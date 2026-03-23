@@ -433,3 +433,4 @@ FodyWeavers.xsd
 
 *.app
 *.command
+.DS_Store
