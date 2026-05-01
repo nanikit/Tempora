@@ -73,7 +73,7 @@ public static class SpectrogramHelper
 	}
 
 	/// <summary>
-	/// FFT 데이터에서 직접 Godot Image를 생성합니다. System.Drawing (libgdiplus) 의존 회피.
+	/// Creates a Godot Image directly from FFT data, avoiding System.Drawing (libgdiplus) dependency.
 	/// </summary>
 	public static Godot.Image GenerateGodotImage(SpectrogramGenerator spectrogramGenerator, Colormap colormap, int intensity = 5, bool dB = true)
 	{
@@ -95,7 +95,7 @@ public static class SpectrogramHelper
 
 				var (r, g, b) = colormap.GetRGB((byte)value);
 
-				// Spectrogram은 row 0 = 낮은 주파수이므로 상하 반전
+				// Spectrogram row 0 = lowest frequency, so flip vertically
 				int pixelIndex = ((height - 1 - row) * width + col) * 4;
 				buffer[pixelIndex] = r;
 				buffer[pixelIndex + 1] = g;
