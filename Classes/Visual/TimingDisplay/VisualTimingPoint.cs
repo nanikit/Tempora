@@ -14,9 +14,9 @@
 using System;
 using System.Collections.Generic;
 using Godot;
-using GD = Tempora.Classes.DataHelpers.GD;
-using Tempora.Classes.Utility;
 using Tempora.Classes.TimingClasses;
+using Tempora.Classes.Utility;
+using GD = Tempora.Classes.DataHelpers.GD;
 //using System.Drawing;
 
 namespace Tempora.Classes.Visual;
@@ -80,7 +80,7 @@ public partial class VisualTimingPoint : Control
             TimingPoint.ChangeFinalized += OnTimingPointChanged;
             //SubscribeToTimingPointEvents();
         }
-    } 
+    }
     #endregion
 
     #region Godot
@@ -101,7 +101,7 @@ public partial class VisualTimingPoint : Control
         TimingPointSelection.Instance.SelectionChanged += OnSelectionChanged;
         BpmLabel.DoubleClicked += OnBPMLabelDoubleClicked;
         BpmEdit.BpmSubmitted += OnBpmSubmitted;
-        
+
         VisibilityChanged += OnVisibilityChanged;
 
         flashTimer.Timeout += OnFlashTimerTimeout;
@@ -109,12 +109,26 @@ public partial class VisualTimingPoint : Control
         lineDefaultWidth = OffsetLine.Width;
     }
 
+    public override void _ExitTree()
+    {
+        GlobalEvents.Instance.MeasurePositionChangeRejected -= OnMeasurePositionChangeRejected;
+        GlobalEvents.Instance.TimingPointNearestCursorChanged -= OnTimingPointNearestCursorChanged;
+        TimingPointSelection.Instance.SelectionChanged -= OnSelectionChanged;
+        BpmLabel.DoubleClicked -= OnBPMLabelDoubleClicked;
+        BpmEdit.BpmSubmitted -= OnBpmSubmitted;
+        VisibilityChanged -= OnVisibilityChanged;
+        flashTimer.Timeout -= OnFlashTimerTimeout;
+
+        if (timingPoint != null)
+            timingPoint.ChangeFinalized -= OnTimingPointChanged;
+    }
+
     public override void _Input(InputEvent @event)
     {
         if (!Visible)
             return;
 
-        
+
 
         Vector2 mousePosition = GetLocalMousePosition();
         Rect2 rectangle = GrabArea.GetRect();
@@ -182,7 +196,7 @@ public partial class VisualTimingPoint : Control
         Viewport viewport = GetViewport();
         viewport.SetInputAsHandled();
         return;
-    } 
+    }
     #endregion
 
     #region Events
@@ -206,7 +220,7 @@ public partial class VisualTimingPoint : Control
 
     private void OnMeasurePositionChangeRejected(object? sender, EventArgs e)
     {
-        if (!Visible) 
+        if (!Visible)
             return;
         if (e is not GlobalEvents.ObjectArgument<TimingPoint> timingPointArgument)
             return;
