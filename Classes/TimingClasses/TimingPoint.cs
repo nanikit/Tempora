@@ -20,7 +20,7 @@ namespace Tempora.Classes.TimingClasses;
 /// <summary>
 /// A data class which asserts that a specific point in time (<see cref="Offset"/>)
 /// should be attached to a musical timeline at (<see cref="MeasurePosition"/>).
-/// The Bpm (<see cref="Bpm"/>) is calculated via the subsequent <see cref="TimingPoint"/> 
+/// The Bpm (<see cref="Bpm"/>) is calculated via the subsequent <see cref="TimingPoint"/>
 /// in <see cref="Timing.TimingPoints"/> if the subsequent point exists.
 /// </summary>
 public partial class TimingPoint : Node, IComparable<TimingPoint>, ICloneable
@@ -32,8 +32,6 @@ public partial class TimingPoint : Node, IComparable<TimingPoint>, ICloneable
     public bool IsBeingUpdated = false;
 
     public ulong SystemTimeWhenCreatedMsec;
-
-    public bool WasBPMManuallySet = false;
 
     #region Time Signature
     private int[] timeSignature = [4, 4];
@@ -62,7 +60,7 @@ public partial class TimingPoint : Node, IComparable<TimingPoint>, ICloneable
     private double offset;
 
     /// <summary>
-    /// The timestamp in the audio which this <see cref="TimingPoint"/> is attached to. 
+    /// The timestamp in the audio which this <see cref="TimingPoint"/> is attached to.
     /// </summary>
     public double Offset
     {
@@ -88,10 +86,10 @@ public partial class TimingPoint : Node, IComparable<TimingPoint>, ICloneable
     #region MeasurePosition
     private double? measurePosition;
     /// <summary>
-    /// The <see cref="TimingPoint"/>'s position on the musical timeline. 
+    /// The <see cref="TimingPoint"/>'s position on the musical timeline.
     /// The value is defined in terms of measures (integer part) from the musical timeline origin.
     /// Individual beats in a measure are the fractional part of the value.
-    /// As an example, if a measure has a 4/4 <see cref="TimeSignature"/>, 
+    /// As an example, if a measure has a 4/4 <see cref="TimeSignature"/>,
     /// the value 0.75 means "Measure 0, Quarter note 4"
     /// </summary>
     public double? MeasurePosition
@@ -113,7 +111,7 @@ public partial class TimingPoint : Node, IComparable<TimingPoint>, ICloneable
     #region MeasuresPerSecond
     private double measuresPerSecond = 0.5d;
     /// <summary>
-    /// Musical measures per second. 
+    /// Musical measures per second.
     /// Directly correlated with <see cref="Bpm"/> and <see cref="TimeSignature"/>
     /// via the formulas <see cref="BpmToMps(float)"/> and <see cref="MpsToBpm(float)"/>.
     /// Cannot be changed directly, as it is a calculated property via <see cref="MeasuresPerSecond_Set(Timing)"/>
@@ -144,13 +142,14 @@ public partial class TimingPoint : Node, IComparable<TimingPoint>, ICloneable
     public double Bpm
     {
         get => manualBpm ?? ComputedBpm;
-        set
+        private set
         {
-            if (manualBpm == value)
+            double roundedValue = RoundBpmIfNeeded(value);
+            if (manualBpm != null && AreBpmsEqual(manualBpm.Value, roundedValue))
                 return;
 
             double oldValue = Bpm;
-            manualBpm = Settings.Instance.RoundBPM ? Math.Round(value * 10, MidpointRounding.ToEven) / 10d : value;
+            manualBpm = roundedValue;
 
             PropertyChanged?.Invoke(this, new PropertyChangeArgument(PropertyType.Bpm, oldValue, manualBpm));
         }
@@ -160,10 +159,20 @@ public partial class TimingPoint : Node, IComparable<TimingPoint>, ICloneable
 
     public double? ManualBpm => manualBpm;
 
+    public bool HasManualBpm => manualBpm != null;
+
     public void SetManualBpm(double bpm)
     {
-        Bpm = bpm;
-        WasBPMManuallySet = true;
+        double? priorManualBpm = manualBpm;
+        double roundedBpm = RoundBpmIfNeeded(bpm);
+
+        Bpm = roundedBpm;
+
+        bool wasAccepted = manualBpm != null && AreBpmsEqual(manualBpm.Value, roundedBpm);
+        if (wasAccepted)
+            return;
+
+        manualBpm = priorManualBpm;
     }
 
     public void ClearManualBpm()
@@ -175,6 +184,11 @@ public partial class TimingPoint : Node, IComparable<TimingPoint>, ICloneable
         manualBpm = null;
 
         PropertyChanged?.Invoke(this, new PropertyChangeArgument(PropertyType.Bpm, oldValue, ComputedBpm));
+    }
+
+    internal void RejectManualBpmChange()
+    {
+        manualBpm = null;
     }
     #endregion
 
@@ -303,5 +317,11 @@ public partial class TimingPoint : Node, IComparable<TimingPoint>, ICloneable
     public static double MpsToBpm(double mps, int[] timeSignature) => TimingMath.MeasuresPerSecondToBpm(mps, timeSignature);
 
     public double BeatLengthSec => 1 / (Bpm / 60);
+
+    private static double RoundBpmIfNeeded(double bpm) => Settings.Instance.RoundBPM
+        ? Math.Round(bpm * 10, MidpointRounding.ToEven) / 10d
+        : bpm;
+
+    private static bool AreBpmsEqual(double bpm1, double bpm2) => Math.Abs(bpm1 - bpm2) < 0.000000001d;
     #endregion
 }

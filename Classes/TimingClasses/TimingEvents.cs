@@ -114,10 +114,9 @@ public partial class Timing
         if (!timingPoint.IsInstantiating && previousTimingPoint != null)
         {
             previousTimingPoint.MeasuresPerSecond = CalculateMPSBasedOnAdjacentPoints(previousTimingPoint) ?? previousTimingPoint.MeasuresPerSecond;
-            previousTimingPoint.WasBPMManuallySet = false;
             previousTimingPoint.ClearManualBpm();
         }
-        if (!timingPoint.IsInstantiating && nextTimingPoint == TimingPoints[^1] && !nextTimingPoint.WasBPMManuallySet)
+        if (!timingPoint.IsInstantiating && nextTimingPoint == TimingPoints[^1] && !nextTimingPoint.HasManualBpm)
             nextTimingPoint.MeasuresPerSecond = CalculateMPSBasedOnAdjacentPoints(nextTimingPoint) ?? nextTimingPoint.MeasuresPerSecond;
     }
 
@@ -149,7 +148,7 @@ public partial class Timing
     /// <param name="timingPoint"></param>
     private void UpdateTempoIncludingAdjacent(TimingPoint timingPoint, int[]? previousTimeSignature = null)
     {
-        if (!(timingPoint == TimingPoints[^1] && timingPoint.WasBPMManuallySet))
+        if (!(timingPoint == TimingPoints[^1] && timingPoint.HasManualBpm))
         {
             UpdateMPS(timingPoint, previousTimeSignature);
         }
@@ -236,8 +235,7 @@ public partial class Timing
                 timingPoint.TimeSignature = oldTimeSignature;
                 break;
             case TimingPoint.PropertyType.Bpm:
-                double oldBpm = (double)oldValue!;
-                timingPoint.Bpm = oldBpm;
+                timingPoint.RejectManualBpmChange();
                 break;
             case TimingPoint.PropertyType.MeasurePosition:
                 double? oldMeasurePosition = (double?)oldValue;

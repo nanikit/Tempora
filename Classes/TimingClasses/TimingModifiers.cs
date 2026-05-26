@@ -288,7 +288,7 @@ public partial class Timing
             BatchChangeMeasurePosition(higherIndex + 1, TimingPoints.Count - 1, getPositionForSubsequentPoints);
 
         TimingPoint higherTimingPoint = TimingPoints[higherIndex];
-        if (!areThereAnySubsequentTimingPoints && higherTimingPoint.WasBPMManuallySet)
+        if (!areThereAnySubsequentTimingPoints && higherTimingPoint.HasManualBpm)
         {
             higherTimingPoint.SetManualBpm(higherTimingPoint.Bpm * multiplier);
         }

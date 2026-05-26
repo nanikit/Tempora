@@ -170,7 +170,8 @@ public partial class BeatSaberExporter : Node
                 double secondsInFirstBeat = firstTimingPoint.Offset + timeOffset;
                 double bpm = 60d / secondsInFirstBeat;
 
-                var offsetTimingPoint = new TimingPoint(-timeOffset, -0.25f, [4, 4]) { Bpm = bpm };
+                var offsetTimingPoint = new TimingPoint(-timeOffset, -0.25f, [4, 4]);
+                offsetTimingPoint.SetManualBpm(bpm);
                 timing.TimingPoints.Insert(0, offsetTimingPoint);
             }
             else
@@ -180,14 +181,16 @@ public partial class BeatSaberExporter : Node
                 double secondsPerBeat = (firstTimingPoint.Offset + timeOffset) / beats;
                 double bpm = 60d / secondsPerBeat;
 
-                var zeroTimingPoint = new TimingPoint(-timeOffset, 0, [4, 4]) { Bpm = bpm };
+                var zeroTimingPoint = new TimingPoint(-timeOffset, 0, [4, 4]);
+                zeroTimingPoint.SetManualBpm(bpm);
                 timing.TimingPoints.Insert(0, zeroTimingPoint);
             }
         }
         else
         {
             // Audio is miraculously already aligned at default 120 bpm
-            var initialTimingPoint = new TimingPoint(-timeOffset, 0, [4, 4]) { Bpm = 120 };
+            var initialTimingPoint = new TimingPoint(-timeOffset, 0, [4, 4]);
+            initialTimingPoint.SetManualBpm(120);
             timing.TimingPoints.Insert(0, initialTimingPoint);
         }
     }
