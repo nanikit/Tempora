@@ -140,21 +140,20 @@ SliderTickRate:1
             TimingPoint timingPoint = timing.TimingPoints[i];
             TimingPoint? previousTimingPoint = i >= 1 ? timing.TimingPoints[i - 1] : null;
 
-            if (previousTimingPoint == null) 
+            if (previousTimingPoint == null)
                 continue;
 
-            float previousOffsetMsRounded = (int)(previousTimingPoint.Offset * 1000);
-            float measureDifference = (float)(timingPoint.MeasurePosition! - previousTimingPoint.MeasurePosition!);
-            float timeDifference = measureDifference / previousTimingPoint.MeasuresPerSecond;
-            float previousWhiteLineOffsetMsRounded = (int)(previousOffsetMsRounded + timeDifference * 1000);
-            float offsetMsRounded = (int)(timingPoint.Offset * 1000);
+            double previousOffsetMsRounded = (int)(previousTimingPoint.Offset * 1000);
+            double measureDifference = timingPoint.MeasurePosition!.Value - previousTimingPoint.MeasurePosition!.Value;
+            double timeDifference = measureDifference / previousTimingPoint.MeasuresPerSecond;
+            double previousWhiteLineOffsetMsRounded = (int)(previousOffsetMsRounded + timeDifference * 1000);
+            double offsetMsRounded = (int)(timingPoint.Offset * 1000);
             if (offsetMsRounded <= previousWhiteLineOffsetMsRounded)
                 continue;
 
-            float requiredTimeDifference = timeDifference + (0.001f - timeDifference % 0.001f + 0.0001f);
-            float requiredMeasuresPerSecond = measureDifference / requiredTimeDifference;
+            double requiredTimeDifference = timeDifference + (0.001d - timeDifference % 0.001d + 0.0001d);
+            double requiredMeasuresPerSecond = measureDifference / requiredTimeDifference;
             previousTimingPoint.MeasuresPerSecond = requiredMeasuresPerSecond;
-            previousTimingPoint.Bpm = previousTimingPoint.MpsToBpm(requiredMeasuresPerSecond);
         }
         timing.ShouldHandleTimingPointChanges = true;
     }
@@ -184,7 +183,7 @@ SliderTickRate:1
         zipPacker.CloseFile();
 
         zipPacker.StartFile($"audio{audioFile.Extension}");
-        
+
         // If osu export no longer works, uncomment this:
         //byte[] fileBuffer = (audioFile.Extension == ".mp3")
         //    ? ((AudioStreamMP3)audioFile.Stream).Data

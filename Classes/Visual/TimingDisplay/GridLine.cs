@@ -40,7 +40,7 @@ public partial class GridLine : Line2D
         Divisor = divisor;
         DivisionIndex = index;
         this.audioHeight = audioHeight;
-        RelativeMeasurePosition = Timing.GetRelativeNotePosition(timeSignature, divisor, index);
+        RelativeMeasurePosition = (float)Timing.GetRelativeNotePosition(timeSignature, divisor, index);
         //new ColorConverter();
 
         DefaultColor = color_Unspecified;

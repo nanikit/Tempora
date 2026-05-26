@@ -19,6 +19,7 @@ using NAudio.MediaFoundation;
 using Tempora.Classes.Utility;
 
 namespace Tempora.Classes.TimingClasses;
+
 public partial class Timing
 {
     public bool ShouldHandleTimingPointChanges = true;
@@ -68,9 +69,9 @@ public partial class Timing
     /// <returns></returns>
     /// <exception cref="NullReferenceException"></exception>
     /// <exception cref="Exception"></exception>
-    private float? CalculateMPSBasedOnAdjacentPoints(TimingPoint timingPoint)
+    private double? CalculateMPSBasedOnAdjacentPoints(TimingPoint timingPoint)
     {
-        float? correctValue = null;
+        double? correctValue = null;
         TimingPoint? previousTimingPoint = GetPreviousTimingPoint(timingPoint);
         TimingPoint? nextTimingPoint = GetNextTimingPoint(timingPoint);
 
@@ -81,17 +82,21 @@ public partial class Timing
 
         if (nextTimingPoint?.MeasurePosition != null)
         {
-            correctValue =
-                ((float)nextTimingPoint.MeasurePosition - (float)timingPoint.MeasurePosition)
-                / (nextTimingPoint.Offset - timingPoint.Offset);
+            correctValue = TimingMath.CalculateMeasuresPerSecond(
+                timingPoint.MeasurePosition.Value,
+                nextTimingPoint.MeasurePosition.Value,
+                timingPoint.Offset,
+                nextTimingPoint.Offset);
         }
         else if (previousTimingPoint?.MeasurePosition != null)
         {
-            float timeSignatureCorrection = ((float)previousTimingPoint.TimeSignature[0] / previousTimingPoint.TimeSignature[1]) / ((float)timingPoint.TimeSignature[0] / timingPoint.TimeSignature[1]);
+            double timeSignatureCorrection = ((double)previousTimingPoint.TimeSignature[0] / previousTimingPoint.TimeSignature[1]) / ((double)timingPoint.TimeSignature[0] / timingPoint.TimeSignature[1]);
 
-            correctValue =
-                ((float)timingPoint.MeasurePosition - (float)previousTimingPoint.MeasurePosition)
-                / (timingPoint.Offset - previousTimingPoint.Offset)
+            correctValue = TimingMath.CalculateMeasuresPerSecond(
+                previousTimingPoint.MeasurePosition.Value,
+                timingPoint.MeasurePosition.Value,
+                previousTimingPoint.Offset,
+                timingPoint.Offset)
                 * timeSignatureCorrection;
         }
 
@@ -110,12 +115,13 @@ public partial class Timing
         {
             previousTimingPoint.MeasuresPerSecond = CalculateMPSBasedOnAdjacentPoints(previousTimingPoint) ?? previousTimingPoint.MeasuresPerSecond;
             previousTimingPoint.WasBPMManuallySet = false;
+            previousTimingPoint.ClearManualBpm();
         }
         if (!timingPoint.IsInstantiating && nextTimingPoint == TimingPoints[^1] && !nextTimingPoint.WasBPMManuallySet)
             nextTimingPoint.MeasuresPerSecond = CalculateMPSBasedOnAdjacentPoints(nextTimingPoint) ?? nextTimingPoint.MeasuresPerSecond;
     }
 
-    private void UpdateAllDependentProperties(TimingPoint timingPoint, TimingPoint.PropertyType propertyType, object? value)
+    private void UpdateAllDependentProperties(TimingPoint timingPoint, TimingPoint.PropertyType propertyType, object? oldValue, object? value)
     {
         switch (propertyType)
         {
@@ -126,10 +132,9 @@ public partial class Timing
                 UpdateTempoIncludingAdjacent(timingPoint);
                 break;
             case TimingPoint.PropertyType.MeasuresPerSecond:
-                timingPoint.Bpm = timingPoint.MpsToBpm(timingPoint.MeasuresPerSecond);
                 break;
             case TimingPoint.PropertyType.TimeSignature:
-                UpdateTempoIncludingAdjacent(timingPoint);
+                UpdateTempoIncludingAdjacent(timingPoint, (int[]?)oldValue);
                 break;
             case TimingPoint.PropertyType.Bpm:
                 timingPoint.MeasuresPerSecond = timingPoint.BpmToMps(timingPoint.Bpm);
@@ -142,18 +147,34 @@ public partial class Timing
     /// Ensures that all tempo-related value for this <see cref="TimingPoint"/> and adjacent ones are properly updated.
     /// </summary>
     /// <param name="timingPoint"></param>
-    private void UpdateTempoIncludingAdjacent(TimingPoint timingPoint)
+    private void UpdateTempoIncludingAdjacent(TimingPoint timingPoint, int[]? previousTimeSignature = null)
     {
         if (!(timingPoint == TimingPoints[^1] && timingPoint.WasBPMManuallySet))
         {
-            UpdateMPS(timingPoint);
-            timingPoint.Bpm = timingPoint.MpsToBpm(timingPoint.MeasuresPerSecond);
+            UpdateMPS(timingPoint, previousTimeSignature);
         }
         UpdateAdjacentTempo(timingPoint);
     }
 
-    private void UpdateMPS(TimingPoint timingPoint) => timingPoint.MeasuresPerSecond = CalculateMPSBasedOnAdjacentPoints(timingPoint)
-        ?? (Settings.Instance.PreserveBPMWhenChangingTimeSignature ? timingPoint.BpmToMps(timingPoint.Bpm) : timingPoint.MeasuresPerSecond);
+    private void UpdateMPS(TimingPoint timingPoint, int[]? previousTimeSignature = null)
+    {
+        double? calculatedMps = CalculateMPSBasedOnAdjacentPoints(timingPoint);
+        if (calculatedMps != null)
+        {
+            timingPoint.MeasuresPerSecond = calculatedMps.Value;
+            return;
+        }
+
+        if (!Settings.Instance.PreserveBPMWhenChangingTimeSignature)
+            return;
+
+        double bpmToPreserve = timingPoint.ManualBpm
+            ?? (previousTimeSignature == null
+                ? timingPoint.ComputedBpm
+                : TimingPoint.MpsToBpm(timingPoint.MeasuresPerSecond, previousTimeSignature));
+
+        timingPoint.MeasuresPerSecond = timingPoint.BpmToMps(bpmToPreserve);
+    }
 
     /// <summary>
     /// When the <see cref="Timing"/> decides that changes to a timing point have been finalized, invoke an event that other classes can respond to.
@@ -171,7 +192,7 @@ public partial class Timing
     {
         if (!ShouldHandleTimingPointChanges)
             return;
-        if (sender is null) 
+        if (sender is null)
             return;
         if (e is null)
             return;
@@ -194,7 +215,7 @@ public partial class Timing
         if (isValid)
         {
             timingPoint.IsBeingUpdated = true;
-            UpdateAllDependentProperties(timingPoint, propertyType, newValue);
+            UpdateAllDependentProperties(timingPoint, propertyType, oldValue, newValue);
             timingPoint.IsBeingUpdated = false;
             FinalizeTimingPointChange(timingPoint);
             return;
@@ -203,11 +224,11 @@ public partial class Timing
         switch (propertyType) // Reset to old values if change is denied
         {
             case TimingPoint.PropertyType.Offset:
-                float oldOffset = (float)oldValue!;
+                double oldOffset = (double)oldValue!;
                 timingPoint.Offset = oldOffset;
                 break;
             case TimingPoint.PropertyType.MeasuresPerSecond:
-                float oldMPS = (float)oldValue!;
+                double oldMPS = (double)oldValue!;
                 timingPoint.MeasuresPerSecond = oldMPS;
                 break;
             case TimingPoint.PropertyType.TimeSignature:
@@ -215,14 +236,14 @@ public partial class Timing
                 timingPoint.TimeSignature = oldTimeSignature;
                 break;
             case TimingPoint.PropertyType.Bpm:
-                float oldBpm = (float)oldValue!;
+                double oldBpm = (double)oldValue!;
                 timingPoint.Bpm = oldBpm;
                 break;
             case TimingPoint.PropertyType.MeasurePosition:
-                float? oldMeasurePosition = (float?)oldValue;
+                double? oldMeasurePosition = (double?)oldValue;
                 timingPoint.MeasurePosition = oldMeasurePosition;
                 TimingPoint? rejectingTimingPoint = null;
-                CanTimingPointGoHere(timingPoint, (float)newValue!, out rejectingTimingPoint);
+                CanTimingPointGoHere(timingPoint, (double)newValue!, out rejectingTimingPoint);
                 if (rejectingTimingPoint != null)
                     GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.MeasurePositionChangeRejected), new GlobalEvents.ObjectArgument<TimingPoint>(rejectingTimingPoint));
                 break;
@@ -238,7 +259,7 @@ public partial class Timing
         switch (propertyType)
         {
             case TimingPoint.PropertyType.Offset:
-                var newOffset = (float)newValue!;
+                var newOffset = (double)newValue!;
                 bool previousPointBlocksChange = previousTimingPoint != null && previousTimingPoint.Offset >= newOffset;
                 bool nextPointBlockschange = nextTimingPoint != null && nextTimingPoint.Offset <= newOffset;
                 if (previousPointBlocksChange || nextPointBlockschange)
@@ -252,9 +273,9 @@ public partial class Timing
                 if (nextTimingPoint == null)
                     return true;
 
-                float? calculatedMPS = CalculateMPSBasedOnAdjacentPoints(timingPoint);
+                double? calculatedMPS = CalculateMPSBasedOnAdjacentPoints(timingPoint);
 
-                return (float)newValue! == calculatedMPS!;
+                return (double)newValue! == calculatedMPS!;
 
             case TimingPoint.PropertyType.Bpm:
                 if (nextTimingPoint == null)
@@ -265,15 +286,15 @@ public partial class Timing
                 if (calculatedMPS == null)
                     return true;
 
-                float newBpm = (float)newValue!;
-                float calculatedBpm = timingPoint.MpsToBpm((float)calculatedMPS);
+                double newBpm = (double)newValue!;
+                double calculatedBpm = timingPoint.MpsToBpm(calculatedMPS.Value);
 
-                return Settings.Instance.RoundBPM 
-                    ? Math.Abs(calculatedBpm - newBpm) < 0.1 
+                return Settings.Instance.RoundBPM
+                    ? Math.Abs(calculatedBpm - newBpm) < 0.1
                     : Math.Abs(calculatedBpm - newBpm) < 0.0001;
 
             case TimingPoint.PropertyType.MeasurePosition:
-                return CanTimingPointGoHere(timingPoint, (float?)newValue, out _);
+                return CanTimingPointGoHere(timingPoint, (double?)newValue, out _);
 
             default:
                 return false;

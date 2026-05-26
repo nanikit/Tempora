@@ -26,8 +26,8 @@ public partial class Context : Node
 
     public bool ShouldDeleteHeldPointIfNotOnGrid = false;
     public bool HeldPointIsJustBeingAdded = false;
-    private float? heldTimingPoint_PreviousMeasurePosition = null!;
-    private float? heldTimingPoint_PreviousOffset = null!;
+    private double? heldTimingPoint_PreviousMeasurePosition = null!;
+    private double? heldTimingPoint_PreviousOffset = null!;
     private TimingPoint? heldTimingPoint = null!;
     public TimingPoint? HeldTimingPoint
     {

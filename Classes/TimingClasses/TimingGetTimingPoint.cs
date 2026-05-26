@@ -11,14 +11,15 @@
 //
 // Full license text is available at: https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode
 
-using System.Linq;
 using System;
+using System.Linq;
 using GD = Tempora.Classes.DataHelpers.GD;
 
 namespace Tempora.Classes.TimingClasses;
+
 public partial class Timing
 {
-    public TimingPoint? GetNearestTimingPoint(float measurePosition)
+    public TimingPoint? GetNearestTimingPoint(double measurePosition)
     {
         if (TimingPoints.Count == 0)
             return null;
@@ -34,8 +35,8 @@ public partial class Timing
             return nextTimingPoint;
         else if (previousTimingPoint?.MeasurePosition != null && nextTimingPoint?.MeasurePosition != null)
         {
-            float distanceToNext = Math.Abs((float)nextTimingPoint.MeasurePosition - measurePosition);
-            float distanceToPrevious = Math.Abs((float)previousTimingPoint.MeasurePosition - measurePosition);
+            double distanceToNext = Math.Abs(nextTimingPoint.MeasurePosition.Value - measurePosition);
+            double distanceToPrevious = Math.Abs(previousTimingPoint.MeasurePosition.Value - measurePosition);
             timingPoint = (distanceToPrevious < distanceToNext) ? previousTimingPoint : nextTimingPoint;
         }
 
@@ -46,12 +47,12 @@ public partial class Timing
             : timingPoint;
     }
 
-    public TimingPoint? GetOperatingTimingPoint_ByMeasurePosition(float measurePosition)
+    public TimingPoint? GetOperatingTimingPoint_ByMeasurePosition(double measurePosition)
     {
         if (TimingPoints.Count == 0)
             return null;
 
-        float epsilon = 0.001f;
+        const double epsilon = 0.001d;
         TimingPoint? timingPoint = TimingPoints.FindLast(point => point.MeasurePosition - measurePosition < epsilon);
 
         // If there's only TimingPoints AFTER MeasurePositionStart
@@ -64,7 +65,7 @@ public partial class Timing
             : timingPoint;
     }
 
-    public TimingPoint? GetOperatingTimingPoint_ByTime(float time)
+    public TimingPoint? GetOperatingTimingPoint_ByTime(double time)
     {
         // Ensures the method can be used while a TimingPoint is being created.
         var validTimingPoints = TimingPoints.Where(point => point.MeasurePosition != null).ToList<TimingPoint>();

@@ -16,8 +16,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot;
 using Tempora.Classes.DataHelpers;
-using GD = Tempora.Classes.DataHelpers.GD;
 using Tempora.Classes.Utility;
+using GD = Tempora.Classes.DataHelpers.GD;
 
 namespace Tempora.Classes.TimingClasses;
 
@@ -60,7 +60,7 @@ public partial class Timing : Node, IMementoOriginator
 
     public static Timing Instance { get => instance; set => instance = value; }
     private static Timing instance = null!;
-    
+
     private List<TimingPoint> timingPoints = [];
 
     public List<TimingPoint> TimingPoints
@@ -89,7 +89,7 @@ public partial class Timing : Node, IMementoOriginator
             GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.TimingChanged));
         }
     }
-    
+
     #endregion
 
 
@@ -98,7 +98,7 @@ public partial class Timing : Node, IMementoOriginator
 
 
     #region Calculators
-    
+
     // These methods can be moved to separate scripts if necessary.
 
     /// <summary>
@@ -108,7 +108,7 @@ public partial class Timing : Node, IMementoOriginator
     /// <param name="measurePosition"></param>
     /// <param name="rejectingTimingPoint"></param>
     /// <returns></returns>
-    public bool CanTimingPointGoHere(TimingPoint? timingPoint, float? measurePosition, out TimingPoint? rejectingTimingPoint)
+    public bool CanTimingPointGoHere(TimingPoint? timingPoint, double? measurePosition, out TimingPoint? rejectingTimingPoint)
     {
         if (measurePosition == null)
         {
@@ -120,13 +120,13 @@ public partial class Timing : Node, IMementoOriginator
         TimingPoint? nextTimingPoint = GetNextTimingPoint(timingPoint);
 
         // validity checks
-        if (previousTimingPoint != null 
+        if (previousTimingPoint != null
             && (previousTimingPoint.MeasurePosition >= measurePosition || AreMeasurePositionsEqual(previousTimingPoint.MeasurePosition, measurePosition)))
         {
             rejectingTimingPoint = previousTimingPoint;
             return false;
         }
-        if (nextTimingPoint != null 
+        if (nextTimingPoint != null
             && (nextTimingPoint.MeasurePosition <= measurePosition || AreMeasurePositionsEqual(nextTimingPoint.MeasurePosition, measurePosition)))
         {
             rejectingTimingPoint = nextTimingPoint;
@@ -137,7 +137,7 @@ public partial class Timing : Node, IMementoOriginator
         return true;
     }
 
-    public float? GetTimeDifference(int timingPointIndex1, int timingPointIndex2)
+    public double? GetTimeDifference(int timingPointIndex1, int timingPointIndex2)
     {
         return timingPointIndex1 < 0 || timingPointIndex2 < 0 || timingPointIndex1 > TimingPoints.Count || timingPointIndex2 > TimingPoints.Count
             ? null
@@ -152,22 +152,22 @@ public partial class Timing : Node, IMementoOriginator
     /// <returns></returns>
     /// <exception cref="NullReferenceException"></exception>
     /// <exception cref="Exception"></exception>
-    public float MeasurePositionToOffset(float measurePosition)
+    public double MeasurePositionToOffset(double measurePosition)
     {
         TimingPoint? timingPoint = GetOperatingTimingPoint_ByMeasurePosition(measurePosition);
         if (timingPoint == null)
-            return measurePosition / 0.5f; // default 120 bpm from time=0
+            return measurePosition / 0.5d; // default 120 bpm from time=0
         if (timingPoint.MeasurePosition == null)
             throw new NullReferenceException($"Operating TimingPoint does not have a non-null {nameof(TimingPoint.MeasurePosition)}");
 
         if (timingPoint.MeasuresPerSecond <= 0)
             throw new Exception("Operating timing point has MeasuresPerSecond <= 0");
 
-        float time = (float)(timingPoint.Offset + ((measurePosition - timingPoint.MeasurePosition) / timingPoint.MeasuresPerSecond));
+        double time = timingPoint.Offset + ((measurePosition - timingPoint.MeasurePosition.Value) / timingPoint.MeasuresPerSecond);
 
         return time;
     }
-    
+
     /// <summary>
     /// Checks whether a music position division (defined by a divisor and an index) is divisible by a different divisor.
     /// Example: (divisor = 12, index = 7, otherIndex = 4) should return true because the 7th 12th note has the same relative music position as the 2nd 4th note.
@@ -178,8 +178,8 @@ public partial class Timing : Node, IMementoOriginator
     /// <returns></returns>
     public static bool IsDivisionOnDivisor(int divisor, int index, int otherDivisor)
     {
-        int[] timeSignature = [4,4]; // The time signature doesn't matter in this case.
-        float relativePosition = GetRelativeNotePosition(timeSignature, divisor, index);
+        int[] timeSignature = [4, 4]; // The time signature doesn't matter in this case.
+        double relativePosition = GetRelativeNotePosition(timeSignature, divisor, index);
 
         return IsPositionOnDivisor(relativePosition, timeSignature, otherDivisor);
     }
@@ -192,28 +192,28 @@ public partial class Timing : Node, IMementoOriginator
     /// <param name="timeSignature"></param>
     /// <param name="divisor"></param>
     /// <returns></returns>
-    public static bool IsPositionOnDivisor(float measurePosition, int[] timeSignature, int divisor)
+    public static bool IsPositionOnDivisor(double measurePosition, int[] timeSignature, int divisor)
     {
-        float divisorLength = GetRelativeNotePosition(timeSignature, divisor, 1);
+        double divisorLength = GetRelativeNotePosition(timeSignature, divisor, 1);
 
         measurePosition = measurePosition % 1;
 
-        var epsilon = 0.001f;
+        const double epsilon = 0.001d;
         bool isDivisible = (measurePosition % divisorLength < epsilon || (divisorLength - measurePosition % divisorLength) < epsilon);
 
         return isDivisible;
     }
 
-    public static bool AreMeasurePositionsEqual(TimingPoint? timingPoint1, TimingPoint? timingPoint2) 
+    public static bool AreMeasurePositionsEqual(TimingPoint? timingPoint1, TimingPoint? timingPoint2)
         => AreMeasurePositionsEqual(timingPoint1?.MeasurePosition, timingPoint2?.MeasurePosition);
 
-    public static bool AreMeasurePositionsEqual(float? measurePosition1, float? measurePosition2)
+    public static bool AreMeasurePositionsEqual(double? measurePosition1, double? measurePosition2)
     {
-        if (measurePosition1 == null || measurePosition2 == null) 
+        if (measurePosition1 == null || measurePosition2 == null)
             return false;
-        return MathF.Abs((float)measurePosition1 - (float)measurePosition2) < 0.001;
+        return Math.Abs(measurePosition1.Value - measurePosition2.Value) < 0.001d;
     }
-    
+
     public bool CanBpmBeChangedManually(TimingPoint timingPoint)
     {
         var timingPoints = Timing.Instance.TimingPoints;

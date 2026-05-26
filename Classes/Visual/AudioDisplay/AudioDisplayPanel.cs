@@ -12,13 +12,13 @@
 // Full license text is available at: https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Godot;
 using GodotPlugins.Game;
-using Tempora.Classes.Utility;
-using Tempora.Classes.TimingClasses;
 using Tempora.Classes.Audio;
-using System.Collections.Generic;
+using Tempora.Classes.TimingClasses;
+using Tempora.Classes.Utility;
 
 namespace Tempora.Classes.Visual.AudioDisplay;
 
@@ -83,7 +83,7 @@ public partial class AudioDisplayPanel : Control
     /// </summary>
     /// <param name="nominalMeasurePositionStart"></param>
     /// <returns></returns>
-    public static float ActualMeasurePositionStart(int nominalMeasurePositionStart) 
+    public static float ActualMeasurePositionStart(int nominalMeasurePositionStart)
         => nominalMeasurePositionStart - Settings.Instance.MeasureOverlap - Settings.Instance.DownbeatPositionOffset;
 
     public float ActualMeasurePositionStartForPanel
@@ -162,7 +162,7 @@ public partial class AudioDisplayPanel : Control
 
         Vector2 mousePos = mouseEvent.Position;
         float measurePosition = GetMouseMeasurePosition(mousePos);
-        float sampletime = Timing.Instance.MeasurePositionToOffset(measurePosition);
+        float sampletime = (float)Timing.Instance.MeasurePositionToOffset(measurePosition);
 
         TimingPoint? nearestTimingPoint = Timing.Instance.GetNearestTimingPoint(measurePosition);
         Context.Instance.TimingPointNearestCursor = nearestTimingPoint;
@@ -183,7 +183,7 @@ public partial class AudioDisplayPanel : Control
             case InputEventMouseButton { ButtonIndex: MouseButton.Right, Pressed: true } mouseButtonEvent
             when !Input.IsKeyPressed(Key.Alt):
                 var heldTimingPoint = Context.Instance?.HeldTimingPoint;
-                var seekTime = heldTimingPoint != null ? heldTimingPoint.Offset - 0.05f : sampletime;
+                float seekTime = heldTimingPoint != null ? (float)(heldTimingPoint.Offset - 0.05d) : sampletime;
                 SeekPlaybackTime?.Invoke(this, new GlobalEvents.ObjectArgument<float>(seekTime));
                 SpamPlaybackLoopTimer.DelayedStart();
                 break;
@@ -202,15 +202,14 @@ public partial class AudioDisplayPanel : Control
             when Input.IsKeyPressed(Key.Alt):
                 if (nearestTimingPoint == null) break;
                 // Decrease BPM by 1 (snapping to integers) - only for last timing point.
-                float previousBpm = nearestTimingPoint.Bpm;
-                float newBpm = (int)previousBpm - 1;
+                double previousBpm = nearestTimingPoint.Bpm;
+                double newBpm = (int)previousBpm - 1;
                 if (Input.IsKeyPressed(Key.Shift) && !Input.IsKeyPressed(Key.Ctrl))
                     newBpm = (int)previousBpm - 5;
                 else if (!Input.IsKeyPressed(Key.Shift) && Input.IsKeyPressed(Key.Ctrl))
-                    newBpm = previousBpm - 0.1f;
+                    newBpm = previousBpm - 0.1d;
 
-                nearestTimingPoint.Bpm = newBpm;
-                nearestTimingPoint.WasBPMManuallySet = true;
+                nearestTimingPoint.SetManualBpm(newBpm);
 
                 MementoHandler.Instance.AddTimingMemento(nearestTimingPoint);
                 break;
@@ -224,10 +223,9 @@ public partial class AudioDisplayPanel : Control
                 if (Input.IsKeyPressed(Key.Shift) && !Input.IsKeyPressed(Key.Ctrl))
                     newBpm = (int)previousBpm + 5;
                 else if (!Input.IsKeyPressed(Key.Shift) && Input.IsKeyPressed(Key.Ctrl))
-                    newBpm = previousBpm + 0.1f;
+                    newBpm = previousBpm + 0.1d;
 
-                nearestTimingPoint.Bpm = newBpm;
-                nearestTimingPoint.WasBPMManuallySet = true;
+                nearestTimingPoint.SetManualBpm(newBpm);
 
                 MementoHandler.Instance.AddTimingMemento(nearestTimingPoint);
                 break;
@@ -278,8 +276,7 @@ public partial class AudioDisplayPanel : Control
             else
                 bpmDelta = 1f;
 
-            nearestTimingPoint.Bpm += steps * bpmDelta;
-            nearestTimingPoint.WasBPMManuallySet = true;
+            nearestTimingPoint.SetManualBpm(nearestTimingPoint.Bpm + steps * bpmDelta);
             MementoHandler.Instance.AddTimingMemento(nearestTimingPoint);
         }
 
@@ -295,7 +292,7 @@ public partial class AudioDisplayPanel : Control
     {
         float measurePosition = XPositionToMeasurePosition(mousePositionInLocalCoords.X);
         if (Input.IsKeyPressed(Key.Shift))
-            measurePosition = Timing.Instance.SnapMeasurePosition(measurePosition);
+            measurePosition = (float)Timing.Instance.SnapMeasurePosition(measurePosition);
 
         return measurePosition;
     }
@@ -315,7 +312,7 @@ public partial class AudioDisplayPanel : Control
                 // Godot's _GuiInput won't seem to let other Nodes handle the event if the mouse has been held down while moving from this Control to another
                 // Therefore mouse input is handled in _Input
                 if (!mouseIsInside)
-                    return; 
+                    return;
 
                 Vector2 globalPosition = GetGlobalRect().Position;
                 Vector2 mousePos = mouseMotion.Position - globalPosition;
@@ -344,8 +341,7 @@ public partial class AudioDisplayPanel : Control
                     float xMovement = mouseMotion.Relative.X;
                     float bpmPerPixel = 0.02f;
                     float bpmDifference = xMovement * bpmPerPixel;
-                    Context.Instance.HeldTimingPoint.Bpm = Context.Instance.HeldTimingPoint.Bpm + bpmDifference;
-                    Context.Instance.HeldTimingPoint.WasBPMManuallySet = true;
+                    Context.Instance.HeldTimingPoint.SetManualBpm(Context.Instance.HeldTimingPoint.Bpm + bpmDifference);
                     return;
                 }
 
@@ -360,7 +356,7 @@ public partial class AudioDisplayPanel : Control
             when !Input.IsKeyPressed(Key.Alt) && !Context.Instance.AreAnySubwindowsVisible && mouseIsInside:
                 mousePos = GetLocalMousePosition();
                 measurePosition = GetMouseMeasurePosition(mousePos);
-                float sampletime = Timing.Instance.MeasurePositionToOffset(measurePosition);
+                float sampletime = (float)Timing.Instance.MeasurePositionToOffset(measurePosition);
                 AttemptToAddTimingPoint?.Invoke(this, new GlobalEvents.ObjectArgument<float>(sampletime));
                 break;
 
@@ -383,7 +379,7 @@ public partial class AudioDisplayPanel : Control
     private void OnAudioFileChanged(object? sender, EventArgs e) => UpdateVisuals();
 
     private void OnSpectrogramUpdated(object? sender, EventArgs e)
-    {   
+    {
         if (Settings.Instance.RenderAsSpectrogram)
             UpdateVisuals();
     }
@@ -428,10 +424,10 @@ public partial class AudioDisplayPanel : Control
     {
         var mousePos = GetLocalMousePosition();
         float measurePosition = GetMouseMeasurePosition(mousePos);
-        float sampletime = Timing.Instance.MeasurePositionToOffset(measurePosition);
+        float sampletime = (float)Timing.Instance.MeasurePositionToOffset(measurePosition);
 
         var heldTimingPoint = Context.Instance?.HeldTimingPoint;
-        var seekTime = heldTimingPoint != null ? heldTimingPoint.Offset - 0.05f : sampletime;
+        float seekTime = heldTimingPoint != null ? (float)(heldTimingPoint.Offset - 0.05d) : sampletime;
         SeekPlaybackTime?.Invoke(this, new GlobalEvents.ObjectArgument<float>(seekTime));
     }
     #endregion
@@ -494,8 +490,8 @@ public partial class AudioDisplayPanel : Control
 
     private void ModifyOrAddAudioSegment(float segmentStart, float segmentEnd, bool renderAsSpectrogram, Node? existingSegment = null)
     {
-        float measurePositionStart = Timing.Instance.OffsetToMeasurePosition(segmentStart);
-        float measurePositionEnd = Timing.Instance.OffsetToMeasurePosition(segmentEnd);
+        float measurePositionStart = (float)Timing.Instance.OffsetToMeasurePosition(segmentStart);
+        float measurePositionEnd = (float)Timing.Instance.OffsetToMeasurePosition(segmentEnd);
 
         float margin = Settings.Instance.MeasureOverlap;
         TimingPoint? heldTimingPoint = Context.Instance.HeldTimingPoint;
@@ -558,14 +554,14 @@ public partial class AudioDisplayPanel : Control
         List<float[]> panelSegments = new(2);
 
         //float margin = Settings.Instance.MeasureOverlap;
-        float offsetOfFirstSampleInThisPanel = MathF.Max(Timing.Instance.MeasurePositionToOffset(ActualMeasurePositionStartForPanel), 0);
-        float offsetOfLastSampleInThisPanel = MathF.Min(Timing.Instance.MeasurePositionToOffset(ActualMeasurePositionEndForPanel), Project.Instance.AudioFile.GetAudioLength());
+        float offsetOfFirstSampleInThisPanel = MathF.Max((float)Timing.Instance.MeasurePositionToOffset(ActualMeasurePositionStartForPanel), 0);
+        float offsetOfLastSampleInThisPanel = MathF.Min((float)Timing.Instance.MeasurePositionToOffset(ActualMeasurePositionEndForPanel), Project.Instance.AudioFile.GetAudioLength());
 
         TimingPoint? previousTimingPoint = Timing.Instance.GetOperatingTimingPoint_ByMeasurePosition(ActualMeasurePositionStartForPanel);
         TimingPoint? firstTimingPointInPanel = Timing.Instance.GetNextTimingPoint(previousTimingPoint);
         firstTimingPointInPanel = firstTimingPointInPanel?.MeasurePosition > ActualMeasurePositionEndForPanel ? null : firstTimingPointInPanel;
 
-        panelSegments.Add([offsetOfFirstSampleInThisPanel, firstTimingPointInPanel?.Offset ?? offsetOfLastSampleInThisPanel]);
+        panelSegments.Add([offsetOfFirstSampleInThisPanel, (float)(firstTimingPointInPanel?.Offset ?? offsetOfLastSampleInThisPanel)]);
 
         if (firstTimingPointInPanel == null)
             return panelSegments;
@@ -579,8 +575,8 @@ public partial class AudioDisplayPanel : Control
             bool isNextPointOutsideOfPanel = isNextPointOutOfRange
                 || (Timing.Instance.TimingPoints[i + 1].MeasurePosition > ActualMeasurePositionEndForPanel);
 
-            float panelSegmentStartTime = timingPoint.Offset;
-            float panelSegmentEndTime = isNextPointOutsideOfPanel ? offsetOfLastSampleInThisPanel : Timing.Instance.TimingPoints[i + 1].Offset;
+            float panelSegmentStartTime = (float)timingPoint.Offset;
+            float panelSegmentEndTime = (float)(isNextPointOutsideOfPanel ? offsetOfLastSampleInThisPanel : Timing.Instance.TimingPoints[i + 1].Offset);
 
             panelSegments.Add([panelSegmentStartTime, panelSegmentEndTime]);
 
@@ -740,7 +736,7 @@ public partial class AudioDisplayPanel : Control
         float offset = Settings.Instance.DownbeatPositionOffset;
         float margin = Settings.Instance.MeasureOverlap;
         float xPosition = Size.X * ((gridLine.RelativeMeasurePosition + measureOffset + margin + offset) / ((2 * margin) + 1f));
-        gridLine.Position = new Vector2(xPosition, Size.Y/2);
+        gridLine.Position = new Vector2(xPosition, Size.Y / 2);
         gridLine.ZIndex = 90;
 
         return gridLine;
@@ -803,12 +799,12 @@ public partial class AudioDisplayPanel : Control
 
         if (Input.IsKeyPressed(Key.Shift))
         {
-            measurePosition = Timing.Instance.SnapMeasurePosition(measurePosition);
+            measurePosition = (float)Timing.Instance.SnapMeasurePosition(measurePosition);
         }
 
         PreviewLine.Position = new Vector2(MeasurePositionToXPosition(measurePosition), 0);
 
-        float time = Timing.Instance.MeasurePositionToOffset(measurePosition);
+        float time = (float)Timing.Instance.MeasurePositionToOffset(measurePosition);
         var musicTime = TimeSpan.FromSeconds(time);
         PreviewLine.TimeLabel.Text = (time < 0 ? "-" : "") + musicTime.ToString(@"mm\:ss\:fff");
     }

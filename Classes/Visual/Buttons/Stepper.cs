@@ -1,5 +1,5 @@
-using Godot;
 using System;
+using Godot;
 using Tempora.Classes.Utility;
 
 public partial class Stepper : HBoxContainer
@@ -9,7 +9,7 @@ public partial class Stepper : HBoxContainer
 
     [Export]
     public Label ValueLabel = null!;
-    
+
     [Export]
     Button decrementButton = null!;
 
@@ -38,12 +38,10 @@ public partial class Stepper : HBoxContainer
             if (hasMouseInside == value)
                 return;
             hasMouseInside = value;
-            if (!value) 
+            if (!value)
                 MouseExitedStepper?.Invoke(this, EventArgs.Empty);
         }
     }
-
-    public event EventHandler? ValueModified = null;
 
     public event EventHandler? ValueIncremented = null;
 
@@ -59,7 +57,7 @@ public partial class Stepper : HBoxContainer
 
     // Called when the node enters the scene tree for the first time.
     public override void _Ready()
-	{
+    {
         DisplayValue(displayedValue);
         incrementButton.Pressed += OnIncrementButtonPressed;
         decrementButton.Pressed += OnDecrementButtonPressed;

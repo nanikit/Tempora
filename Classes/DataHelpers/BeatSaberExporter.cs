@@ -1,8 +1,8 @@
-using Godot;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using Godot;
 using Tempora.Classes.Audio;
 using Tempora.Classes.TimingClasses;
 
@@ -10,50 +10,50 @@ namespace Tempora.Classes.Utility;
 
 public partial class BeatSaberExporter : Node
 {
-	public static BeatSaberExporter Instance = null!;
+    public static BeatSaberExporter Instance = null!;
 
-	public override void _Ready()
-	{
-		Instance = this;
-	}
+    public override void _Ready()
+    {
+        Instance = this;
+    }
 
     private readonly JsonSerializerOptions serializeOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = true
     };
-    
+
     // Assuming most users start with Ex+ diffs.
     private const string DefaultCharacteristic = "Standard";
     private const string DefaultDifficulty = "ExpertPlus";
     private const string DefaultDifficultyFilename = "ExpertPlusStandard.dat";
 
-	public void SaveFilesToPath(string path)
+    public void SaveFilesToPath(string path)
     {
-		AudioFile audioFile = Project.Instance.AudioFile;
+        AudioFile audioFile = Project.Instance.AudioFile;
         string audioFilename = Path.GetFileNameWithoutExtension(audioFile.FilePath);
-		int audioSamples = audioFile.PcmLeft.Length - 1;
+        int audioSamples = audioFile.PcmLeft.Length - 1;
 
         Timing timing = Timing.CloneAndParseForBeatSaber(Timing.Instance);
         AddAdditionalTimingPointsIfRequired(timing, audioFile.AudacityOrigin);
 
-        List<BpmDataPoint> bpmData = GetBpmDataPoints(timing.TimingPoints, audioFile);
-        
+        List<BpmDataPoint> bpmData = GetBpmDataPoints(timing.TimingPoints, audioSamples, audioFile.SampleRate, audioFile.AudacityOrigin);
+
         var zipPacker = new ZipPacker();
         string zipPath = Path.ChangeExtension(path, ".zip");
         zipPacker.Open(zipPath);
 
         bool isV4Format = Settings.Instance.BeatSaberExportFormat == 4;
-        
+
         // Info file
         var info = new Info { SongName = audioFilename };
         string infoJson = JsonSerializer.Serialize(isV4Format ? info.GetV4Object() : info.GetV2Object(),
             serializeOptions);
-        
+
         zipPacker.StartFile("Info.dat");
         zipPacker.WriteFile(infoJson.ToUtf8Buffer());
         zipPacker.CloseFile();
-        
+
         // Audio data file
         var audioData = new AudioData
         {
@@ -64,26 +64,26 @@ public partial class BeatSaberExporter : Node
         string audioDataJson = JsonSerializer.Serialize(isV4Format ? audioData.GetV4Object() : audioData.GetV2Object(),
             serializeOptions);
         string audioDataFilename = isV4Format ? "AudioData.dat" : "BPMInfo.dat";
-        
+
         zipPacker.StartFile(audioDataFilename);
         zipPacker.WriteFile(audioDataJson.ToUtf8Buffer());
         zipPacker.CloseFile();
-        
+
         // Difficulty files
         object difficultyObject = isV4Format ? Difficulty.GetV4Object() : Difficulty.GetV3Object(audioData.BpmData);
         string difficultyJson = JsonSerializer.Serialize(difficultyObject, serializeOptions);
-        
+
         zipPacker.StartFile(DefaultDifficultyFilename);
         zipPacker.WriteFile(difficultyJson.ToUtf8Buffer());
         zipPacker.CloseFile();
-        
+
         if (isV4Format)
         {
             zipPacker.StartFile("Lightshow.dat");
             zipPacker.WriteFile(difficultyJson.ToUtf8Buffer());
             zipPacker.CloseFile();
         }
-        
+
         // Audio file
         if (audioFile.Extension == ".ogg")
         {
@@ -95,17 +95,15 @@ public partial class BeatSaberExporter : Node
         {
             Project.Instance.NotificationMessage = "Note: convert audio file to .ogg in Audacity";
         }
-        
-        zipPacker.Close();
-	}
 
-    private List<BpmDataPoint> GetBpmDataPoints(List<TimingPoint> timingPoints, AudioFile audioFile)
+        zipPacker.Close();
+    }
+
+    public static List<BpmDataPoint> GetBpmDataPoints(IReadOnlyList<TimingPoint> timingPoints, int audioSamples, int sampleRate, double audacityOrigin)
     {
         var bpmDataPoints = new List<BpmDataPoint>();
-        
-        int audioSamples = audioFile.PcmLeft.Length - 1;
-        
-        float currentBeat = 0f;
+
+        double currentBeat = 0d;
         int currentSample = 0;
 
         for (int i = 0; i < timingPoints.Count - 1; i++)
@@ -114,44 +112,44 @@ public partial class BeatSaberExporter : Node
             TimingPoint nextTimingPoint = timingPoints[i + 1];
 
             // Beat Saber doesn't work with measures. Convert to "beats"
-            float measurePositionDiff = nextTimingPoint.MeasurePosition!.Value - timingPoint.MeasurePosition!.Value;
-            float beatsDiff = measurePositionDiff * timingPoint.TimeSignature[0];
+            double measurePositionDiff = nextTimingPoint.MeasurePosition!.Value - timingPoint.MeasurePosition!.Value;
+            double beatsDiff = measurePositionDiff * timingPoint.TimeSignature[0];
 
-            float startBeat = currentBeat;
-            float endBeat = startBeat + beatsDiff;
+            double startBeat = currentBeat;
+            double endBeat = startBeat + beatsDiff;
 
             // Beat Saber only supports ogg. If the user loads an mp3, odds are they're going to convert the audio file
             // to ogg via Audacity afterwards so offset the timings points.
-            int startIndex = (int)((timingPoint.Offset + audioFile.AudacityOrigin) * audioFile.SampleRate);
-            int endIndex = (int)((nextTimingPoint.Offset + audioFile.AudacityOrigin) * audioFile.SampleRate);
-			
+            int startIndex = (int)((timingPoint.Offset + audacityOrigin) * sampleRate);
+            int endIndex = (int)((nextTimingPoint.Offset + audacityOrigin) * sampleRate);
+
             var bpmDataPoint = new BpmDataPoint
             {
                 StartIndex = startIndex,
                 EndIndex = endIndex,
                 StartBeat = startBeat,
                 EndBeat = endBeat,
-                Bpm = timingPoint.Bpm * (timingPoint.TimeSignature[1] / 4f)
+                Bpm = timingPoint.Bpm * (timingPoint.TimeSignature[1] / 4d)
             };
-			
+
             currentBeat = endBeat;
             currentSample = endIndex;
-			
+
             bpmDataPoints.Add(bpmDataPoint);
         }
 
         // Final region from last timing point to end of song
-        TimingPoint lastTimingPoint = timingPoints.Last(); 
-        float indexDiff = (float)audioSamples - currentSample;
-        float secondsDiff = indexDiff / audioFile.SampleRate;
-        
+        TimingPoint lastTimingPoint = timingPoints.Last();
+        double indexDiff = audioSamples - currentSample;
+        double secondsDiff = indexDiff / sampleRate;
+
         bpmDataPoints.Add(new BpmDataPoint
         {
             StartIndex = currentSample,
             EndIndex = audioSamples,
             StartBeat = currentBeat,
-            EndBeat = currentBeat + secondsDiff * (lastTimingPoint.Bpm / 60f),
-            Bpm = lastTimingPoint.Bpm * (lastTimingPoint.TimeSignature[1] / 4f)
+            EndBeat = currentBeat + secondsDiff * (lastTimingPoint.Bpm / 60d),
+            Bpm = lastTimingPoint.Bpm * (lastTimingPoint.TimeSignature[1] / 4d)
         });
 
         return bpmDataPoints;
@@ -169,18 +167,18 @@ public partial class BeatSaberExporter : Node
             if (firstTimingPoint.MeasurePosition == 0)
             {
                 // Add timing point to simulate a "beat" before the first timing point
-                float secondsInFirstBeat = firstTimingPoint.Offset + timeOffset;
-                float bpm = 60f / secondsInFirstBeat;
-                    
+                double secondsInFirstBeat = firstTimingPoint.Offset + timeOffset;
+                double bpm = 60d / secondsInFirstBeat;
+
                 var offsetTimingPoint = new TimingPoint(-timeOffset, -0.25f, [4, 4]) { Bpm = bpm };
                 timing.TimingPoints.Insert(0, offsetTimingPoint);
             }
             else
             {
                 // Add a timing point at beat 0 
-                float beats = Timing.GetBeatsBetweenMeasurePositions(timing, 0, (float)firstTimingPoint.MeasurePosition);
-                float secondsPerBeat = (firstTimingPoint.Offset + timeOffset) / beats;
-                float bpm = 60f / secondsPerBeat;
+                double beats = Timing.GetBeatsBetweenMeasurePositions(timing, 0, firstTimingPoint.MeasurePosition.Value);
+                double secondsPerBeat = (firstTimingPoint.Offset + timeOffset) / beats;
+                double bpm = 60d / secondsPerBeat;
 
                 var zeroTimingPoint = new TimingPoint(-timeOffset, 0, [4, 4]) { Bpm = bpm };
                 timing.TimingPoints.Insert(0, zeroTimingPoint);
@@ -193,15 +191,15 @@ public partial class BeatSaberExporter : Node
             timing.TimingPoints.Insert(0, initialTimingPoint);
         }
     }
-    
+
     #region Data
-    private struct BpmDataPoint
+    public struct BpmDataPoint
     {
         public required int StartIndex { get; set; }
         public required int EndIndex { get; set; }
-        public required float StartBeat { get; set; }
-        public required float EndBeat { get; set; }
-        public required float Bpm { get; set; }
+        public required double StartBeat { get; set; }
+        public required double EndBeat { get; set; }
+        public required double Bpm { get; set; }
     }
 
     private class Info
@@ -251,7 +249,7 @@ public partial class BeatSaberExporter : Node
                 }
             };
         }
-        
+
         public object GetV4Object()
         {
             return new
@@ -300,11 +298,11 @@ public partial class BeatSaberExporter : Node
         }
     }
 
-	private class AudioData
-	{
-		public required int SongSampleCount { get; init; }
-		public required int SongFrequency { get; init; }
-		public required List<BpmDataPoint> BpmData { get; init; } = [];
+    private class AudioData
+    {
+        public required int SongSampleCount { get; init; }
+        public required int SongFrequency { get; init; }
+        public required List<BpmDataPoint> BpmData { get; init; } = [];
 
         public object GetV4Object()
         {
@@ -323,7 +321,7 @@ public partial class BeatSaberExporter : Node
                 }),
             };
         }
-        
+
         public object GetV2Object()
         {
             return new
@@ -340,7 +338,7 @@ public partial class BeatSaberExporter : Node
                 })
             };
         }
-	}
+    }
 
     private static class Difficulty
     {
@@ -349,12 +347,12 @@ public partial class BeatSaberExporter : Node
             // Not having to specify default properties in v4 is nice
             return new { Version = "4.0.0" };
         }
-        
+
         public static object GetV3Object(IEnumerable<BpmDataPoint> bpmDataPoints)
         {
             // Some editors do not read from BPMInfo.dat so we need to populate the BpmEvents in the difficulty file
             var bpmEvents = bpmDataPoints.Select(x => new { b = x.StartBeat, m = x.Bpm });
-            
+
             return new
             {
                 Version = "3.3.0",

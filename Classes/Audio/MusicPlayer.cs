@@ -14,8 +14,8 @@
 using System;
 using System.IO;
 using Godot;
-using Tempora.Classes.Utility;
 using Tempora.Classes.TimingClasses;
+using Tempora.Classes.Utility;
 
 namespace Tempora.Classes.Audio;
 
@@ -103,7 +103,7 @@ public partial class MusicPlayer : AudioStreamPlayer
 
     private void OnSelectedPositionChanged(object? _sender, EventArgs e)
     {
-        float time = Timing.Instance.MeasurePositionToOffset(Context.Instance.SelectedMeasurePosition);
+        double time = Timing.Instance.MeasurePositionToOffset(Context.Instance.SelectedMeasurePosition);
         PauseTime = time >= 0 ? (double)time : 0;
     }
 
@@ -120,7 +120,7 @@ public partial class MusicPlayer : AudioStreamPlayer
         if (!Settings.Instance.SeekPlaybackOnTimingPointChanges)
             return;
         var timingPoint = timingPointArg.Value;
-        SeekPlay(timingPoint.Offset - 0.05f);
+        SeekPlay((float)(timingPoint.Offset - 0.05d));
     }
 
     public void Pause()

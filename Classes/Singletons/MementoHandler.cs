@@ -13,10 +13,10 @@
 
 using System;
 using System.Collections.Generic;
-using Godot;
-using GD = Tempora.Classes.DataHelpers.GD;
-using Tempora.Classes.TimingClasses;
 using System.Reflection;
+using Godot;
+using Tempora.Classes.TimingClasses;
+using GD = Tempora.Classes.DataHelpers.GD;
 
 namespace Tempora.Classes.Utility;
 
@@ -101,10 +101,6 @@ public partial class MementoHandler : Node
 
     public void AddSelectionMemento()
     {
-        IMemento memento = Timing.Instance.GetMemento(); // TODO: Change this
-        return;
-        AddMemento(memento);
-        timingPointBeingChanged = null;
     }
 
     private void AddMemento(IMemento memento)

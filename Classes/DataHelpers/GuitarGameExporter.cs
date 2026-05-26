@@ -10,6 +10,7 @@ using Tempora.Classes.TimingClasses;
 using Tempora.Classes.Utility;
 
 namespace Tempora.Classes.DataHelpers;
+
 public class GuitarGameExporter
 {
     public static float ExportOffsetMp3 = -0.029f;
@@ -54,14 +55,14 @@ public class GuitarGameExporter
         ArgumentNullException.ThrowIfNull(timing);
 
         if (timing.TimingPoints.Count == 0)
-            return string.Format(syncTrackSectionUnformatted, GetTimeSignatureLine(0, [4,4]) + GetBpmLine(0, 120));
+            return string.Format(syncTrackSectionUnformatted, GetTimeSignatureLine(0, [4, 4]) + GetBpmLine(0, 120));
 
         string syncTrackSectionInner = "";
-        syncTrackSectionInner += GetFirstSyncTrackLines(timing, exportOffset, out float positionOfReferenceBeat, out int positionOfReferenceDownbeat, out int ticksOfReferenceDownbeat);
+        syncTrackSectionInner += GetFirstSyncTrackLines(timing, exportOffset, out double positionOfReferenceBeat, out int positionOfReferenceDownbeat, out int ticksOfReferenceDownbeat);
 
-        int getTicks(float measurePosition) => GetTicks(measurePosition, timing, ticksOfReferenceDownbeat, positionOfReferenceDownbeat);
+        int getTicks(double measurePosition) => GetTicks(measurePosition, timing, ticksOfReferenceDownbeat, positionOfReferenceDownbeat);
 
-        float epsilon = 0.001f;
+        const double epsilon = 0.001d;
 
         foreach (TimeSignaturePoint point in timing.TimeSignaturePoints)
         {
@@ -82,11 +83,11 @@ public class GuitarGameExporter
         return string.Format(syncTrackSectionUnformatted, syncTrackSectionInner);
     }
 
-    private static string GetFirstSyncTrackLines(Timing timing, float exportOffset, out float positionOfReferenceBeat, out int positionOfReferenceDownbeat, out int ticksOfReferenceDownbeat)
+    private static string GetFirstSyncTrackLines(Timing timing, float exportOffset, out double positionOfReferenceBeat, out int positionOfReferenceDownbeat, out int ticksOfReferenceDownbeat)
     {
-        float measurePositionAtOffsetZero = timing.OffsetToMeasurePosition(0);
+        double measurePositionAtOffsetZero = timing.OffsetToMeasurePosition(0);
 
-        float beatLength = timing.GetDistancePerBeat(measurePositionAtOffsetZero);
+        double beatLength = timing.GetDistancePerBeat(measurePositionAtOffsetZero);
         positionOfReferenceBeat = timing.GetOperatingBeatPosition(timing.OffsetToMeasurePosition(0)) + beatLength;
 
         //float referenceBeatBeatsFromOffsetZero = Timing.GetBeatsBetweenMeasurePositions(
@@ -94,8 +95,8 @@ public class GuitarGameExporter
         //    measurePositionAtOffsetZero,
         //    positionOfReferenceBeat);
 
-        float offsetOfSecondLine = timing.MeasurePositionToOffset(positionOfReferenceBeat) + exportOffset;
-        float bpmOfFirstLine = 1 / offsetOfSecondLine * 60f;
+        double offsetOfSecondLine = timing.MeasurePositionToOffset(positionOfReferenceBeat) + exportOffset;
+        double bpmOfFirstLine = 1 / offsetOfSecondLine * 60d;
 
         string firstTimeSignatureLine = GetTimeSignatureLine(0, [1, 4]);
         string firstBpmLine = GetBpmLine(0, bpmOfFirstLine);
@@ -107,10 +108,10 @@ public class GuitarGameExporter
         bool isReferenceBeatOnDownbeat = Timing.AreMeasurePositionsEqual(positionOfReferenceBeat, (int)Math.Floor(positionOfReferenceBeat))
             || Timing.AreMeasurePositionsEqual(positionOfReferenceBeat, (int)Math.Floor(positionOfReferenceBeat) + 1);
 
-        float epsilon = 0.001f;
+        const double epsilon = 0.001d;
         positionOfReferenceDownbeat = isReferenceBeatOnDownbeat ? (int)Math.Floor(positionOfReferenceBeat + epsilon) : (int)Math.Floor(positionOfReferenceBeat + 1 + epsilon);
-        int beatsFromRerefenceBeatToReferenceDownbeat = isReferenceBeatOnDownbeat 
-            ? 0 
+        int beatsFromRerefenceBeatToReferenceDownbeat = isReferenceBeatOnDownbeat
+            ? 0
             : (int)Timing.GetBeatsBetweenMeasurePositions(timing, positionOfReferenceBeat, positionOfReferenceDownbeat);
 
         string secondTimeSignatureLine = isReferenceBeatOnDownbeat ? "" : GetTimeSignatureLine(ticksOfSecondLine, [beatsFromRerefenceBeatToReferenceDownbeat, 4]);
@@ -121,10 +122,10 @@ public class GuitarGameExporter
         return firstTimeSignatureLine + firstBpmLine + secondTimeSignatureLine + secondBpmLine + thirdTimeSignatureLine;
     }
 
-    private static int GetTicks(float measurePosition, Timing timing, int ticksOfReferenceDownbeat, int positionOfReferenceDownbeat) 
+    private static int GetTicks(double measurePosition, Timing timing, int ticksOfReferenceDownbeat, int positionOfReferenceDownbeat)
         => (int)(ticksOfReferenceDownbeat + Timing.GetBeatsBetweenMeasurePositions(timing, positionOfReferenceDownbeat, measurePosition) * ticksPerBeat);
 
-    private static int FormatBpm(float bpm) => (int)Math.Round(bpm * 1000);
+    private static int FormatBpm(double bpm) => (int)Math.Round(bpm * 1000);
 
     private static string FormatTimeSignature(int[] timeSignature)
     {
@@ -134,7 +135,7 @@ public class GuitarGameExporter
         return $"{timeSignature[0]} {denominatorFormatted}";
     }
 
-    private static string GetBpmLine(int ticks, float bpm) => $"\n  {ticks} = B {FormatBpm(bpm)}";
+    private static string GetBpmLine(int ticks, double bpm) => $"\n  {ticks} = B {FormatBpm(bpm)}";
 
     private static string GetTimeSignatureLine(int ticks, int[] timeSignature)
     {

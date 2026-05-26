@@ -44,7 +44,7 @@ public partial class ProjectFileManager : Node
 
     public const string AutoSavePath = "user://autosave";
 
-    public static ProjectFileManager Instance { get => instance; set => instance = value; } 
+    public static ProjectFileManager Instance { get => instance; set => instance = value; }
     #endregion
 
     // Called when the node enters the scene tree for the first time.
@@ -132,8 +132,8 @@ public partial class ProjectFileManager : Node
                 break;
             case SaveConfig.guitarGame:
                 GuitarGameExporter.SaveChartToPath_AndShowInFileExplorer(
-                    Timing.Instance, 
-                    selectedPath, 
+                    Timing.Instance,
+                    selectedPath,
                     Project.Instance.AudioFile.AudacityOrigin);
                 dir = Path.GetDirectoryName(selectedPath) ?? "";
                 Settings.Instance.GuitarGameFilesDirectory = dir;
@@ -167,7 +167,7 @@ public partial class ProjectFileManager : Node
         string[] allowedExtensions =
         [
             projectFileExtension,
-            mp3Extension, 
+            mp3Extension,
             oggExtension,
         ];
 
@@ -215,10 +215,10 @@ public partial class ProjectFileManager : Node
 
         string audioFileExtension = Project.Instance.AudioFile.Extension;
         string audioFilePathShort = $"{fileName}{audioFileExtension}";
-        string audioFilePathLong = fileDir == "user:" 
-            ? fileDir + "//" + audioFilePathShort 
+        string audioFilePathLong = fileDir == "user:"
+            ? fileDir + "//" + audioFilePathShort
             : Path.Combine(fileDir, audioFilePathShort);
-        
+
         using var audioFile = Godot.FileAccess.Open(audioFilePathLong, Godot.FileAccess.ModeFlags.Write);
         var error = Godot.FileAccess.GetOpenError();
         audioFile.StoreBuffer(Project.Instance.AudioFile.FileBuffer);
@@ -230,6 +230,16 @@ public partial class ProjectFileManager : Node
     public static void AutoSave() => SaveProject(AutoSavePath);
 
     public static string CreateProjectFileString() => CreateProjectFileString(Project.Instance.AudioFile.FilePath);
+
+    public static string FormatFloatForProjectFile(float value) => value.ToString("G9", CultureInfo.InvariantCulture);
+
+    public static string FormatDoubleForProjectFile(double value) => value.ToString("G17", CultureInfo.InvariantCulture);
+
+    public static bool TryParseFloatFromProjectFile(string value, out float result)
+        => float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out result);
+
+    public static bool TryParseDoubleFromProjectFile(string value, out double result)
+        => double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out result);
 
     public static string CreateProjectFileString(string audioPath)
     {
@@ -274,15 +284,15 @@ public partial class ProjectFileManager : Node
             if (timingPoint?.MeasurePosition == null)
                 continue;
             string timingPointLine = "";
-            timingPointLine += timingPoint.Offset.ToString(CultureInfo.InvariantCulture);
+            timingPointLine += FormatDoubleForProjectFile(timingPoint.Offset);
             timingPointLine += ";";
-            timingPointLine += ((float)timingPoint.MeasurePosition).ToString(CultureInfo.InvariantCulture);
+            timingPointLine += FormatDoubleForProjectFile(timingPoint.MeasurePosition.Value);
             timingPointLine += ";";
             timingPointLine += timingPoint.TimeSignature[0].ToString();
             timingPointLine += ";";
             timingPointLine += timingPoint.TimeSignature[1].ToString();
             if (timingPoint == lastTimingPoint)
-                timingPointLine += ";" + timingPoint.MeasuresPerSecond.ToString(CultureInfo.InvariantCulture);
+                timingPointLine += ";" + FormatDoubleForProjectFile(timingPoint.MeasuresPerSecond);
             timingPointLine += "\n";
 
             timingPointsLines += timingPointLine;
@@ -358,17 +368,15 @@ public partial class ProjectFileManager : Node
                     if (lineData.Length is not 4 and not 5)
                         continue;
 
-                    bool timeParsed = float.TryParse(
-                        lineData[0], NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out float time);
-                    bool tpMeasurePositionParsed = float.TryParse(
-                        lineData[1], NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out float tpMeasurePosition);
+                    bool timeParsed = TryParseDoubleFromProjectFile(lineData[0], out double time);
+                    bool tpMeasurePositionParsed = TryParseDoubleFromProjectFile(lineData[1], out double tpMeasurePosition);
                     timeSignatureUpperParsed = int.TryParse(lineData[2], out _);
                     timeSignatureLowerParsed = int.TryParse(lineData[3], out _);
 
                     bool measuresPerSecondParsed = true;
-                    float measuresPerSecond = 2f;
+                    double measuresPerSecond = 2d;
                     if (lineData.Length == 5)
-                        measuresPerSecondParsed = float.TryParse(lineData[4], NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out measuresPerSecond);
+                        measuresPerSecondParsed = TryParseDoubleFromProjectFile(lineData[4], out measuresPerSecond);
 
                     if (timeParsed == false
                         || tpMeasurePositionParsed == false
@@ -417,6 +425,6 @@ public partial class ProjectFileManager : Node
         AudioPath,
         TimingPoints,
         TimeSignaturePoints
-    }  
+    }
     #endregion
 }

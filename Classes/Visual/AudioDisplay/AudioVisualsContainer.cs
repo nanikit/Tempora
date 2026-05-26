@@ -12,12 +12,12 @@
 // Full license text is available at: https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode
 
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 using Godot;
-using Tempora.Classes.Utility;
-using Tempora.Classes.TimingClasses;
 using Tempora.Classes.Audio;
+using Tempora.Classes.TimingClasses;
+using Tempora.Classes.Utility;
 
 namespace Tempora.Classes.Visual.AudioDisplay;
 
@@ -134,7 +134,7 @@ public partial class AudioVisualsContainer : VBoxContainer
     {
         double playbackTime = MusicPlayer.GetPlaybackTime();
         float sampleTime = Project.Instance.AudioFile.PlaybackTimeToSampleTime((float)playbackTime);
-        float measurePosition = Timing.Instance.OffsetToMeasurePosition((float)sampleTime);
+        float measurePosition = (float)Timing.Instance.OffsetToMeasurePosition(sampleTime);
         foreach (AudioBlock audioBlock in GetChildren().OfType<AudioBlock>())
         {
             AudioDisplayPanel audioDisplayPanel = audioBlock.AudioDisplayPanel;
@@ -258,7 +258,7 @@ public partial class AudioVisualsContainer : VBoxContainer
             return;
 
         var timingPoint = timingPointArgument.Value;
-        if (timingPoint.MeasurePosition == null) 
+        if (timingPoint.MeasurePosition == null)
             return;
         float measurePosition = (float)timingPoint.MeasurePosition!;
 

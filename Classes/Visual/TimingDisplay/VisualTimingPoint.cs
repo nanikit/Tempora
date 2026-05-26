@@ -88,7 +88,7 @@ public partial class VisualTimingPoint : Control
     public override void _Ready()
     {
         //numberLabel.Text = Timing.Instance.TimingPoints.IndexOf(TimingPoint).ToString();
-        BpmLabel.Text = TimingPoint.Bpm.ToString("0.00");
+        UpdateLabels(TimingPoint);
 
         //SystemTimeWhenCreated = Time.GetTicksMsec();
 
@@ -175,7 +175,7 @@ public partial class VisualTimingPoint : Control
     public void UpdateLabels(TimingPoint timingPoint)
     {
         //numberLabel.Text = Timing.Instance.TimingPoints.IndexOf(timingPoint).ToString();
-        BpmLabel.Text = timingPoint.Bpm.ToString("0.00");
+        BpmLabel.Text = timingPoint.Bpm.ToString("0.###");
     }
 
     private void DeleteTimingPoint()
@@ -255,8 +255,7 @@ public partial class VisualTimingPoint : Control
 
     private void OnBpmSubmitted(object? sender, EventArgs e)
     {
-        timingPoint.Bpm = BpmEdit.Text.ToFloat();
-        timingPoint.WasBPMManuallySet = true;
+        timingPoint.SetManualBpm(BpmEdit.Text.ToFloat());
         BpmLabel.Visible = true;
     }
     #endregion

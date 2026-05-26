@@ -20,12 +20,12 @@ public partial class Timing
 {
     public bool IsTimingPointOnGrid(TimingPoint? point)
     {
-        float? position = point?.MeasurePosition;
+        double? position = point?.MeasurePosition;
         if (position == null) return false;
-        return AreMeasurePositionsEqual(position, SnapMeasurePosition((float)position));
+        return AreMeasurePositionsEqual(position, SnapMeasurePosition(position.Value));
     }
 
-    public int[] GetTimeSignature(float measurePosition)
+    public int[] GetTimeSignature(double measurePosition)
     {
         //TimingPoint timingPoint = GetOperatingTimingPoint(measurePosition);
         //if (timingPoint == null) return new int[] { 4, 4 };
@@ -34,16 +34,16 @@ public partial class Timing
         TimeSignaturePoint? timeSignaturePoint = TimeSignaturePoints.FindLast(point => point.Measure <= measurePosition);
         return timeSignaturePoint == null ? ([4, 4]) : timeSignaturePoint.TimeSignature;
     }
-    public float OffsetToMeasurePosition(float time)
+    public double OffsetToMeasurePosition(double time)
     {
         TimingPoint? operatingTimingPoint = GetOperatingTimingPoint_ByTime(time);
 
         if (operatingTimingPoint?.MeasurePosition == null)
         {
-            return time * 0.5f; // default 120 bpm from measurePosition origin
+            return time * 0.5d; // default 120 bpm from measurePosition origin
         }
         else
-            return (float)(((time - operatingTimingPoint.Offset) * operatingTimingPoint.MeasuresPerSecond) + operatingTimingPoint.MeasurePosition);
+            return ((time - operatingTimingPoint.Offset) * operatingTimingPoint.MeasuresPerSecond) + operatingTimingPoint.MeasurePosition.Value;
     }
 
 
@@ -52,10 +52,10 @@ public partial class Timing
     /// </summary>
     /// <param name="measurePosition"></param>
     /// <returns></returns>
-    public float GetDistancePerBeat(float measurePosition)
+    public double GetDistancePerBeat(double measurePosition)
     {
         int[] timeSignature = GetTimeSignature(measurePosition);
-        return timeSignature[1] / 4f / timeSignature[0];
+        return timeSignature[1] / 4d / timeSignature[0];
     }
 
     /// <summary>
@@ -63,15 +63,15 @@ public partial class Timing
     /// </summary>
     /// <param name="measurePosition"></param>
     /// <returns></returns>
-    public float GetOperatingBeatPosition(float measurePosition)
+    public double GetOperatingBeatPosition(double measurePosition)
     {
-        float beatLength = GetDistancePerBeat(measurePosition);
+        double beatLength = GetDistancePerBeat(measurePosition);
         int downbeatPosition = (measurePosition >= 0) ? (int)measurePosition : (int)measurePosition - 1;
-        float relativePosition = (measurePosition >= 0)
+        double relativePosition = (measurePosition >= 0)
             ? measurePosition % 1
             : 1 + (measurePosition % 1);
         int beatsFromDownbeat = (int)(relativePosition / beatLength);
-        float position = (beatsFromDownbeat * beatLength) + downbeatPosition;
+        double position = (beatsFromDownbeat * beatLength) + downbeatPosition;
         return position;
     }
 
@@ -80,39 +80,39 @@ public partial class Timing
     /// </summary>
     /// <param name="measurePosition"></param>
     /// <returns></returns>
-    public float GetNextOperatingBeatPosition(float measurePosition)
+    public double GetNextOperatingBeatPosition(double measurePosition)
     {
-        float beatLength = GetDistancePerBeat(measurePosition);
+        double beatLength = GetDistancePerBeat(measurePosition);
         int downbeatPosition = (measurePosition >= 0) ? (int)measurePosition : (int)measurePosition - 1;
-        float relativePosition = (measurePosition >= 0)
+        double relativePosition = (measurePosition >= 0)
             ? measurePosition % 1
             : 1 + (measurePosition % 1);
-        int beatsFromDownbeat = (int)MathF.Ceiling(relativePosition / beatLength);
+        int beatsFromDownbeat = (int)Math.Ceiling(relativePosition / beatLength);
 
-        float position = (relativePosition + beatLength) <= 1
+        double position = (relativePosition + beatLength) <= 1
             ? (beatsFromDownbeat * beatLength) + downbeatPosition
             : downbeatPosition + 1;
         return position;
     }
 
-    public float GetNextOperatingGridPosition(float measurePosition)
+    public double GetNextOperatingGridPosition(double measurePosition)
     {
         int downbeatPosition = (measurePosition >= 0) ? (int)measurePosition : (int)measurePosition - 1;
         int[] timeSignature = GetTimeSignature(measurePosition);
         int divisor = Settings.Instance.GridDivisor;
-        float divisionLength = GetRelativeNotePosition(timeSignature, divisor, 1);
-        float relativePosition = (measurePosition >= 0)
+        double divisionLength = GetRelativeNotePosition(timeSignature, divisor, 1);
+        double relativePosition = (measurePosition >= 0)
             ? measurePosition % 1
             : 1 + (measurePosition % 1);
-        int divisionsFromDownbeat = (int)MathF.Ceiling(relativePosition / divisionLength);
+        int divisionsFromDownbeat = (int)Math.Ceiling(relativePosition / divisionLength);
 
-        float position = (relativePosition + divisionLength) <= 1
+        double position = (relativePosition + divisionLength) <= 1
             ? (divisionsFromDownbeat * divisionLength) + downbeatPosition
             : downbeatPosition + 1;
         return position;
     }
 
-    public float GetOperatingGridPosition(float measurePosition)
+    public double GetOperatingGridPosition(double measurePosition)
     {
         //TimingPoint? operatingTimingPoint = 
         //    GetOperatingTimingPoint_ByMeasurePosition(measurePosition) 
@@ -123,11 +123,11 @@ public partial class Timing
         int gridDivisor = Settings.Instance.GridDivisor;
 
         int nextMeasure = (int)(measurePosition + 1);
-        float previousAbsolutePosition = GetRelativeNotePosition(timeSignature, gridDivisor, 0) + MathF.Floor(measurePosition);
+        double previousAbsolutePosition = GetRelativeNotePosition(timeSignature, gridDivisor, 0) + Math.Floor(measurePosition);
         for (int index = 0; index < 30; index++)
         {
-            float relativePosition = GetRelativeNotePosition(timeSignature, gridDivisor, index);
-            float absolutePosition = MathF.Floor(measurePosition) + relativePosition;
+            double relativePosition = GetRelativeNotePosition(timeSignature, gridDivisor, index);
+            double absolutePosition = Math.Floor(measurePosition) + relativePosition;
 
             if (absolutePosition > measurePosition)
                 return previousAbsolutePosition;
@@ -168,7 +168,7 @@ public partial class Timing
     //    return 0;
     //}
 
-    public static float GetRelativeNotePosition(int[] timeSignature, int gridDivisor, int index)
+    public static double GetRelativeNotePosition(int[] timeSignature, int gridDivisor, int index)
     {
         // For a quarter-note:
         // 4/4: 0, 1/4, 2/4, 3/4
@@ -181,27 +181,27 @@ public partial class Timing
         // 7/4: 0, 1/21, 2/21, 3/21, etc.
         // 7/8: 0, 2/21, 4/21, 6/21, etc.
 
-        float position = index * timeSignature[1] / (float)(timeSignature[0] * gridDivisor);
+        double position = index * timeSignature[1] / (double)(timeSignature[0] * gridDivisor);
         return position;
     }
 
-    public float GetNearestGridPosition(float measurePosition)
+    public double GetNearestGridPosition(double measurePosition)
     {
-        float previous = GetOperatingGridPosition(measurePosition);
-        float next = GetNextOperatingGridPosition(measurePosition);
-        float distanceToPrevious = Math.Abs(measurePosition - previous);
-        float distanceToNext = Math.Abs(next - measurePosition);
+        double previous = GetOperatingGridPosition(measurePosition);
+        double next = GetNextOperatingGridPosition(measurePosition);
+        double distanceToPrevious = Math.Abs(measurePosition - previous);
+        double distanceToNext = Math.Abs(next - measurePosition);
         return (distanceToPrevious < distanceToNext) ? previous : next;
     }
 
     public int GetLastMeasure()
     {
         float lengthInSeconds = Project.Instance.AudioFile?.GetAudioLength() ?? 0;
-        float lastMeasure = OffsetToMeasurePosition(lengthInSeconds);
+        double lastMeasure = OffsetToMeasurePosition(lengthInSeconds);
         return (int)lastMeasure;
     }
 
-    private float GetBeatsBetweenMeasurePositions(float measurePositionFrom, float measurePositionTo)
+    private double GetBeatsBetweenMeasurePositions(double measurePositionFrom, double measurePositionTo)
     {
         return GetBeatsBetweenMeasurePositions(this, measurePositionFrom, measurePositionTo);
     }
@@ -211,20 +211,20 @@ public partial class Timing
     /// I.e. clone the timing first and parse it as <see cref="timing"/> to use the method without worrying that the timing has changed meanwhile.
     /// </summary>
     /// <returns></returns>
-    public static float GetBeatsBetweenMeasurePositions(Timing timing, float measurePositionFrom, float measurePositionTo)
+    public static double GetBeatsBetweenMeasurePositions(Timing timing, double measurePositionFrom, double measurePositionTo)
     {
         if (measurePositionFrom > measurePositionTo)
             (measurePositionTo, measurePositionFrom) = (measurePositionFrom, measurePositionTo);
 
-        float sum = 0;
-        float currentMeasurePosition = measurePositionFrom;
+        double sum = 0;
+        double currentMeasurePosition = measurePositionFrom;
         // Go through every measure between them and add up the number of beats
         for (int measure = (int)Math.Floor(measurePositionFrom); measure < (int)(measurePositionTo + 1); measure++)
         {
-            float distancePerBeat = timing.GetDistancePerBeat(measure);
-            float nextPosition = (measurePositionTo < measure + 1) ? measurePositionTo : (measure + 1);
-            float distanceToNextPosition = nextPosition - currentMeasurePosition;
-            float beatsToNextPosition = distanceToNextPosition / distancePerBeat;
+            double distancePerBeat = timing.GetDistancePerBeat(measure);
+            double nextPosition = (measurePositionTo < measure + 1) ? measurePositionTo : (measure + 1);
+            double distanceToNextPosition = nextPosition - currentMeasurePosition;
+            double beatsToNextPosition = distanceToNextPosition / distancePerBeat;
             sum += beatsToNextPosition;
 
             if (AreMeasurePositionsEqual(nextPosition, measurePositionTo))
@@ -236,24 +236,24 @@ public partial class Timing
         return sum;
     }
 
-    private float GetMeasurePositionAfterAddingBeats(float measurePosition, float numberOfBeats)
+    private double GetMeasurePositionAfterAddingBeats(double measurePosition, double numberOfBeats)
     {
         return GetMeasurePositionAfterAddingBeats(this, measurePosition, numberOfBeats);
     }
 
-    private static float GetMeasurePositionAfterAddingBeats(Timing timing, float measurePositionFrom, float numberOfBeatsToAdd)
+    private static double GetMeasurePositionAfterAddingBeats(Timing timing, double measurePositionFrom, double numberOfBeatsToAdd)
     {
         if (numberOfBeatsToAdd == 0)
             return measurePositionFrom;
 
         int lastMeasure = timing.GetLastMeasure();
 
-        float currentMeasurePosition = measurePositionFrom;
-        float beatsLeftToAdd = numberOfBeatsToAdd;
+        double currentMeasurePosition = measurePositionFrom;
+        double beatsLeftToAdd = numberOfBeatsToAdd;
 
         bool isAdding = numberOfBeatsToAdd > 0;
 
-        int measure = (int) measurePositionFrom;
+        int measure = (int)measurePositionFrom;
         int iteration = 0;
 
         // Iterate measures
@@ -261,7 +261,7 @@ public partial class Timing
         {
             bool usePreviousMeasure = !isAdding && AreMeasurePositionsEqual((int)currentMeasurePosition, currentMeasurePosition);
 
-            float signedDistanceToNextDownbeat = isAdding 
+            double signedDistanceToNextDownbeat = isAdding
                 ? (int)(currentMeasurePosition + 1) - currentMeasurePosition
                 : usePreviousMeasure
                 ? -1
@@ -270,7 +270,7 @@ public partial class Timing
             var distancePerBeat = timing.GetDistancePerBeat(currentMeasurePosition - (usePreviousMeasure ? 1 : 0));
             var potentialBeatsToAdd = signedDistanceToNextDownbeat / distancePerBeat;
 
-            if (MathF.Abs(potentialBeatsToAdd) < MathF.Abs(beatsLeftToAdd))
+            if (Math.Abs(potentialBeatsToAdd) < Math.Abs(beatsLeftToAdd))
             {
                 currentMeasurePosition += potentialBeatsToAdd * distancePerBeat;
                 beatsLeftToAdd -= potentialBeatsToAdd;
@@ -289,7 +289,7 @@ public partial class Timing
         return currentMeasurePosition;
     }
 
-    public float SnapMeasurePosition(float measurePosition)
+    public double SnapMeasurePosition(double measurePosition)
     {
         if (!Settings.Instance.SnapToGridEnabled)
             return measurePosition;

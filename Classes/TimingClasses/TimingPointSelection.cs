@@ -11,8 +11,8 @@
 //
 // Full license text is available at: https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode
 
-using Godot;
 using System;
+using Godot;
 using Tempora.Classes.Utility;
 
 namespace Tempora.Classes.TimingClasses;
@@ -52,27 +52,27 @@ public partial class TimingPointSelection : Node
     }
 
     #region Selector
-    public float? SelectorStaticPosition = null;
+    public double? SelectorStaticPosition = null;
 
-    public float? SelectorDynamicPosition = null;
+    public double? SelectorDynamicPosition = null;
 
-    public float? SelectorStartPosition
+    public double? SelectorStartPosition
     {
         get
         {
             if (SelectorStaticPosition == null || SelectorDynamicPosition == null)
                 return null;
-            return Math.Min((float)SelectorStaticPosition, (float)SelectorDynamicPosition);
+            return Math.Min(SelectorStaticPosition.Value, SelectorDynamicPosition.Value);
         }
     }
 
-    public float? SelectorEndPosition
+    public double? SelectorEndPosition
     {
         get
         {
             if (SelectorStaticPosition == null || SelectorDynamicPosition == null)
                 return null;
-            return Math.Max((float)SelectorStaticPosition, (float)SelectorDynamicPosition);
+            return Math.Max(SelectorStaticPosition.Value, SelectorDynamicPosition.Value);
         }
     }
 
@@ -85,7 +85,7 @@ public partial class TimingPointSelection : Node
         }
     }
 
-    public void StartSelector(float position)
+    public void StartSelector(double position)
     {
         if (SelectionIndices == null)
         {
@@ -98,7 +98,7 @@ public partial class TimingPointSelection : Node
         ApplySelector();
     }
 
-    public void UpdateSelector(float position)
+    public void UpdateSelector(double position)
     {
         if (SelectorStartPosition == null || SelectorEndPosition == null)
             return;
@@ -110,7 +110,7 @@ public partial class TimingPointSelection : Node
     {
         if (SelectorStartPosition == null || SelectorEndPosition == null)
             return;
-        Select((float)SelectorStartPosition, (float)SelectorEndPosition);
+        Select(SelectorStartPosition.Value, SelectorEndPosition.Value);
         SelectorChanged?.Invoke(this, EventArgs.Empty);
     }
 
@@ -176,10 +176,10 @@ public partial class TimingPointSelection : Node
         }
     }
 
-    private float? firstPosition => FirstPoint?.MeasurePosition;
-    private float? lastPostion => LastPoint?.MeasurePosition;
+    private double? firstPosition => FirstPoint?.MeasurePosition;
+    private double? lastPostion => LastPoint?.MeasurePosition;
 
-    public float? CenterPosition
+    public double? CenterPosition
     {
         get
         {
@@ -238,7 +238,7 @@ public partial class TimingPointSelection : Node
         SelectionIndices = [first, last];
     }
 
-    private void Select(float positionFirst, float positionLast)
+    private void Select(double positionFirst, double positionLast)
     {
         if (positionFirst > positionLast)
             (positionFirst, positionLast) = (positionLast, positionFirst);
@@ -312,7 +312,7 @@ public partial class TimingPointSelection : Node
         }
 
         bool isPointBeforeSelectionCenter = point.MeasurePosition < CenterPosition;
-        
+
         SelectionIndices = isPointBeforeSelectionCenter
             ? [isPointInSelection ? index + 1 : index, SelectionIndices[1]]
             : [SelectionIndices[0], isPointInSelection ? index - 1 : index];
@@ -326,15 +326,15 @@ public partial class TimingPointSelection : Node
         SelectionIndices = null;
     }
 
-    public void MoveSelection(float? referencePosition, float newPosition)
+    public void MoveSelection(double? referencePosition, double newPosition)
     {
         if (SelectionIndices == null || referencePosition == null) return;
 
         newPosition = Timing.Instance.SnapMeasurePosition(newPosition);
 
-        float positionDifference = newPosition - (float)referencePosition;
+        double positionDifference = newPosition - referencePosition.Value;
 
-        float getNewPosition(TimingPoint? point) => (point?.MeasurePosition ?? 0) + positionDifference;
+        double getNewPosition(TimingPoint? point) => (point?.MeasurePosition ?? 0) + positionDifference;
 
         timing.BatchChangeMeasurePosition(SelectionIndices[0], SelectionIndices[1], getNewPosition);
     }
@@ -342,7 +342,7 @@ public partial class TimingPointSelection : Node
     /// <summary>
     /// If the point is in selection, offset the entire selection. Otherwise, offset the point.
     /// </summary>
-    public void OffsetSelectionOrPoint(TimingPoint? point, float offset)
+    public void OffsetSelectionOrPoint(TimingPoint? point, double offset)
     {
         if (point == null) return;
         if (IsPointInSelection(point))
@@ -354,7 +354,7 @@ public partial class TimingPointSelection : Node
         }
     }
 
-    public void OffsetSelection(float offset)
+    public void OffsetSelection(double offset)
     {
         if (SelectionIndices == null) return;
         timing.BatchChangeOffset(SelectionIndices[0], SelectionIndices[1], offset);

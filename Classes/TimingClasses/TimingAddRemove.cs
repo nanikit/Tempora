@@ -26,14 +26,14 @@ public partial class Timing
     /// </summary>
     /// <param name="measurePosition"></param>
     /// <param name="time"></param>
-    public void AddTimingPoint(float measurePosition, float time)
+    public void AddTimingPoint(double measurePosition, double time)
     {
         var timingPoint = new TimingPoint(time, measurePosition, GetTimeSignature(measurePosition));
         TimingPoints.Add(timingPoint);
         SubscribeToEvents(timingPoint);
         TimingPoints.Sort();
-        float? mps = CalculateMPSBasedOnAdjacentPoints(timingPoint);
-        timingPoint.MeasuresPerSecond = mps == null ? timingPoint.MeasuresPerSecond : (float)mps;
+        double? mps = CalculateMPSBasedOnAdjacentPoints(timingPoint);
+        timingPoint.MeasuresPerSecond = mps ?? timingPoint.MeasuresPerSecond;
 
         timingPoint.IsInstantiating = false;
 
@@ -62,7 +62,7 @@ public partial class Timing
     /// </summary>
     /// <param name="measurePosition"></param>
     /// <param name="time"></param>
-    public void AddTimingPoint(float measurePosition)
+    public void AddTimingPoint(double measurePosition)
     {
         var timingPoint = new TimingPoint(measurePosition);
         timingPoint.Offset = MeasurePositionToOffset(measurePosition);
@@ -82,7 +82,7 @@ public partial class Timing
     /// <summary>
     /// Add a timing point and force a given <see cref="TimingPoint.MeasuresPerSecond"/> value without checking validity.
     /// </summary>
-    public void AddTimingPoint(float measurePosition, float time, float measuresPerSecond)
+    public void AddTimingPoint(double measurePosition, double time, double measuresPerSecond)
     {
         var timingPoint = new TimingPoint(time, measurePosition, GetTimeSignature(measurePosition), measuresPerSecond);
         TimingPoints.Add(timingPoint);
@@ -110,7 +110,7 @@ public partial class Timing
     ///     The <see cref="TimingPoint.MeasurePosition"/> is defined via the existing timing.
     /// </summary>
     /// <param name="time"></param>
-    public void AddTimingPoint(float time, out TimingPoint? timingPoint)
+    public void AddTimingPoint(double time, out TimingPoint? timingPoint)
     {
         timingPoint = new TimingPoint(time, GetTimeSignature(OffsetToMeasurePosition(time)));
         TimingPoints.Add(timingPoint);
@@ -126,8 +126,8 @@ public partial class Timing
         if (timingPoint.MeasurePosition == null
             || previousTimingPoint?.MeasurePosition == timingPoint.MeasurePosition
             || nextTimingPoint?.MeasurePosition == timingPoint.MeasurePosition
-            || (previousTimingPoint?.MeasurePosition is float previousMeasurePosition && Mathf.Abs(previousMeasurePosition - (float)timingPoint.MeasurePosition) < 0.015f) // Too close to previous timing point
-            || (nextTimingPoint?.MeasurePosition is float nextMeasurePosition && Mathf.Abs(nextMeasurePosition - (float)timingPoint.MeasurePosition) < 0.015f) // Too close to next timing point
+            || (previousTimingPoint?.MeasurePosition is double previousMeasurePosition && Math.Abs(previousMeasurePosition - timingPoint.MeasurePosition.Value) < 0.015d) // Too close to previous timing point
+            || (nextTimingPoint?.MeasurePosition is double nextMeasurePosition && Math.Abs(nextMeasurePosition - timingPoint.MeasurePosition.Value) < 0.015d) // Too close to next timing point
            )
         {
             TimingPoints.Remove(timingPoint);
@@ -156,7 +156,7 @@ public partial class Timing
         GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.TimingPointCountChanged));
 
         if (!Context.Instance.HeldPointIsJustBeingAdded)
-           MementoHandler.Instance.AddTimingMemento();
+            MementoHandler.Instance.AddTimingMemento();
     }
 
     /// <summary>
@@ -204,7 +204,7 @@ public partial class Timing
     {
         DeleteTimingPoints(0, TimingPoints.Count);
     }
-    
+
     /// <summary>
     /// Delete all time signature points without changing any timing points.
     /// </summary>
@@ -212,7 +212,7 @@ public partial class Timing
     {
         TimeSignaturePoints.Clear();
         GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.TimingChanged));
-    }   
+    }
 
     private void RemovePointsThatChangeNothing()
     {
@@ -223,7 +223,7 @@ public partial class Timing
             var previous = GetPreviousTimingPoint(timingPoint);
             if (previous == null)
                 continue;
-            bool mpsIsSame = MathF.Abs(previous.MeasuresPerSecond - (float)timingPoint.MeasuresPerSecond) < 0.0001;
+            bool mpsIsSame = Math.Abs(previous.MeasuresPerSecond - timingPoint.MeasuresPerSecond) < 0.0001d;
             bool ts0IsSame = previous?.TimeSignature[0] == timingPoint.TimeSignature[0];
             bool ts1IsSame = previous?.TimeSignature[1] == timingPoint.TimeSignature[1];
 
@@ -244,13 +244,13 @@ public partial class Timing
         {
             if (timingPoint?.MeasurePosition == null)
                 break;
-            bool isOnDownbeat = timingPoint.MeasurePosition % 1 == 0 
+            bool isOnDownbeat = timingPoint.MeasurePosition % 1 == 0
                 || AreMeasurePositionsEqual(timingPoint.MeasurePosition, (int)timingPoint.MeasurePosition)
                 || AreMeasurePositionsEqual(timingPoint.MeasurePosition, (int)timingPoint.MeasurePosition + 1);
             if (isOnDownbeat)
                 continue;
             TimingPoint? nextTimingPoint = GetNextTimingPoint(timingPoint);
-            
+
             bool isNextPointInSameMeasure = nextTimingPoint?.MeasurePosition != null
                 && (int)nextTimingPoint.MeasurePosition == (int)timingPoint.MeasurePosition;
             bool isThereAPointOnNextDownbeat = nextTimingPoint?.MeasurePosition != null
@@ -268,7 +268,7 @@ public partial class Timing
     }
     private void AddExtraPointsOnQuarterNotes()
     {
-        var quaterNotePositions = new List<float>();
+        var quaterNotePositions = new List<double>();
         foreach (TimingPoint timingPoint in TimingPoints)
         {
             if (timingPoint == null)
@@ -276,13 +276,13 @@ public partial class Timing
             if (timingPoint.MeasurePosition == null)
                 break;
 
-            float beatLength = GetDistancePerBeat((float)timingPoint.MeasurePosition);
-            float beatPosition = GetOperatingBeatPosition((float)timingPoint.MeasurePosition);
+            double beatLength = GetDistancePerBeat(timingPoint.MeasurePosition.Value);
+            double beatPosition = GetOperatingBeatPosition(timingPoint.MeasurePosition.Value);
             TimingPoint? nextTimingPoint = GetNextTimingPoint(timingPoint);
-            float? nextPointPosition = nextTimingPoint?.MeasurePosition;
+            double? nextPointPosition = nextTimingPoint?.MeasurePosition;
 
-            bool isOnQuarterNote = IsPositionOnDivisor((float)timingPoint.MeasurePosition, timingPoint.TimeSignature, 4);
-            bool isNextPointOnQuarterNote = nextTimingPoint != null ? IsPositionOnDivisor((float)(nextTimingPoint?.MeasurePosition!), nextTimingPoint.TimeSignature, 4) : false;
+            bool isOnQuarterNote = IsPositionOnDivisor(timingPoint.MeasurePosition.Value, timingPoint.TimeSignature, 4);
+            bool isNextPointOnQuarterNote = nextTimingPoint != null ? IsPositionOnDivisor(nextTimingPoint.MeasurePosition!.Value, nextTimingPoint.TimeSignature, 4) : false;
 
             bool nextPointIsOnOrBeforeNextQuarterNote = (nextTimingPoint != null
                 && (isNextPointOnQuarterNote || nextPointPosition!.Value < beatPosition + beatLength));
@@ -291,7 +291,7 @@ public partial class Timing
 
             quaterNotePositions.Add(beatPosition + beatLength);
         }
-        foreach (float quarterNote in quaterNotePositions)
+        foreach (double quarterNote in quaterNotePositions)
         {
             //float time = newTiming.MeasurePositionToTime(quarterNote);
             //newTiming.AddTimingPoint(quarterNote, time);
@@ -304,7 +304,7 @@ public partial class Timing
         // Maybe add exceptions later like 4/8 and 8/8 
 
         int firstMeasure = (int)OffsetToMeasurePosition(0f);
-        int lastMeasure = (int)OffsetToMeasurePosition((float)audioFile.Stream.GetLength());
+        int lastMeasure = (int)OffsetToMeasurePosition(audioFile.Stream.GetLength());
 
         for (int measure = firstMeasure; measure < lastMeasure + 1; measure++)
         {

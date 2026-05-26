@@ -12,13 +12,10 @@
 // Full license text is available at: https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode
 
 using System;
-using System.IO;
 using Godot;
-using NAudio.Wave;
-using Tempora.Classes.Utility;
-using Tempora.Classes.TimingClasses;
 using Tempora.Classes.DataHelpers;
-using FileAccess = Godot.FileAccess;
+using Tempora.Classes.TimingClasses;
+using Tempora.Classes.Utility;
 
 namespace Tempora.Classes.Audio;
 
@@ -109,7 +106,7 @@ public partial class Metronome : Node
                 isMuted = false;
             }
         }
-    } 
+    }
     #endregion
 
     #region Buffer
@@ -117,8 +114,8 @@ public partial class Metronome : Node
     private double currentBufferMusicSample;
     private int numClickFramesLeftToAdd;
     private bool isPrimaryClick;
-    private float triggerPosition;
-    private float triggerTime;
+    private double triggerPosition;
+    private double triggerTime;
 
     private float timeBetweenCurrentFrameSyncs = 3;
 
@@ -153,7 +150,7 @@ public partial class Metronome : Node
                 buffer[bufferIndex] = Vector2.Zero;
             }
 
-            currentBufferMusicSample = initialBufferMusicFrame + musicPitchScale * (i+1) / sampleRateRatio;
+            currentBufferMusicSample = initialBufferMusicFrame + musicPitchScale * (i + 1) / sampleRateRatio;
             bufferIndex++;
 
             if (bufferIndex >= buffer.Length)
@@ -176,7 +173,7 @@ public partial class Metronome : Node
     private void UpdateTriggerTime(double currentPlaybackTime)
     {
         float currentSampleTime = Project.Instance.AudioFile.PlaybackTimeToSampleTime((float)currentPlaybackTime);
-        float measurePosition = Timing.Instance.OffsetToMeasurePosition((float)currentSampleTime);
+        double measurePosition = Timing.Instance.OffsetToMeasurePosition(currentSampleTime);
         triggerPosition = GetTriggerPosition(measurePosition);
         var triggerSampleTime = Timing.Instance.MeasurePositionToOffset(triggerPosition);
         triggerTime = triggerSampleTime;
@@ -207,7 +204,7 @@ public partial class Metronome : Node
     {
         audioStreamPlayer.Stop();
         playback = null;
-    } 
+    }
     #endregion
 
     #region Events
@@ -244,36 +241,11 @@ public partial class Metronome : Node
     #endregion
 
 
-    private static float GetTriggerPosition(float measurePosition)
+    private static double GetTriggerPosition(double measurePosition)
     {
         return Settings.Instance.MetronomeFollowsGrid
             ? Timing.Instance.GetNextOperatingGridPosition(measurePosition)
             : Timing.Instance.GetNextOperatingBeatPosition(measurePosition);
     }
 
-
-    [Obsolete]
-    private static Vector2[] CacheWavFile(string path)
-    {
-        using FileAccess? file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
-        using var fileStream = new MemoryStream(file.GetBuffer((long)file.GetLength()));
-        using var waveReader = new WaveFileReader(fileStream);
-        var cache = new Vector2[waveReader.SampleCount];
-        for (int i = 0; i < waveReader.SampleCount; i++)
-        {
-            float[]? sample = waveReader.ReadNextSampleFrame();
-            cache[i] = new Vector2(sample[0], sample[1]);
-        }
-
-        return cache;
-    }
-
-    private static int GetSampleRate(string path)
-    {
-        using FileAccess? file = FileAccess.Open(path, FileAccess.ModeFlags.Read);
-        using var fileStream = new MemoryStream(file.GetBuffer((long)file.GetLength()));
-        using var waveReader = new WaveFileReader(fileStream);
-
-        return waveReader.WaveFormat.SampleRate;
-    }
 }

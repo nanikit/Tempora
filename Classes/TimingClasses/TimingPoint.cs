@@ -25,50 +25,50 @@ namespace Tempora.Classes.TimingClasses;
 /// </summary>
 public partial class TimingPoint : Node, IComparable<TimingPoint>, ICloneable
 {
-	#region Properties and Fields
+    #region Properties and Fields
 
-	public bool IsInstantiating = true;
+    public bool IsInstantiating = true;
 
     public bool IsBeingUpdated = false;
 
-	public ulong SystemTimeWhenCreatedMsec;
+    public ulong SystemTimeWhenCreatedMsec;
 
     public bool WasBPMManuallySet = false;
 
-	#region Time Signature
-	private int[] timeSignature = [4, 4];
+    #region Time Signature
+    private int[] timeSignature = [4, 4];
 
-	/// <summary>
-	/// Time Signature. Affects how <see cref="MeasuresPerSecond"/> and <see cref="TimeSignature"/> correlate
-	/// via the formulas <see cref="BpmToMps(float)"/> and <see cref="MpsToBpm(float)"/>.
-	/// Changes are always accepted.
-	/// </summary>
-	public int[] TimeSignature
-	{
-		get => timeSignature;
-		set
-		{
-			if (timeSignature == value)
-				return;
+    /// <summary>
+    /// Time Signature. Affects how <see cref="MeasuresPerSecond"/> and <see cref="TimeSignature"/> correlate
+    /// via the formulas <see cref="BpmToMps(float)"/> and <see cref="MpsToBpm(float)"/>.
+    /// Changes are always accepted.
+    /// </summary>
+    public int[] TimeSignature
+    {
+        get => timeSignature;
+        set
+        {
+            if (timeSignature == value)
+                return;
             int[] oldValue = timeSignature;
-			timeSignature = value;
+            timeSignature = value;
 
             PropertyChanged?.Invoke(this, new PropertyChangeArgument(PropertyType.TimeSignature, oldValue, value));
-		}
-	}
-	#endregion
+        }
+    }
+    #endregion
 
-	#region Offset
-	private float offset;
+    #region Offset
+    private double offset;
 
-	/// <summary>
-	/// The timestamp in the audio which this <see cref="TimingPoint"/> is attached to. 
-	/// </summary>
-	public float Offset
-	{
-		get => offset;
-		set
-		{
+    /// <summary>
+    /// The timestamp in the audio which this <see cref="TimingPoint"/> is attached to. 
+    /// </summary>
+    public double Offset
+    {
+        get => offset;
+        set
+        {
             if (offset == value)
                 return;
             if (IsInstantiating)
@@ -77,172 +77,187 @@ public partial class TimingPoint : Node, IComparable<TimingPoint>, ICloneable
                 return;
             }
 
-            float oldValue = offset;
-			offset = value;
+            double oldValue = offset;
+            offset = value;
 
             PropertyChanged?.Invoke(this, new PropertyChangeArgument(PropertyType.Offset, oldValue, value));
-		}
-	}
-	#endregion
+        }
+    }
+    #endregion
 
-	#region MeasurePosition
-	private float? measurePosition;
-	/// <summary>
-	/// The <see cref="TimingPoint"/>'s position on the musical timeline. 
-	/// The value is defined in terms of measures (integer part) from the musical timeline origin.
-	/// Individual beats in a measure are the fractional part of the value.
-	/// As an example, if a measure has a 4/4 <see cref="TimeSignature"/>, 
-	/// the value 0.75 means "Measure 0, Quarter note 4"
-	/// </summary>
-	public float? MeasurePosition
-	{
-		get => measurePosition;
-		set
-		{
-			if (measurePosition == value)
-				return;
+    #region MeasurePosition
+    private double? measurePosition;
+    /// <summary>
+    /// The <see cref="TimingPoint"/>'s position on the musical timeline. 
+    /// The value is defined in terms of measures (integer part) from the musical timeline origin.
+    /// Individual beats in a measure are the fractional part of the value.
+    /// As an example, if a measure has a 4/4 <see cref="TimeSignature"/>, 
+    /// the value 0.75 means "Measure 0, Quarter note 4"
+    /// </summary>
+    public double? MeasurePosition
+    {
+        get => measurePosition;
+        set
+        {
+            if (measurePosition == value)
+                return;
 
-            float? oldValue = measurePosition;
+            double? oldValue = measurePosition;
             measurePosition = value;
 
             PropertyChanged?.Invoke(this, new PropertyChangeArgument(PropertyType.MeasurePosition, oldValue, value));
         }
-	}
-	#endregion
+    }
+    #endregion
 
-	#region MeasuresPerSecond
-	private float measuresPerSecond = 0.5f;
-	/// <summary>
-	/// Musical measures per second. 
-	/// Directly correlated with <see cref="Bpm"/> and <see cref="TimeSignature"/>
-	/// via the formulas <see cref="BpmToMps(float)"/> and <see cref="MpsToBpm(float)"/>.
-	/// Cannot be changed directly, as it is a calculated property via <see cref="MeasuresPerSecond_Set(Timing)"/>
-	/// </summary>
-	public float MeasuresPerSecond
-	{
-		get => measuresPerSecond;
-		set
-		{
-			if (measuresPerSecond == value)
-				return;
+    #region MeasuresPerSecond
+    private double measuresPerSecond = 0.5d;
+    /// <summary>
+    /// Musical measures per second. 
+    /// Directly correlated with <see cref="Bpm"/> and <see cref="TimeSignature"/>
+    /// via the formulas <see cref="BpmToMps(float)"/> and <see cref="MpsToBpm(float)"/>.
+    /// Cannot be changed directly, as it is a calculated property via <see cref="MeasuresPerSecond_Set(Timing)"/>
+    /// </summary>
+    public double MeasuresPerSecond
+    {
+        get => measuresPerSecond;
+        set
+        {
+            if (measuresPerSecond == value)
+                return;
 
-            float oldValue = measuresPerSecond;
-			measuresPerSecond = value;
+            double oldValue = measuresPerSecond;
+            measuresPerSecond = value;
 
             PropertyChanged?.Invoke(this, new PropertyChangeArgument(PropertyType.MeasuresPerSecond, oldValue, value));
         }
-	}
-	#endregion
+    }
+    #endregion
 
-	#region Bpm
-	private float bpm;
-	/// <summary>
-	/// Beats per minute. Directly correlated with <see cref="MeasuresPerSecond"/> and <see cref="TimeSignature"/>
-	/// via the formulas <see cref="BpmToMps(float)"/> and <see cref="MpsToBpm(float)"/>.
-	/// Changes are only accepted if <see cref="Timing"/> validates the change.
-	/// </summary>
-	public float Bpm
-	{
-		get
-		{
-			if (bpm == 0)
-				bpm = MpsToBpm(MeasuresPerSecond);
-			return bpm;
-		}
-		set
-		{
-			if (bpm == value)
-				return;
-			
-			float oldValue = bpm;
-			bpm = Settings.Instance.RoundBPM ? (float)Math.Round(value*10, MidpointRounding.ToEven) / 10f : value;
+    #region Bpm
+    private double? manualBpm;
+    /// <summary>
+    /// Beats per minute. Directly correlated with <see cref="MeasuresPerSecond"/> and <see cref="TimeSignature"/>
+    /// via the formulas <see cref="BpmToMps(float)"/> and <see cref="MpsToBpm(float)"/>.
+    /// Changes are only accepted if <see cref="Timing"/> validates the change.
+    /// </summary>
+    public double Bpm
+    {
+        get => manualBpm ?? ComputedBpm;
+        set
+        {
+            if (manualBpm == value)
+                return;
 
-            PropertyChanged?.Invoke(this, new PropertyChangeArgument(PropertyType.Bpm, oldValue, bpm));
-		}
-	}
-	#endregion
+            double oldValue = Bpm;
+            manualBpm = Settings.Instance.RoundBPM ? Math.Round(value * 10, MidpointRounding.ToEven) / 10d : value;
 
-	#endregion
-	#region Constructors
-	public TimingPoint(float time, int[] timeSignature)
-	{
-		this.offset = time;
-		this.timeSignature = timeSignature;
-		SystemTimeWhenCreatedMsec = Time.GetTicksMsec();
-	}
+            PropertyChanged?.Invoke(this, new PropertyChangeArgument(PropertyType.Bpm, oldValue, manualBpm));
+        }
+    }
 
-	public TimingPoint(float measurePosition)
-	{
-		this.measurePosition = measurePosition;
-		SystemTimeWhenCreatedMsec = Time.GetTicksMsec();
-	}
+    public double ComputedBpm => MpsToBpm(MeasuresPerSecond);
 
-	public TimingPoint(float time, float measurePosition, float measuresPerSecond)
-	{
-		this.offset = time;
-		this.measurePosition = measurePosition;
-		this.measuresPerSecond = measuresPerSecond;
-		SystemTimeWhenCreatedMsec = Time.GetTicksMsec();
-	}
+    public double? ManualBpm => manualBpm;
 
-	public TimingPoint(float time, float measurePosition, int[] timeSignature)
-	{
-		this.offset = time;
-		this.measurePosition = measurePosition;
-		this.timeSignature = timeSignature;
-		SystemTimeWhenCreatedMsec = Time.GetTicksMsec();
-	}
+    public void SetManualBpm(double bpm)
+    {
+        Bpm = bpm;
+        WasBPMManuallySet = true;
+    }
 
-	public TimingPoint(float time, float measurePosition, int[] timeSignature, float measuresPerSecond)
-	{
-		this.offset = time;
-		this.measurePosition = measurePosition;
-		this.timeSignature = timeSignature;
-		this.measuresPerSecond = measuresPerSecond;
-		bpm = MpsToBpm(measuresPerSecond);
-		SystemTimeWhenCreatedMsec = Time.GetTicksMsec();
-	}
+    public void ClearManualBpm()
+    {
+        if (manualBpm == null)
+            return;
 
-	/// <summary>
-	/// Constructor used only for cloning
-	/// </summary>
-	private TimingPoint(float time, float? measurePosition, int[] timeSignature, float measuresPerSecond, float bpm, bool isInstantiating)
-	{
-		this.offset = time;
-		this.measurePosition = measurePosition;
-		this.timeSignature = timeSignature;
-		this.measuresPerSecond = measuresPerSecond;
-		this.bpm = bpm;
-		this.IsInstantiating = isInstantiating;
-		SystemTimeWhenCreatedMsec = Time.GetTicksMsec();
-	}
-	#endregion
-	#region Interface Methods
-	public int CompareTo(TimingPoint? other) => Offset.CompareTo(other?.Offset);
+        double oldValue = Bpm;
+        manualBpm = null;
 
-	public object Clone()
-	{
-		var timingPoint = new TimingPoint(Offset, MeasurePosition, TimeSignature, MeasuresPerSecond, Bpm, IsInstantiating);
+        PropertyChanged?.Invoke(this, new PropertyChangeArgument(PropertyType.Bpm, oldValue, ComputedBpm));
+    }
+    #endregion
 
-		return timingPoint;
-	}
-	#endregion
-	#region Change and Deletion Events
-	public event EventHandler ChangeFinalized = null!;
+    #endregion
+    #region Constructors
+    public TimingPoint(double time, int[] timeSignature)
+    {
+        this.offset = time;
+        this.timeSignature = timeSignature;
+        SystemTimeWhenCreatedMsec = Time.GetTicksMsec();
+    }
 
-	public void FinalizeChange()
-	{
-		if (!IsInstantiating)
-		{
-			ChangeFinalized?.Invoke(this, EventArgs.Empty);
-		}
-	}
+    public TimingPoint(double measurePosition)
+    {
+        this.measurePosition = measurePosition;
+        SystemTimeWhenCreatedMsec = Time.GetTicksMsec();
+    }
 
-	public event EventHandler AttemptDelete = null!;
-	/// <summary>
-	///     Relies on parent <see cref="Timing" /> to delete from project.
-	/// </summary>
-	public void Delete() => AttemptDelete?.Invoke(this, EventArgs.Empty);
+    public TimingPoint(double time, double measurePosition, double measuresPerSecond)
+    {
+        this.offset = time;
+        this.measurePosition = measurePosition;
+        this.measuresPerSecond = measuresPerSecond;
+        SystemTimeWhenCreatedMsec = Time.GetTicksMsec();
+    }
+
+    public TimingPoint(double time, double measurePosition, int[] timeSignature)
+    {
+        this.offset = time;
+        this.measurePosition = measurePosition;
+        this.timeSignature = timeSignature;
+        SystemTimeWhenCreatedMsec = Time.GetTicksMsec();
+    }
+
+    public TimingPoint(double time, double measurePosition, int[] timeSignature, double measuresPerSecond)
+    {
+        this.offset = time;
+        this.measurePosition = measurePosition;
+        this.timeSignature = timeSignature;
+        this.measuresPerSecond = measuresPerSecond;
+        SystemTimeWhenCreatedMsec = Time.GetTicksMsec();
+    }
+
+    /// <summary>
+    /// Constructor used only for cloning
+    /// </summary>
+    private TimingPoint(double time, double? measurePosition, int[] timeSignature, double measuresPerSecond, double? manualBpm, bool isInstantiating)
+    {
+        this.offset = time;
+        this.measurePosition = measurePosition;
+        this.timeSignature = timeSignature;
+        this.measuresPerSecond = measuresPerSecond;
+        this.manualBpm = manualBpm;
+        this.IsInstantiating = isInstantiating;
+        SystemTimeWhenCreatedMsec = Time.GetTicksMsec();
+    }
+    #endregion
+    #region Interface Methods
+    public int CompareTo(TimingPoint? other) => Offset.CompareTo(other?.Offset);
+
+    public object Clone()
+    {
+        var timingPoint = new TimingPoint(Offset, MeasurePosition, TimeSignature, MeasuresPerSecond, ManualBpm, IsInstantiating);
+
+        return timingPoint;
+    }
+    #endregion
+    #region Change and Deletion Events
+    public event EventHandler ChangeFinalized = null!;
+
+    public void FinalizeChange()
+    {
+        if (!IsInstantiating)
+        {
+            ChangeFinalized?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    public event EventHandler AttemptDelete = null!;
+    /// <summary>
+    ///     Relies on parent <see cref="Timing" /> to delete from project.
+    /// </summary>
+    public void Delete() => AttemptDelete?.Invoke(this, EventArgs.Empty);
 
     public event EventHandler PropertyChanged = null!;
 
@@ -275,10 +290,18 @@ public partial class TimingPoint : Node, IComparable<TimingPoint>, ICloneable
     }
     #endregion
     #region Calculators
-    public float BpmToMps(float bpm) => bpm / (60 * (TimeSignature[0] * 4f / TimeSignature[1]));
+    public double BpmToMps(double bpm) => BpmToMps(bpm, TimeSignature);
 
-	public float MpsToBpm(float mps) => mps * 60 * (TimeSignature[0] * 4f / TimeSignature[1]);
+    public double MpsToBpm(double mps) => MpsToBpm(mps, TimeSignature);
 
-	public float BeatLengthSec => 1 / (Bpm / 60);
-	#endregion
+    public static float BpmToMps(float bpm, int[] timeSignature) => (float)BpmToMps((double)bpm, timeSignature);
+
+    public static float MpsToBpm(float mps, int[] timeSignature) => (float)MpsToBpm((double)mps, timeSignature);
+
+    public static double BpmToMps(double bpm, int[] timeSignature) => TimingMath.BpmToMeasuresPerSecond(bpm, timeSignature);
+
+    public static double MpsToBpm(double mps, int[] timeSignature) => TimingMath.MeasuresPerSecondToBpm(mps, timeSignature);
+
+    public double BeatLengthSec => 1 / (Bpm / 60);
+    #endregion
 }
