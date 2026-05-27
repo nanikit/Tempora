@@ -319,6 +319,33 @@ public partial class Timing
         ScaleTempo(index, index, multiplier);
     }
 
+    public double SnapOffsetChangeToBpmIncrement(int lowerIndex, int higherIndex, double offsetChange, double bpmIncrement = 0.1d)
+    {
+        if (!Settings.Instance.RoundBPM || offsetChange == 0 || bpmIncrement <= 0)
+            return offsetChange;
+        if (!ValidateIndices(lowerIndex, higherIndex, out lowerIndex, out higherIndex))
+            return offsetChange;
+
+        double? previousPointSnap = lowerIndex > 0
+            ? GetOffsetChangeToNextBpmIncrement(
+                TimingPoints[lowerIndex - 1],
+                TimingPoints[lowerIndex],
+                offsetChange,
+                bpmIncrement,
+                movingStartPoint: false)
+            : null;
+        double? currentPointSnap = higherIndex < TimingPoints.Count - 1
+            ? GetOffsetChangeToNextBpmIncrement(
+                TimingPoints[higherIndex],
+                TimingPoints[higherIndex + 1],
+                offsetChange,
+                bpmIncrement,
+                movingStartPoint: true)
+            : null;
+
+        return GetNearestOffsetChange(offsetChange, previousPointSnap, currentPointSnap) ?? offsetChange;
+    }
+
     public void BatchChangeOffset(int lowerIndex, int higherIndex, double offsetChange)
     {
         if (!ValidateIndices(lowerIndex, higherIndex, out lowerIndex, out higherIndex))
@@ -346,6 +373,70 @@ public partial class Timing
 
         GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.TimingChanged));
     }
+
+    private static double? GetOffsetChangeToNextBpmIncrement(
+        TimingPoint startPoint,
+        TimingPoint endPoint,
+        double offsetChange,
+        double bpmIncrement,
+        bool movingStartPoint)
+    {
+        if (startPoint.MeasurePosition == null || endPoint.MeasurePosition == null)
+            return null;
+
+        double measureDifference = endPoint.MeasurePosition.Value - startPoint.MeasurePosition.Value;
+        double offsetDifference = endPoint.Offset - startPoint.Offset;
+        if (measureDifference <= 0 || offsetDifference <= 0)
+            return null;
+
+        double currentBpm = TimingMath.MeasuresPerSecondToBpm(
+            TimingMath.CalculateMeasuresPerSecond(
+                startPoint.MeasurePosition.Value,
+                endPoint.MeasurePosition.Value,
+                startPoint.Offset,
+                endPoint.Offset),
+            startPoint.TimeSignature);
+        double bpmDirection = Math.Sign(offsetChange) * (movingStartPoint ? 1d : -1d);
+        double targetBpm = GetNextBpmIncrement(currentBpm, bpmIncrement, bpmDirection);
+        if (targetBpm <= 0)
+            return null;
+
+        double desiredOffsetDifference = measureDifference
+            / TimingMath.BpmToMeasuresPerSecond(targetBpm, startPoint.TimeSignature);
+        double requiredOffsetChange = movingStartPoint
+            ? offsetDifference - desiredOffsetDifference
+            : desiredOffsetDifference - offsetDifference;
+
+        return IsOffsetChangeWithinStep(requiredOffsetChange, offsetChange) ? requiredOffsetChange : null;
+    }
+
+    private static double GetNextBpmIncrement(double bpm, double bpmIncrement, double direction)
+    {
+        double roundedBpm = Math.Round(bpm / bpmIncrement) * bpmIncrement;
+        if (Math.Abs(bpm - roundedBpm) < 0.000000001d)
+            return roundedBpm + (Math.Sign(direction) * bpmIncrement);
+
+        return direction > 0
+            ? Math.Ceiling(bpm / bpmIncrement) * bpmIncrement
+            : Math.Floor(bpm / bpmIncrement) * bpmIncrement;
+    }
+
+    private static bool IsOffsetChangeWithinStep(double offsetChange, double maximumOffsetChange)
+    {
+        const double epsilon = 0.000000001d;
+        return Math.Sign(offsetChange) == Math.Sign(maximumOffsetChange)
+            && Math.Abs(offsetChange) > epsilon
+            && Math.Abs(offsetChange) <= Math.Abs(maximumOffsetChange) + epsilon;
+    }
+
+    private static double? GetNearestOffsetChange(double offsetChange, params double?[] candidates)
+        => candidates
+            .Where(candidate => candidate != null)
+            .Select(candidate => candidate!.Value)
+            .Where(candidate => IsOffsetChangeWithinStep(candidate, offsetChange))
+            .OrderBy(Math.Abs)
+            .Cast<double?>()
+            .FirstOrDefault();
 
     /// <summary>
     /// Ensures that the specified indices can be applied to the <see cref="TimingPoints"/>.

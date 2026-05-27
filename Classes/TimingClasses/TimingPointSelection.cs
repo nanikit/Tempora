@@ -346,9 +346,14 @@ public partial class TimingPointSelection : Node
     {
         if (point == null) return;
         if (IsPointInSelection(point))
+        {
+            offset = timing.SnapOffsetChangeToBpmIncrement(SelectionIndices![0], SelectionIndices[1], offset);
             OffsetSelection(offset);
+        }
         else
         {
+            int index = timing.TimingPoints.IndexOf(point);
+            offset = timing.SnapOffsetChangeToBpmIncrement(index, index, offset);
             point.Offset = point.Offset + offset;
             MementoHandler.Instance.AddTimingMemento(point);
         }
