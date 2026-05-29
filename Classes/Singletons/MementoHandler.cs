@@ -127,7 +127,7 @@ public partial class MementoHandler : Node
         mementoList.RemoveRange(index + 1, mementoList.Count - (index + 1));
     }
 
-    private void Undo()
+    internal void Undo()
     {
         switch (mementoIndex)
         {

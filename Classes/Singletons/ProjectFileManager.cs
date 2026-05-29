@@ -435,6 +435,10 @@ public partial class ProjectFileManager : Node
         Project.Instance.AudioFile = new AudioFile(audioPath);
         Timing.Instance.IsInstantiating = false;
         GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.TimingChanged));
+
+        // Reset undo history so undo after loading cannot restore the previous project's state
+        // (mirrors the standalone-audio load path in ResetEditingStateForStandaloneAudio).
+        MementoHandler.Instance.ResetTimingHistory();
     }
 
     public void LoadProjectFromFilePath(string filePath)

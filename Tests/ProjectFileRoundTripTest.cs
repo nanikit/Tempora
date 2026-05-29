@@ -59,6 +59,35 @@ public class ProjectFileRoundTripTest
         AssertThat(loaded.MeasuresPerSecond).IsEqual(measuresPerSecond);
     }
 
+    [TestCase]
+    public void Loading_project_resets_undo_history()
+    {
+        string audioPath = ProjectSettings.GlobalizePath("res://Audio/click-quick.ogg");
+        Project.Instance.AudioFile = new AudioFile(audioPath);
+
+        // Save a project file that contains a single timing point.
+        Timing.Instance = new Timing { IsInstantiating = true };
+        Timing.Instance.AddTimingPoint(0d, 1.0d, 0.5d);
+        Timing.Instance.IsInstantiating = false;
+        string savePath = ProjectSettings.GlobalizePath($"{SaveDir}/single.tmpr");
+        ProjectFileManager.SaveProjectAs(savePath);
+
+        // Simulate editing another project so the undo history accumulates extra snapshots.
+        MementoHandler.Instance.ResetTimingHistory();
+        Timing.Instance.AddTimingPoint(2d, 3.0d, 0.5d);
+        MementoHandler.Instance.AddTimingMemento();
+        Timing.Instance.AddTimingPoint(3d, 4.0d, 0.5d);
+        MementoHandler.Instance.AddTimingMemento();
+
+        ProjectFileManager.Instance.LoadProjectFromFilePath(savePath);
+        AssertThat(Timing.Instance.TimingPoints.Count).IsEqual(1);
+
+        // Right after loading, undo must be a no-op; otherwise it restores the previous project's snapshot.
+        MementoHandler.Instance.Undo();
+
+        AssertThat(Timing.Instance.TimingPoints.Count).IsEqual(1);
+    }
+
     private TimingPoint SaveAndReloadSingleTimingPoint(double measurePosition, double offset, double measuresPerSecond)
     {
         // AudioFile decodes via NAudio directly, so it needs an OS path rather than a Godot res:// virtual path.
