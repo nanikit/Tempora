@@ -177,8 +177,7 @@ public partial class ProjectFileManager : Node
         switch (extension)
         {
             case var value when (value == mp3Extension || value == oggExtension):
-                var audioFile = new AudioFile(selectedPath);
-                Project.Instance.AudioFile = audioFile;
+                LoadAudioFromFilePath(selectedPath);
                 break;
             case var value when value == projectFileExtension:
                 ProjectFileManager.Instance.LoadProjectFromFilePath(selectedPath);
@@ -186,6 +185,37 @@ public partial class ProjectFileManager : Node
                 Settings.Instance.ProjectFilesDirectory = dir;
                 break;
         }
+    }
+
+    public void LoadAudioFromFilePath(string audioPath)
+    {
+        if (!AudioFile.IsAudioFileExtensionValid(audioPath, out _))
+            return;
+
+        if (Project.Instance.AudioFile != null)
+            MusicPlayer.Instance.Pause();
+
+        Project.Instance.ProjectPath = null;
+        ResetEditingStateForStandaloneAudio();
+        Project.Instance.AudioFile = new AudioFile(audioPath);
+
+        GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.TimingChanged));
+    }
+
+    private static void ResetEditingStateForStandaloneAudio()
+    {
+        Context.Instance.HeldPointIsJustBeingAdded = false;
+        Context.Instance.HeldTimingPoint = null;
+        Context.Instance.TimingPointNearestCursor = null;
+        Context.Instance.SelectedMeasurePosition = 0;
+        Context.Instance.IsSelectedMeasurePositionMoving = false;
+        TimingPointSelection.Instance.DeselectAll();
+
+        Timing.Instance.IsInstantiating = true;
+        Timing.Instance.TimingPoints.Clear();
+        Timing.Instance.TimeSignaturePoints.Clear();
+        Timing.Instance.IsInstantiating = false;
+        MementoHandler.Instance.ResetTimingHistory();
     }
     #endregion
 

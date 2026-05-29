@@ -62,13 +62,8 @@ public partial class LoadButton : Button
 
         switch (extension)
         {
-            case var value when value == mp3Extension:
-                var audioFile = new AudioFile(selectedPath);
-                Project.Instance.AudioFile = audioFile;
-                break;
-            case var value when value == oggExtension:
-                audioFile = new AudioFile(selectedPath);
-                Project.Instance.AudioFile = audioFile;
+            case var value when value == mp3Extension || value == oggExtension:
+                ProjectFileManager.Instance.LoadAudioFromFilePath(selectedPath);
                 break;
             case var value when value == projectFileExtension:
                 ProjectFileManager.Instance.LoadProjectFromFilePath(selectedPath);

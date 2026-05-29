@@ -118,6 +118,7 @@ public partial class AudioVisualsContainer : VBoxContainer
         MouseExited += OnMouseExited;
         MusicPlayer.Paused += OnMusicPaused;
         MusicPlayer.Finished += OnMusicFinished;
+        GlobalEvents.Instance.AudioFileChanged += OnAudioFileChanged;
         GlobalEvents.Instance.TimingPointAdded += OnTimingPointAdded;
     }
 
@@ -152,6 +153,14 @@ public partial class AudioVisualsContainer : VBoxContainer
     private void OnMusicPaused() => UpdatePlayHeads();
 
     private void OnMusicFinished() => UpdatePlayHeads();
+
+    private void OnAudioFileChanged(object? sender, EventArgs e)
+    {
+        panGestureAccumulator = 0;
+        NominalMeasurePositionStartForTopBlock = FirstTopMeasure;
+        UpdatePlayHeads();
+        GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.AudioVisualsContainerScrolled));
+    }
 
     public void CreateBlocks()
     {

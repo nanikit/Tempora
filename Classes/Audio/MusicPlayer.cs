@@ -109,6 +109,7 @@ public partial class MusicPlayer : AudioStreamPlayer
 
     private void OnAudioFileChanged(object? sender, EventArgs e)
     {
+        PauseTime = 0;
         Pause();
         LoadAudio();
     }

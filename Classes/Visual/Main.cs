@@ -12,12 +12,12 @@
 // Full license text is available at: https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode
 
 using System;
+using System.IO;
 using System.Linq;
 using Godot;
 using Tempora.Classes.Audio;
-using Tempora.Classes.Utility;
 using Tempora.Classes.TimingClasses;
-using System.IO;
+using Tempora.Classes.Utility;
 
 // Tempora
 
@@ -25,24 +25,24 @@ namespace Tempora.Classes.Visual.AudioDisplay;
 
 public partial class Main : Control
 {
-	//[Export]
-	//private string audioPath = "res://Audio/UMO.mp3";
-	[Export]
-	private AudioStreamMP3 defaultMP3 = null!;
-	private MusicPlayer MusicPlayer => MusicPlayer.Instance;
-	[Export]
-	private AudioVisualsContainer audioVisualsContainer = null!;
-	[Export]
-	private BlockScrollBar blockScrollBar = null!;
+    //[Export]
+    //private string audioPath = "res://Audio/UMO.mp3";
+    [Export]
+    private AudioStreamMP3 defaultMP3 = null!;
+    private MusicPlayer MusicPlayer => MusicPlayer.Instance;
+    [Export]
+    private AudioVisualsContainer audioVisualsContainer = null!;
+    [Export]
+    private BlockScrollBar blockScrollBar = null!;
     [Export]
     private ColorRect backgroundColorRect = null!;
 
-	private ProjectFileManager projectFileManager = null!;
+    private ProjectFileManager projectFileManager = null!;
 
-	// Called when the node enters the scene tree for the first time.
-	public override void _Ready()
-	{
-		projectFileManager = ProjectFileManager.Instance;
+    // Called when the node enters the scene tree for the first time.
+    public override void _Ready()
+    {
+        projectFileManager = ProjectFileManager.Instance;
 
         // This works in Debug if we use i.e. audioPath = "res://Audio/UMO.mp3",
         // but won't work in production, as resources are converted to different file formats.
@@ -53,75 +53,75 @@ public partial class Main : Control
         if (Godot.FileAccess.FileExists(autoSavePathGlobal))
             ProjectFileManager.Instance.LoadProjectFromFilePath(autoSavePathGlobal);
         else
-		    Project.Instance.AudioFile = new AudioFile(defaultMP3);
+            Project.Instance.AudioFile = new AudioFile(defaultMP3);
 
-		GlobalEvents.Instance.SettingsChanged += OnSettingsChanged;
-		audioVisualsContainer.SeekPlaybackTime += OnSeekPlaybackTime;
-		GetTree().Root.FilesDropped += OnFilesDropped;
+        GlobalEvents.Instance.SettingsChanged += OnSettingsChanged;
+        audioVisualsContainer.SeekPlaybackTime += OnSeekPlaybackTime;
+        GetTree().Root.FilesDropped += OnFilesDropped;
 
-		audioVisualsContainer.CreateBlocks();
-		blockScrollBar.UpdateLimits();
-		audioVisualsContainer.UpdateBlocksScroll();
+        audioVisualsContainer.CreateBlocks();
+        blockScrollBar.UpdateLimits();
+        audioVisualsContainer.UpdateBlocksScroll();
 
         backgroundColorRect.Color = GlobalConstants.TemporaBlue;
 
-		MementoHandler.Instance.AddTimingMemento();
-	}
+        MementoHandler.Instance.AddTimingMemento();
+    }
 
-	public override void _Input(InputEvent inputEvent)
-	{
-		switch (inputEvent)
-		{
-			case InputEventMouseButton mouseEvent:
-				{
-					if (mouseEvent.ButtonIndex == MouseButton.Left && mouseEvent.IsReleased())
-					{
-						// Ensure a mouse release is always captured.
-						GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.MouseLeftReleased));
-						Context.Instance.IsSelectedMeasurePositionMoving = false;
-					}
-					break;
-				}
-		}
-	}
+    public override void _Input(InputEvent inputEvent)
+    {
+        switch (inputEvent)
+        {
+            case InputEventMouseButton mouseEvent:
+                {
+                    if (mouseEvent.ButtonIndex == MouseButton.Left && mouseEvent.IsReleased())
+                    {
+                        // Ensure a mouse release is always captured.
+                        GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.MouseLeftReleased));
+                        Context.Instance.IsSelectedMeasurePositionMoving = false;
+                    }
+                    break;
+                }
+        }
+    }
 
-	public override void _GuiInput(InputEvent @event)
-	{
-		if (@event is InputEventMouseButton mouseEvent)
-		{
-			if (mouseEvent.ButtonIndex == MouseButton.Left && mouseEvent.IsPressed())
-				GrabFocus();
-			ReleaseFocus();
-		}
-	}
+    public override void _GuiInput(InputEvent @event)
+    {
+        if (@event is InputEventMouseButton mouseEvent)
+        {
+            if (mouseEvent.ButtonIndex == MouseButton.Left && mouseEvent.IsPressed())
+                GrabFocus();
+            ReleaseFocus();
+        }
+    }
 
-	private void OnSettingsChanged(object? sender, EventArgs e) => audioVisualsContainer.UpdateNumberOfVisibleBlocks();
+    private void OnSettingsChanged(object? sender, EventArgs e) => audioVisualsContainer.UpdateNumberOfVisibleBlocks();
 
-	private void OnFilesDropped(string[] filePaths)
-	{
-		if (filePaths.Length != 1)
-			return;
-		string path = filePaths[0];
+    private void OnFilesDropped(string[] filePaths)
+    {
+        if (filePaths.Length != 1)
+            return;
+        string path = filePaths[0];
         bool isAudioFile = AudioFile.IsAudioFileExtensionValid(path, out string extension);
 
-        switch (extension) {
+        switch (extension)
+        {
             case var value when value == ProjectFileManager.ProjectFileExtension:
                 projectFileManager.LoadProjectFromFilePath(path);
                 break;
             case var value when isAudioFile:
-		        var audioFile = new AudioFile(path);
-		        Project.Instance.AudioFile = audioFile;
+                projectFileManager.LoadAudioFromFilePath(path);
                 break;
         }
-	}
+    }
 
-	private void OnSeekPlaybackTime(object? sender, EventArgs e)
-	{
-		if (e is not GlobalEvents.ObjectArgument<float> floatArgument)
-			throw new Exception($"{nameof(e)} was not of type {nameof(GlobalEvents.ObjectArgument<float>)}");
-		float playbackTime = floatArgument.Value;
-		MusicPlayer.SeekPlay(playbackTime);
-	}
+    private void OnSeekPlaybackTime(object? sender, EventArgs e)
+    {
+        if (e is not GlobalEvents.ObjectArgument<float> floatArgument)
+            throw new Exception($"{nameof(e)} was not of type {nameof(GlobalEvents.ObjectArgument<float>)}");
+        float playbackTime = floatArgument.Value;
+        MusicPlayer.SeekPlay(playbackTime);
+    }
 
-	public override string ToString() => "Main";
+    public override string ToString() => "Main";
 }

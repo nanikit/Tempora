@@ -103,6 +103,15 @@ public partial class MementoHandler : Node
     {
     }
 
+    public void ResetTimingHistory()
+    {
+        mementoList.Clear();
+        mementoIndex = 0;
+        timingPointBeingChanged = null;
+        SelectionBeingChanged = null;
+        AddTimingMemento();
+    }
+
     private void AddMemento(IMemento memento)
     {
         if (mementoIndex < (mementoList.Count - 1))
