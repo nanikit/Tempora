@@ -1,5 +1,8 @@
 # Custom added for Tempora
 *.old
+Tests/**/*.cs.uid
+# gdUnit4 test.adapter auto-generated runner scene
+/gdunit4_testadapter_v5/
 
 
 # Godot 4+ specific ignores
