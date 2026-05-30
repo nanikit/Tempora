@@ -1,0 +1,50 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  test:
+    name: gdUnit4
+    runs-on: windows-latest
+    env:
+      GODOT_VERSION: 4.6.3-stable
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+
+      - name: setup dotnet
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.0.x
+
+      - name: install Godot Mono
+        id: godot
+        shell: pwsh
+        run: |
+          $zipPath = Join-Path $env:RUNNER_TEMP "godot-mono.zip"
+          $installDir = Join-Path $env:RUNNER_TEMP "godot-mono"
+          $downloadUrl = "https://github.com/godotengine/godot/releases/download/$env:GODOT_VERSION/Godot_v$env:GODOT_VERSION" + "_mono_win64.zip"
+
+          Invoke-WebRequest -Uri $downloadUrl -OutFile $zipPath
+          Expand-Archive -LiteralPath $zipPath -DestinationPath $installDir -Force
+
+          $godot = Get-ChildItem -LiteralPath $installDir -Recurse -Filter "Godot_v*_mono_win64_console.exe" |
+            Select-Object -First 1
+
+          if (-not $godot) {
+            throw "Godot Mono console executable not found."
+          }
+
+          "godot_bin=$($godot.FullName)" >> $env:GITHUB_OUTPUT
+
+      - name: test
+        shell: pwsh
+        run: dotnet test Tempora.csproj --settings .runsettings -e "GODOT_BIN=${{ steps.godot.outputs.godot_bin }}"

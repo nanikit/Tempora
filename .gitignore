@@ -3,6 +3,7 @@
 Tests/**/*.cs.uid
 # gdUnit4 test.adapter auto-generated runner scene
 /gdunit4_testadapter_v5/
+/Tempora_Exports/
 
 
 # Godot 4+ specific ignores

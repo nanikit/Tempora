@@ -1,41 +1,110 @@
-# Whenever a tag push matching pattern "v*" then run the job
-on: 
-  push:
-    tags:
-      - "v*"
-  workflow_dispatch:
-jobs:
-  # job id, can be anything
-  export_game:
-    # Always use ubuntu-latest for this action
-    runs-on: ubuntu-latest
-    # Add permission for release creation. Can be made narrower according to your needs
-    permissions: write-all
-    # Job name, can be anything
-    name: Export Game
-    steps:
-      # Always include the checkout step so that 
-      # your project is available for Godot to export
-    - name: checkout
-      uses: actions/checkout@v4
-  
-    - name: export game
-      id: export
-      # Use latest version (see releases for all versions)
-      uses: firebelley/godot-export@v6.0.0
-      with:
-        # Defining all the required inputs
-        godot_executable_download_url: https://downloads.tuxfamily.org/godotengine/4.0/Godot_v4.0-stable_linux.x86_64.zip
-        godot_export_templates_download_url: https://downloads.tuxfamily.org/godotengine/4.0/Godot_v4.0-stable_export_templates.tpz
-        relative_project_path: ./
-        archive_output: true
+name: Release
 
-      # This release action has worked well for me. However, you can most likely use any release action of your choosing.
-      # https://github.com/ncipollo/release-action
-    - name: create release
-      uses: ncipollo/release-action@v1.14.0
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        generateReleaseNotes: true
-        tag: ${{ github.ref_name }}
-        artifacts: ${{ steps.export.outputs.archive_directory }}/*
+on:
+  push:
+    branches:
+      - release
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  export_game:
+    if: github.ref_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    name: Export Game
+    env:
+      GODOT_VERSION: 4.6.3-stable
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: resolve release version
+        id: version
+        shell: pwsh
+        run: |
+          $project = Get-Content project.godot -Raw
+          if ($project -notmatch '(?m)^config/version="([^"]+)"$') {
+            throw 'project.godot must define application config/version.'
+          }
+
+          $version = $Matches[1]
+          if ($version -notmatch '^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$') {
+            throw "project.godot config/version must be a semantic version. Actual: '$version'"
+          }
+
+          $tag = "v$version"
+          $remoteTag = git ls-remote --tags origin "refs/tags/$tag"
+          if ($remoteTag) {
+            throw "Release tag already exists: $tag"
+          }
+
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+
+      - name: prepare release metadata
+        shell: pwsh
+        run: |
+          $version = '${{ steps.version.outputs.version }}'
+          $match = [regex]::Match($version, '^(?<major>0|[1-9]\d*)\.(?<minor>0|[1-9]\d*)\.(?<patch>0|[1-9]\d*)')
+          if (-not $match.Success) {
+            throw "Invalid semantic version: $version"
+          }
+
+          $shortVersion = "{0}.{1}.{2}" -f $match.Groups["major"].Value, $match.Groups["minor"].Value, $match.Groups["patch"].Value
+          $windowsFileVersion = "$shortVersion.0"
+          $content = Get-Content export_presets.cfg -Raw
+          $content = $content -replace 'application/file_version="[^"]*"', "application/file_version=`"$windowsFileVersion`""
+          $content = $content -replace 'application/product_version="[^"]*"', "application/product_version=`"$version`""
+          $content = $content -replace 'application/short_version="[^"]*"', "application/short_version=`"$shortVersion`""
+          $content = $content -replace 'application/version="[^"]*"', "application/version=`"$version`""
+          Set-Content export_presets.cfg -Value $content -NoNewline
+
+      - name: export game
+        id: export
+        uses: firebelley/godot-export@v8.0.0
+        with:
+          godot_executable_download_url: https://github.com/godotengine/godot/releases/download/${{ env.GODOT_VERSION }}/Godot_v${{ env.GODOT_VERSION }}_mono_linux_x86_64.zip
+          godot_export_templates_download_url: https://github.com/godotengine/godot/releases/download/${{ env.GODOT_VERSION }}/Godot_v${{ env.GODOT_VERSION }}_mono_export_templates.tpz
+          relative_project_path: ./
+          presets_to_export: Linux/X11,Windows,macOS
+          archive_output: true
+
+      - name: push release tag
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a '${{ steps.version.outputs.tag }}' -m '${{ steps.version.outputs.tag }}'
+          git push origin '${{ steps.version.outputs.tag }}'
+
+      - name: create release
+        id: release
+        continue-on-error: true
+        uses: ncipollo/release-action@v1.21.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          generateReleaseNotes: true
+          immutableCreate: true
+          tag: ${{ steps.version.outputs.tag }}
+          commit: ${{ github.sha }}
+          artifactErrorsFailBuild: true
+          artifacts: ${{ steps.export.outputs.archive_directory }}/*
+
+      - name: rollback release tag after upload failure
+        if: steps.release.outcome == 'failure'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete '${{ steps.version.outputs.tag }}' --cleanup-tag --yes 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            git push --delete origin '${{ steps.version.outputs.tag }}'
+          }
+          throw "Release upload failed; cleaned up release tag ${{ steps.version.outputs.tag }}."

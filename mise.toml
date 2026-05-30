@@ -20,7 +20,7 @@ arg "[preset]" default="Windows"
 arg "[mode]" default="release" {
   choices "release" "debug"
 }
-arg "[output]" default="../Tempora_Exports/local/Tempora.exe"
+arg "[output]" default="Tempora_Exports/Tempora.exe"
 '''
 run_windows = '''
 $OutputPath = "{{ usage.output }}"

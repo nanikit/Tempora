@@ -17,9 +17,21 @@ namespace Tempora.Classes.Visual;
 
 public partial class VersionLabel : Label
 {
-    // Called when the node enters the scene tree for the first time.
+    private const string VersionSetting = "application/config/version";
+
     public override void _Ready()
     {
-        Text = ThisAssembly.Git.Tag;
+        Text = ReadProjectVersion() ?? ReadGitTag() ?? "dev";
+    }
+
+    private static string? ReadProjectVersion()
+    {
+        var version = ProjectSettings.GetSetting(VersionSetting).AsString().Trim();
+        return string.IsNullOrWhiteSpace(version) ? null : version;
+    }
+
+    private static string? ReadGitTag()
+    {
+        return string.IsNullOrWhiteSpace(ThisAssembly.Git.Tag) ? null : ThisAssembly.Git.Tag;
     }
 }
