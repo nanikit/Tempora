@@ -1,0 +1,31 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "detail": "dotnet build (C# compile check)",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["build", "Tempora.csproj"],
+      "group": { "kind": "build" },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "test",
+      "detail": "gdUnit4 tests via dotnet test (needs GODOT_BIN)",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["test", "Tempora.csproj", "--settings", ".runsettings"],
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "export (Windows release)",
+      "detail": "If it hangs check output binary is already executing, so locked.",
+      "type": "shell",
+      "command": "New-Item -ItemType Directory -Force '${workspaceFolder}/../Tempora_Exports/local' > $null; & godot --headless --xr-mode off --path '${workspaceFolder}' --export-release Windows '${workspaceFolder}/../Tempora_Exports/local/Tempora.exe'",
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": []
+    }
+  ]
+}
