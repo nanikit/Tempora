@@ -1,0 +1,36 @@
+[tools]
+# Godot .NET(mono) build for running gdUnit4 C# tests.
+# aqua-registry's godot package has no mono variant, so pull the release zip directly.
+# Windows-only asset; adjust the URL for other platforms if needed.
+"http:godot-mono" = { version = "4.6.3-stable", url = "https://github.com/godotengine/godot/releases/download/{{ version }}/Godot_v{{ version }}_mono_win64.zip" }
+
+[tasks.build]
+description = "Build C# project"
+run = "dotnet build Tempora.csproj"
+
+[tasks.test]
+description = "Run gdUnit4 C# tests"
+run = 'dotnet test Tempora.csproj --settings .runsettings -e GODOT_BIN={{ tools["http:godot-mono"].path }}/Godot_v{{ tools["http:godot-mono"].version }}_mono_win64_console.exe'
+
+[tasks.export]
+description = "Export Windows release with Godot Mono"
+shell = "pwsh -NoProfile -Command"
+usage = '''
+arg "[preset]" default="Windows"
+arg "[mode]" default="release" {
+  choices "release" "debug"
+}
+arg "[output]" default="../Tempora_Exports/local/Tempora.exe"
+'''
+run_windows = '''
+$OutputPath = "{{ usage.output }}"
+$ExportDir = Split-Path -Parent $OutputPath
+if ($ExportDir) {
+  New-Item -ItemType Directory -Force -Path $ExportDir | Out-Null
+}
+
+& "{{ tools["http:godot-mono"].path }}\Godot_v{{ tools["http:godot-mono"].version }}_mono_win64_console.exe" --headless --xr-mode off --path . --export-{{ usage.mode }} "{{ usage.preset }}" $OutputPath
+if ($LASTEXITCODE -ne 0) {
+  exit $LASTEXITCODE
+}
+'''

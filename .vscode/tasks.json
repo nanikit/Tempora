@@ -1,29 +1,35 @@
 {
+  // VS Code delegates to mise tasks. mise.toml installs Godot .NET/mono and
+  // loads the repo-local .env before running build/test/export.
   "version": "2.0.0",
   "tasks": [
     {
       "label": "build",
-      "detail": "dotnet build (C# compile check)",
+      "detail": "mise run build",
       "type": "process",
-      "command": "dotnet",
-      "args": ["build", "Tempora.csproj"],
+      "command": "mise",
+      "args": ["run", "build"],
+      "options": { "cwd": "${workspaceFolder}" },
       "group": { "kind": "build" },
       "problemMatcher": "$msCompile"
     },
     {
       "label": "test",
-      "detail": "gdUnit4 tests via dotnet test (needs GODOT_BIN)",
+      "detail": "mise run test",
       "type": "process",
-      "command": "dotnet",
-      "args": ["test", "Tempora.csproj", "--settings", ".runsettings"],
+      "command": "mise",
+      "args": ["run", "test"],
+      "options": { "cwd": "${workspaceFolder}" },
       "group": { "kind": "test", "isDefault": true },
       "problemMatcher": "$msCompile"
     },
     {
       "label": "export (Windows release)",
-      "detail": "If it hangs check output binary is already executing, so locked.",
-      "type": "shell",
-      "command": "New-Item -ItemType Directory -Force '${workspaceFolder}/../Tempora_Exports/local' > $null; & godot --headless --xr-mode off --path '${workspaceFolder}' --export-release Windows '${workspaceFolder}/../Tempora_Exports/local/Tempora.exe'",
+      "detail": "mise run export",
+      "type": "process",
+      "command": "mise",
+      "args": ["run", "export"],
+      "options": { "cwd": "${workspaceFolder}" },
       "group": { "kind": "build", "isDefault": true },
       "problemMatcher": []
     }
