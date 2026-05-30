@@ -26,7 +26,7 @@ public partial class Settings : Node
     private int numberOfBlocks = 10;
     private float measureOverlap;
     private bool metronomeFollowsGrid;
-    private bool roundBPM;
+    private bool roundBPM = true;
     private int divisor = 1;
     private bool autoScrollWhenAddingTimingPoints = false;
     private string settingsPath = "user://settings.txt";
@@ -357,7 +357,7 @@ public partial class Settings : Node
         ApplyVolumeSettingsToAudioServer();
     }
 
-public void LoadSettings()
+    public void LoadSettings()
     {
         if (string.IsNullOrEmpty(settingsPath))
             return;
@@ -499,7 +499,7 @@ public void LoadSettings()
             }
         }
     }
-public void SaveSettings()
+    public void SaveSettings()
     {
         string settingsFile = "";
         settingsFile += GetSettingsFileLine(settingStrings[Setting.ProjectFilesDirectory], ProjectFilesDirectory);

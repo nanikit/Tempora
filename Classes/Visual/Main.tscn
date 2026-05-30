@@ -421,60 +421,67 @@ bbcode_enabled = true
 text = "[center][font_size=40]Tempora[/font_size]
 by kongehund[/center]
 
-[font_size=25]Files[/font_size]
-The \"File\" menu in the top left corner reveals common file handling options.
-Drag an .mp3 or .ogg file into Tempora to import it, or use the \"Open...\" dialog. 
+[font_size=25]Getting started[/font_size]
+Drag an .mp3 or .ogg file into Tempora to load a song.
+Each row is one measure. The bright red line marks where a measure starts.
+A downbeat is the first beat you hear in a measure. Match each downbeat to the red line, then export for your rhythm game.
 
-[i]Ctrl + S									[/i] Save project
-
-[font_size=25]Timeline[/font_size]
-Each row of audio represents a measure of music. Each measure begins on the bright red line (downbeat).
-
-[i](Shift +) Scroll wheel			[/i] Navigate timeline
-[i]\"Grid\"										[/i] Timeline division to use for each measure (i.e. 4 = 1/4 = quarter note)
-
-[font_size=25]Audio[/font_size]
-Adjust the volumes in the top right. By default, the metronome plays every 1/4 note.
-
-[i]Space										[/i] Start/Stop audio 
-[i]Right-click								[/i] Start audio from position
-[i]\"Playback\"								[/i] Adjust the playback rate
-[i]X												[/i] Toggle the playback rate between two states
-[i]Z												[/i] Hold to mute metronome
+[font_size=25]Listen[/font_size]
+[i]Space										[/i] Start / stop playback
+[i]Right-click								[/i] Start playback from the clicked position
 
 [font_size=25]Timing[/font_size]
-Click and drag on the timeline to create a timing point and move it around on the musical timeline. 
-Double-click to remove. 
-Change the time signature in the left-hand side (Default: 4/4)
+A timing point pins the music to the grid.
+1. Find a downbeat by ear.
+2. Drag it onto the red line.
+3. Repeat for every downbeat.
+4. Play back (slow it down if needed) and fix any drift.
 
-[b]Recommended workflow:[/b] Listen to the music to identify where the downbeat is. Then click and drag that part of the music on to the bright red line to tell Tempora \"the downbeat goes here\". Repeat for other downbeats. Once downbeats have been placed throughout the whole song, listen to the song again (at lower playback rate if desired), and listen for inaccuracies. To fix inaccuracies try adjusting offset of existing timing points on downbeats and/or adding more. If this can't fix it, increase \"Grid\" slider to 2 so you can add timing points in the middle of measures.
+[i]Click										[/i] Create a timing point
+[i]Hold Shift								[/i] Snap to the grid when placing a point
+[i]Double-click							[/i] Remove a timing point
+[i]Ctrl + Scroll wheel				[/i] Nudge the nearest point's offset. (shift = larger steps)
+[i]Alt + Scroll wheel					[/i] Change the last point's BPM. (shift = larger steps, ctrl = smaller steps)
 
-[i]Ctrl + A									[/i] Select all Timing Points
-[i]Delete / Backspace				[/i] Delete selected Timing Points
+With the cursor on a timing point (or while holding one):
+[i]Drag										[/i] Move the point along the timeline
+[i]Ctrl + Drag								[/i] Change its offset
+[i]Shift + Drag							[/i] Change its BPM (last point only)
+
+Beats between downbeats? Raise the \"Grid\" slider (e.g. to 2) to add points inside a measure.
+Set the time signature on the left (default 4/4).
+
+[font_size=25]Export[/font_size]
+Open the [i]File[/i] menu and pick an export.
+
+[font_size=25]Audio[/font_size]
+Set the volumes in the top right. The metronome plays every 1/4 note by default.
+[i]\"Playback\"								[/i] Change the playback rate
+[i]X												[/i] Toggle the playback rate between two states
+[i]Hold Z										[/i] Mute the metronome
+
+[font_size=25]Navigation & shortcuts[/font_size]
+[i]Scroll wheel							[/i] Move the timeline
+	[i]+ Shift									[/i] Jump 5 measures
+[i]Ctrl + S									[/i] Save project
 [i]Ctrl + Z / Y								[/i] Undo / Redo
-[i]Alt + Click + Drag					[/i] Select / Deselect Timing Points
-[i]Alt + Double Click				[/i] Deselect All Timing Points
-[i]Esc											[/i] Deselect All Timing Points
-[i]Ctrl + Scroll wheel				[/i] Change offset of nearest Timing Point
-	[i]+ Shift									[/i] Larger increments	
-[i]Alt + Scroll wheel					[/i] Change BPM of Timing Point (only if it is the last point)
-	[i]+ Shift / Ctrl						[/i] Larger / Smaller increments	
-[i]Alt + Click								[/i] (on a Timing Point) Select / Deselect
+[i]Ctrl + A									[/i] Select all timing points
+[i]Delete / Backspace				[/i] Delete selected timing points
+[i]Alt + Click + drag					[/i] Select / deselect timing points
+[i]Alt + Click								[/i] (on a timing point) Select / deselect
+[i]Alt + Double-click / Esc		[/i] Deselect all timing points
 
-When cursor is on a Timing Point (or holding one):
-[i]Ctrl + Click + Drag				[/i] Change offset of Timing Point
-[i]Shift + Click + Drag				[/i] Change BPM of Timing Point (only if it's last)
-
+The [i]File[/i] menu also has New Project, Open and Save As.
 
 [font_size=25]Options[/font_size]
-[b]Time Signature Changes Move Points [/b]
-When toggled, changing the time signature will move subsequent points such that the BPM is preserved instead of each point's position on the timeline.
+[b]Time Signature Changes Move Points[/b]
+When on, changing the time signature keeps each later point's BPM instead of its position.
 [font_size=6] [/font_size]
-[b]Metronome Follows Grid [/b] 
+[b]Metronome Follows Grid[/b]
 Metronome plays on every grid line instead of every 1/4 note.
 [font_size=6] [/font_size]
-[b]Show All Settings [/b] 
-Reveals additional timeline settings
+[b]Show All Settings[/b]
+Reveals additional timeline settings.
 
 "
 selection_enabled = true
