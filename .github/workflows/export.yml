@@ -15,7 +15,9 @@ jobs:
     if: github.ref_name == 'release'
     runs-on: ubuntu-latest
     permissions:
+      attestations: write
       contents: write
+      id-token: write
     name: Export Game
     env:
       GODOT_VERSION: 4.6.3-stable
@@ -83,6 +85,11 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag -a '${{ steps.version.outputs.tag }}' -m '${{ steps.version.outputs.tag }}'
           git push origin '${{ steps.version.outputs.tag }}'
+
+      - name: attest release artifacts
+        uses: actions/attest-build-provenance@v4.1.0
+        with:
+          subject-path: ${{ steps.export.outputs.archive_directory }}/*
 
       - name: create release
         id: release
