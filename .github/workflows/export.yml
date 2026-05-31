@@ -14,10 +14,11 @@ jobs:
   export_game:
     if: github.ref_name == 'release'
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      version: ${{ steps.version.outputs.version }}
     permissions:
-      attestations: write
-      contents: write
-      id-token: write
+      contents: read
     name: Export Game
     env:
       GODOT_VERSION: 4.6.3-stable
@@ -78,18 +79,122 @@ jobs:
           presets_to_export: Linux/X11,Windows,macOS
           archive_output: true
 
+      - name: upload raw export archives
+        uses: actions/upload-artifact@v4
+        with:
+          name: raw-export-archives
+          path: ${{ steps.export.outputs.archive_directory }}/*
+          if-no-files-found: error
+
+  package_release:
+    needs: export_game
+    runs-on: macos-latest
+    permissions:
+      attestations: write
+      contents: write
+      id-token: write
+    name: Package Release
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: download raw export archives
+        uses: actions/download-artifact@v4
+        with:
+          name: raw-export-archives
+          path: raw-export-archives
+
+      - name: re-sign macOS app and name release archives
+        id: artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          version='${{ needs.export_game.outputs.version }}'
+          release_dir="$RUNNER_TEMP/release-artifacts"
+          mac_work_dir="$RUNNER_TEMP/macos-work"
+          mkdir -p "$release_dir" "$mac_work_dir"
+
+          archives=()
+          while IFS= read -r -d '' archive; do
+            archives+=("$archive")
+          done < <(find raw-export-archives -type f -name '*.zip' -print0)
+
+          if [ "${#archives[@]}" -eq 0 ]; then
+            echo "No export archives were downloaded." >&2
+            exit 1
+          fi
+
+          mac_archive=''
+          for archive in "${archives[@]}"; do
+            archive_name="$(basename "$archive")"
+            if [ "${archive_name%.zip}" = 'macOS' ]; then
+              mac_archive="$archive"
+              break
+            fi
+          done
+
+          if [ -z "$mac_archive" ]; then
+            printf 'macOS export archive not found. Archives:' >&2
+            printf ' %s' "${archives[@]##*/}" >&2
+            printf '\n' >&2
+            exit 1
+          fi
+
+          for archive in "${archives[@]}"; do
+            if [ "$archive" = "$mac_archive" ]; then
+              continue
+            fi
+
+            base_name="$(basename "${archive%.zip}")"
+            case "$base_name" in
+              *Windows*) platform='Windows' ;;
+              *Linux*) platform='Linux' ;;
+              *) platform="$(printf '%s' "$base_name" | sed 's/[^0-9A-Za-z._-]/-/g')" ;;
+            esac
+
+            cp "$archive" "$release_dir/Tempora-v$version-$platform.zip"
+          done
+
+          ditto -x -k "$mac_archive" "$mac_work_dir"
+          app="$(find "$mac_work_dir" -type d -name '*.app' -print | head -n 1)"
+          if [ -z "$app" ]; then
+            echo "No .app bundle found in $(basename "$mac_archive")." >&2
+            exit 1
+          fi
+
+          xattr -cr "$app"
+          codesign --force --deep --sign - "$app"
+          codesign --verify --deep --strict --verbose=4 "$app"
+
+          signature="$(codesign -dv --verbose=4 "$app" 2>&1)"
+          if printf '%s\n' "$signature" | grep -Eq '\(adhoc,runtime\)|Runtime Version='; then
+            echo 'macOS app is still signed with hardened runtime.' >&2
+            exit 1
+          fi
+
+          mac_zip="$release_dir/Tempora-v$version-macOS.zip"
+          (
+            cd "$(dirname "$app")"
+            ditto -c -k --keepParent "$(basename "$app")" "$mac_zip"
+          )
+
+          echo "directory=$release_dir" >> "$GITHUB_OUTPUT"
+
       - name: push release tag
-        shell: pwsh
+        shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a '${{ steps.version.outputs.tag }}' -m '${{ steps.version.outputs.tag }}'
-          git push origin '${{ steps.version.outputs.tag }}'
+          git tag -a '${{ needs.export_game.outputs.tag }}' -m '${{ needs.export_game.outputs.tag }}'
+          git push origin '${{ needs.export_game.outputs.tag }}'
 
       - name: attest release artifacts
         uses: actions/attest-build-provenance@v4.1.0
         with:
-          subject-path: ${{ steps.export.outputs.archive_directory }}/*
+          subject-path: ${{ steps.artifacts.outputs.directory }}/*
 
       - name: create release
         id: release
@@ -99,19 +204,19 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           generateReleaseNotes: true
           immutableCreate: true
-          tag: ${{ steps.version.outputs.tag }}
+          tag: ${{ needs.export_game.outputs.tag }}
           commit: ${{ github.sha }}
           artifactErrorsFailBuild: true
-          artifacts: ${{ steps.export.outputs.archive_directory }}/*
+          artifacts: ${{ steps.artifacts.outputs.directory }}/*
 
       - name: rollback release tag after upload failure
         if: steps.release.outcome == 'failure'
-        shell: pwsh
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release delete '${{ steps.version.outputs.tag }}' --cleanup-tag --yes 2>$null
-          if ($LASTEXITCODE -ne 0) {
-            git push --delete origin '${{ steps.version.outputs.tag }}'
-          }
-          throw "Release upload failed; cleaned up release tag ${{ steps.version.outputs.tag }}."
+          if ! gh release delete '${{ needs.export_game.outputs.tag }}' --cleanup-tag --yes 2>/dev/null; then
+            git push --delete origin '${{ needs.export_game.outputs.tag }}'
+          fi
+          echo "Release upload failed; cleaned up release tag ${{ needs.export_game.outputs.tag }}." >&2
+          exit 1
