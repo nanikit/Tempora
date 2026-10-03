@@ -440,13 +440,15 @@ A timing point pins the music to the grid.
 [i]Click										[/i] Create a timing point
 [i]Hold Shift								[/i] Snap to the grid when placing a point
 [i]Double-click							[/i] Remove a timing point
-[i]Ctrl + Scroll wheel				[/i] Nudge the nearest point's offset. (shift = larger steps)
-[i]Alt + Scroll wheel					[/i] Change the last point's BPM. (shift = larger steps, ctrl = smaller steps)
+[i]Shift + Scroll wheel				[/i] Nudge the nearest point's offset, or its selection. (alt = larger steps)
+[i]Ctrl + Scroll wheel				[/i] Change the nearest point's BPM (last point only). (alt = larger steps, shift = smaller steps)
 
 With the cursor on a timing point (or while holding one):
 [i]Drag										[/i] Move the point along the timeline
-[i]Ctrl + Drag								[/i] Change its offset
-[i]Shift + Drag							[/i] Change its BPM (last point only)
+[i]Shift + Drag							[/i] Change its offset, or the selected points' offsets
+[i]Ctrl + Drag								[/i] Change its BPM (last point only)
+
+With Ctrl and Shift held together, BPM takes priority. Scroll shortcuts also work with trackpad scrolling.
 
 Beats between downbeats? Raise the \"Grid\" slider (e.g. to 2) to add points inside a measure.
 Set the time signature on the left (default 4/4).
@@ -462,7 +464,7 @@ Set the volumes in the top right. The metronome plays every 1/4 note by default.
 
 [font_size=25]Navigation & shortcuts[/font_size]
 [i]Scroll wheel							[/i] Move the timeline
-	[i]+ Shift									[/i] Jump 5 measures
+	[i]+ Alt									[/i] Jump 5 measures
 [i]Ctrl + S									[/i] Save project
 [i]Ctrl + Z / Y								[/i] Undo / Redo
 [i]Ctrl + A									[/i] Select all timing points

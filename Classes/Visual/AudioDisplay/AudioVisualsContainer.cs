@@ -65,20 +65,20 @@ public partial class AudioVisualsContainer : VBoxContainer
     {
         if (@event is InputEventMouseButton mouseEvent)
         {
-            if (mouseEvent.ButtonIndex == MouseButton.WheelDown && mouseEvent.Pressed && !Input.IsKeyPressed(Key.Ctrl) && !Input.IsKeyPressed(Key.Alt))
+            if (mouseEvent.ButtonIndex == MouseButton.WheelDown && mouseEvent.Pressed && !Input.IsKeyPressed(Key.Ctrl) && !Input.IsKeyPressed(Key.Shift))
             {
                 int distanceToLast = LastTopMeasure - NominalMeasurePositionStartForTopBlock;
-                NominalMeasurePositionStartForTopBlock += Math.Min(Input.IsKeyPressed(Key.Shift) ? 5 : 1, distanceToLast);
+                NominalMeasurePositionStartForTopBlock += Math.Min(Input.IsKeyPressed(Key.Alt) ? 5 : 1, distanceToLast);
                 GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.AudioVisualsContainerScrolled));
             }
-            else if (mouseEvent.ButtonIndex == MouseButton.WheelUp && mouseEvent.Pressed && !Input.IsKeyPressed(Key.Ctrl) && !Input.IsKeyPressed(Key.Alt))
+            else if (mouseEvent.ButtonIndex == MouseButton.WheelUp && mouseEvent.Pressed && !Input.IsKeyPressed(Key.Ctrl) && !Input.IsKeyPressed(Key.Shift))
             {
                 int distanceToFirst = NominalMeasurePositionStartForTopBlock - FirstTopMeasure;
-                NominalMeasurePositionStartForTopBlock -= Math.Min(Input.IsKeyPressed(Key.Shift) ? 5 : 1, distanceToFirst);
+                NominalMeasurePositionStartForTopBlock -= Math.Min(Input.IsKeyPressed(Key.Alt) ? 5 : 1, distanceToFirst);
                 GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.AudioVisualsContainerScrolled));
             }
         }
-        else if (@event is InputEventPanGesture panGesture && !Input.IsKeyPressed(Key.Ctrl) && !Input.IsKeyPressed(Key.Alt))
+        else if (@event is InputEventPanGesture panGesture && !Input.IsKeyPressed(Key.Ctrl) && !Input.IsKeyPressed(Key.Shift))
         {
             panGestureAccumulator += panGesture.Delta.Y;
             int steps = (int)panGestureAccumulator;
@@ -86,7 +86,7 @@ public partial class AudioVisualsContainer : VBoxContainer
                 return;
             panGestureAccumulator -= steps;
 
-            int scrollAmount = Input.IsKeyPressed(Key.Shift) ? steps * 5 : steps;
+            int scrollAmount = Input.IsKeyPressed(Key.Alt) ? steps * 5 : steps;
             if (scrollAmount > 0)
             {
                 int distanceToLast = LastTopMeasure - NominalMeasurePositionStartForTopBlock;

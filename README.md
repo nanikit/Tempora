@@ -32,6 +32,7 @@ You can also build and run the project from an IDE such as Visual Studio. This m
 ### Audio
 - Open an .mp3 or .ogg file via `File -> Open...` or by dragging the file into Tempora from a File Explorer.
 - Navigate the audio by scrolling and hovering over the audio with the mouse.
+- Hold Alt while scrolling to move 5 measures at a time. Trackpad scrolling uses the same shortcuts as the scroll wheel.
 - Playback the audio by right-clicking the audio.
 - Stop playback by pressing space.
 
@@ -48,8 +49,10 @@ Tempora works by associating points of time in the music to the musical timeline
 - Add a timing point by clicking on a point of time in the music. The point will snap to the nearest measure division.
 - Delete a timing point by double-clicking
 - Click and drag a timing point to change its position on the musical timeline (music position)
-- Control + click and drag a timing point to change its offset in the audio (offset in seconds)
-- Control + scroll when hovering the audio to change the offset of the nearest timing point.
+- Shift + click and drag a timing point to change its offset in the audio (offset in seconds). If the point is selected with other points, their offsets change together.
+- Shift + scroll when hovering the audio to change the offset of the nearest timing point, or its selection. Add Alt for larger steps.
+- Control + click and drag the last timing point to change its BPM.
+- Control + scroll near the last timing point to change its BPM. Add Alt for larger steps, or Shift for smaller steps. Control takes priority when both Control and Shift are held.
 
 ### Other features
 - Select multiple timing points with Alt+Clicking and dragging
