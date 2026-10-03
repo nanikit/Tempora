@@ -1,7 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://sumijiej7v46"]
-
-[sub_resource type="Resource" id="Resource_6l1er"]
-metadata/__load_path__ = "res://Classes/Visual/Components/FontSizeComponent.cs"
-
-[node name="FontSizeComponent" type="Node"]
-script = SubResource("Resource_6l1er")
