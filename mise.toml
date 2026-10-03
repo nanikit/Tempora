@@ -12,6 +12,44 @@ run = "dotnet build Tempora.csproj -c Debug"
 description = "Run gdUnit4 C# tests"
 run = 'dotnet test Tempora.csproj --settings .runsettings -e GODOT_BIN={{ tools["http:godot-mono"].path }}/Godot_v{{ tools["http:godot-mono"].version }}_mono_win64_console.exe'
 
+[tasks.release]
+description = "Bump an already published version, commit, and push main and release"
+shell = "pwsh -NoProfile -Command"
+run = '''
+$ErrorActionPreference = 'Stop'
+$PSNativeCommandUseErrorActionPreference = $true
+
+if ((git branch --show-current) -ne 'main') {
+  throw 'Run mise release from the main branch.'
+}
+if (git status --porcelain) {
+  throw 'Commit or stash pending changes before releasing.'
+}
+
+$project = [IO.File]::ReadAllText((Join-Path $PWD 'project.godot'))
+if ($project -notmatch '(?m)^config/version="([^"]+)"\r?$') {
+  throw 'project.godot must define application config/version.'
+}
+$originalVersion = $Matches[1]
+$version = $originalVersion
+$parsedVersion = [System.Management.Automation.SemanticVersion]::Parse($version)
+$remoteTags = @(git ls-remote --tags --refs origin | ForEach-Object { ($_ -split '\s+')[1] })
+while ($remoteTags -contains "refs/tags/v$version") {
+  $version = '{0}.{1}.{2}' -f $parsedVersion.Major, $parsedVersion.Minor, ($parsedVersion.Patch + 1)
+  $parsedVersion = [System.Management.Automation.SemanticVersion]::Parse($version)
+}
+
+if ($version -ne $originalVersion) {
+  $project = $project.Replace("config/version=`"$originalVersion`"", "config/version=`"$version`"")
+  [IO.File]::WriteAllText((Join-Path $PWD 'project.godot'), $project)
+  git add -- project.godot
+  git commit -m "chore: release v$version"
+}
+
+# Keep both branches on the same commit if either update is rejected.
+git push --atomic origin HEAD:refs/heads/main HEAD:refs/heads/release
+'''
+
 [tasks.export]
 # Export may finish while the Godot console wrapper keeps waiting for the .NET build server.
 # https://github.com/godotengine/godot/issues/110101
