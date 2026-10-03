@@ -230,6 +230,12 @@ public partial class AudioDisplayPanel : Control
         bool alt = Input.IsKeyPressed(Key.Alt);
         if (Input.IsKeyPressed(Key.Ctrl))
         {
+            if (!Timing.Instance.CanBpmBeChangedManually(nearestTimingPoint))
+            {
+                Project.Instance.ShowNotification("Can only change BPM of last timing point.", 1d);
+                return;
+            }
+
             double previousBpm = nearestTimingPoint.Bpm;
             double newBpm = !alt && Input.IsKeyPressed(Key.Shift)
                 ? previousBpm + (steps * 0.1d)

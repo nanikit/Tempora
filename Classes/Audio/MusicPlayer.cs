@@ -219,8 +219,9 @@ public partial class MusicPlayer : AudioStreamPlayer
             return;
         }
         string? fileName = Path.GetFileName(Project.Instance.ProjectPath);
-        Project.Instance.NotificationMessage = fileName == null
-            ? "Audio loaded!"
-            : $"Audio loaded! You are currently editing {fileName}";
+        if (fileName == null)
+            Project.Instance.NotificationMessage = "Audio loaded!";
+        else
+            Project.Instance.ShowNotification("Audio loaded! You are currently editing {0}", arguments: [fileName]);
     }
 }

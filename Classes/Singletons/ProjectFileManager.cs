@@ -93,23 +93,38 @@ public partial class ProjectFileManager : Node
         {
             case SaveConfig.project:
                 SaveFileDialog.CurrentDir = Settings.Instance.ProjectFilesDirectory;
-                SaveFileDialog.Title = "Save Project";
                 break;
             case SaveConfig.osz:
                 SaveFileDialog.CurrentDir = Settings.Instance.OszFilesDirectory;
-                SaveFileDialog.Title = "Export osz";
                 break;
             case SaveConfig.beatSaber:
                 SaveFileDialog.CurrentDir = Settings.Instance.BeatSaberFilesDirectory;
-                SaveFileDialog.Title = $"Export Beat Saber (v{Settings.Instance.BeatSaberExportFormat})";
                 break;
             case SaveConfig.guitarGame:
                 SaveFileDialog.CurrentDir = Settings.Instance.GuitarGameFilesDirectory;
-                SaveFileDialog.Title = $"Export Guitar Game (.chart))";
                 break;
         }
         latestSaveConfig = config;
+        UpdateSaveDialogTitle();
         SaveFileDialog.Popup();
+    }
+
+    public override void _Notification(int what)
+    {
+        if (what == NotificationTranslationChanged && IsNodeReady())
+            UpdateSaveDialogTitle();
+    }
+
+    private void UpdateSaveDialogTitle()
+    {
+        SaveFileDialog.Title = latestSaveConfig switch
+        {
+            SaveConfig.project => Tr("Save Project"),
+            SaveConfig.osz => Tr("Export osz"),
+            SaveConfig.beatSaber => string.Format(Tr("Export Beat Saber (v{0})"), Settings.Instance.BeatSaberExportFormat),
+            SaveConfig.guitarGame => Tr("Export Guitar Game (.chart)"),
+            _ => throw new ArgumentOutOfRangeException(nameof(latestSaveConfig))
+        };
     }
     private void OnSaveFilePathSelected(string selectedPath)
     {
@@ -231,7 +246,7 @@ public partial class ProjectFileManager : Node
         SaveProject(filePath);
 
         Project.Instance.ProjectPath = filePath;
-        Project.Instance.NotificationMessage = $"Saved to {filePath}";
+        Project.Instance.ShowNotification("Saved to {0}", arguments: [filePath]);
     }
 
     private static void SaveProject(string filePath)
@@ -450,7 +465,7 @@ public partial class ProjectFileManager : Node
             MusicPlayer.Instance.Pause();
         Project.Instance.ProjectPath = filePath;
         LoadProjectFromFile(projectFile, filePath);
-        Project.Instance.NotificationMessage = $"Loaded {filePath}";
+        Project.Instance.ShowNotification("Loaded {0}", arguments: [filePath]);
     }
 
     private enum ParseMode

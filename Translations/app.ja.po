@@ -1,0 +1,582 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Tempora\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: ja\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "HELP_BODY"
+msgstr ""
+"[center][font_size=40]Tempora[/font_size]\n"
+"作者: kongehund[/center]\n"
+"\n"
+"[font_size=25]はじめに[/font_size]\n"
+".mp3 または .ogg ファイルを Tempora にドラッグして曲を読み込みます。\n"
+"各行は1小節です。赤線は小節の始まりを示します。\n"
+"各小節の1拍目を赤線に合わせてから、リズムゲーム用にエクスポートします。\n"
+"\n"
+"[font_size=25]再生[/font_size]\n"
+"[i]Space[/i] — 再生 / 停止\n"
+"[i]右クリック[/i] — クリックした位置から再生\n"
+"\n"
+"[font_size=25]タイミング調整[/font_size]\n"
+"タイミングポイントは曲の特定の位置をグリッドに固定します。\n"
+"1. 曲を聴いて小節の1拍目を探します。\n"
+"2. その位置をクリックするか、赤線をドラッグします。\n"
+"3. 各小節の1拍目で繰り返します。\n"
+"4. 再生してずれを調整します。必要に応じて再生速度を下げてください。\n"
+"\n"
+"[i]クリック[/i] — タイミングポイントを作成\n"
+"[i]Shift を押す[/i] — ポイント配置時にグリッドに合わせる\n"
+"[i]ダブルクリック[/i] — タイミングポイントを削除\n"
+"[i]Shift + ホイール[/i] — 最も近いポイント、または選択したポイント群のオフセットを調整（Alt: 大きく変更）\n"
+"[i]Ctrl + ホイール[/i] — 最も近いポイントの BPM を調整、最後のポイントのみ（Alt: 大きく変更、Shift: 細かく変更）\n"
+"\n"
+"ポイントにカーソルを合わせているとき、またはポイントをつかんでいるとき:\n"
+"[i]ドラッグ[/i] — 時間軸に沿ってポイントを移動\n"
+"[i]Shift + ドラッグ[/i] — そのポイント、または選択したポイント群のオフセットを調整\n"
+"[i]Ctrl + ドラッグ[/i] — BPM を調整、最後のポイントのみ\n"
+"\n"
+"ホイールのショートカットはトラックパッドのスクロールでも使えます。\n"
+"\n"
+"小節内にポイントを追加するには「グリッド」スライダーを上げてください（例: 2）。\n"
+"左側で拍子を設定できます。初期値は4/4です。\n"
+"\n"
+"[font_size=25]エクスポート[/font_size]\n"
+"[i]ファイル[/i] メニューからエクスポート形式を選びます。\n"
+"\n"
+"[font_size=25]オーディオ[/font_size]\n"
+"右上で音量を調整します。メトロノームは通常、4分音符ごとに鳴ります。\n"
+"[i]「再生速度」[/i] — 再生速度を変更\n"
+"[i]X[/i] — 2つの再生速度の状態を切り替え\n"
+"[i]Z を押す[/i] — 押している間メトロノームをミュート\n"
+"\n"
+"[font_size=25]移動とショートカット[/font_size]\n"
+"[i]ホイール[/i] — 時間軸を移動（Alt: 5小節ずつ）\n"
+"[i]Ctrl + S[/i] — プロジェクトを保存\n"
+"[i]Ctrl + Z / Y[/i] — 元に戻す / やり直す\n"
+"[i]Ctrl + A[/i] — すべてのタイミングポイントを選択\n"
+"[i]Delete / Backspace[/i] — 選択したタイミングポイントを削除\n"
+"[i]Alt + クリックしてドラッグ[/i] — タイミングポイントを選択 / 選択解除\n"
+"[i]Alt + クリック[/i] — そのタイミングポイントを選択 / 選択解除\n"
+"[i]Alt + ダブルクリック / Esc[/i] — すべての選択を解除\n"
+"\n"
+"[i]ファイル[/i] メニューには新規プロジェクト、開く、名前を付けて保存もあります。\n"
+"\n"
+"[font_size=25]オプション[/font_size]\n"
+"[b]拍子変更時に BPM を維持[/b]\n"
+"有効にすると、拍子の変更時に後続ポイントの位置ではなく BPM を維持します。\n"
+"[font_size=6] [/font_size]\n"
+"[b]メトロノームをグリッドに合わせる[/b]\n"
+"メトロノームが4分音符の位置ではなく、各グリッド線で鳴ります。\n"
+"[font_size=6] [/font_size]\n"
+"[b]すべての設定を表示[/b]\n"
+"時間軸の追加設定を表示します。\n"
+
+msgid "HELP_TITLE"
+msgstr "ヘルプ"
+
+msgid "LANGUAGE_MENU"
+msgstr "言語 / Language"
+
+msgid "HELP_AUTOMATIC"
+msgstr "自動（システム）"
+
+msgid "Can only change BPM of last timing point."
+msgstr "BPM を変更できるのは最後のタイミングポイントのみです。"
+
+msgid "File"
+msgstr "ファイル"
+
+msgid "Options"
+msgstr "オプション"
+
+msgid "New Project"
+msgstr "新規プロジェクト"
+
+msgid "Open..."
+msgstr "開く..."
+
+msgid "Save As..."
+msgstr "名前を付けて保存..."
+
+msgid "Export & Open .osz"
+msgstr ".osz をエクスポートして開く"
+
+msgid "Export .osz..."
+msgstr ".osz をエクスポート..."
+
+msgid "Export Beat Saber..."
+msgstr "Beat Saber 用にエクスポート..."
+
+msgid "Export Guitar Game (.chart)..."
+msgstr "ギターゲーム用にエクスポート (.chart)..."
+
+msgid "Export Settings"
+msgstr "エクスポート設定"
+
+msgid "Preserve BPM on new time signature"
+msgstr "拍子変更時に BPM を維持"
+
+msgid "Metronome Follows Grid"
+msgstr "メトロノームをグリッドに合わせる"
+
+msgid "Auto-scroll when adding timing points"
+msgstr "タイミングポイント追加時に自動スクロール"
+
+msgid "Round BPM to nearest 0.1"
+msgstr "BPM を小数第1位に丸める"
+
+msgid "Show All Settings"
+msgstr "すべての設定を表示"
+
+msgid "Playback when adding points"
+msgstr "ポイント追加時に再生"
+
+msgid "Spectrogram View"
+msgstr "スペクトログラム表示"
+
+msgid "Spectrogram Settings..."
+msgstr "スペクトログラム設定..."
+
+msgid "Double BPM"
+msgstr "BPM を2倍にする"
+
+msgid "Halve BPM"
+msgstr "BPM を半分にする"
+
+msgid "Delete Timing Points"
+msgstr "タイミングポイントを削除"
+
+msgid "Delete Timing Point"
+msgstr "タイミングポイントを削除"
+
+msgid "Select all points from beginning to here"
+msgstr "先頭からここまでのポイントを選択"
+
+msgid "Extend selection to the beginning"
+msgstr "選択範囲を先頭まで拡張"
+
+msgid "Select all points from here to the end"
+msgstr "ここから末尾までのポイントを選択"
+
+msgid "Extend selection to the end"
+msgstr "選択範囲を末尾まで拡張"
+
+msgid "Grid"
+msgstr "グリッド"
+
+msgid "Playback"
+msgstr "再生速度"
+
+msgid "Rows"
+msgstr "行数"
+
+msgid "Offset"
+msgstr "オフセット"
+
+msgid "Overlap"
+msgstr "重なり"
+
+msgid "{0}:"
+msgstr "{0}:"
+
+msgid "Distance between grid lines"
+msgstr "グリッド線の間隔"
+
+msgid "Playback rate. Press X to toggle between two states."
+msgstr "再生速度。X キーで2つの速度を切り替えます。"
+
+msgid "Number of audio rows to display"
+msgstr "表示するオーディオの行数"
+
+msgid "Offsets the start of each row by X% into the previous measure."
+msgstr "各行の開始位置を前の小節へ X% ずらします。"
+
+msgid "How much of the previous and next measure to show at the beginning and end of each row."
+msgstr "各行の先頭と末尾に表示する、前後の小節の範囲"
+
+msgid "Music"
+msgstr "音楽"
+
+msgid "Metronome"
+msgstr "メトロノーム"
+
+msgid "Master"
+msgstr "全体"
+
+msgid "Music Volume"
+msgstr "音楽の音量"
+
+msgid "Metronome Volume. Hold Z to mute temporarily."
+msgstr "メトロノームの音量。Z キーを押している間はミュートします。"
+
+msgid "Master Volume"
+msgstr "全体の音量"
+
+msgid "Help"
+msgstr "ヘルプ"
+
+msgid "General"
+msgstr "一般"
+
+msgid "Main"
+msgstr "基本"
+
+msgid "Timing Point Efficiency"
+msgstr "タイミングポイントの最適化"
+
+msgid "Remove points that change nothing"
+msgstr "変化のないポイントを削除"
+
+msgid "Export offset [ms] (Default: -14)"
+msgstr "エクスポートのオフセット [ms]（初期値: -14）"
+
+msgid "Add metronome resets on unsupported time signatures"
+msgstr "非対応の拍子にメトロノームのリセットを追加"
+
+msgid "Nightcore & main menu compatibility"
+msgstr "Nightcore とメインメニューの互換性"
+
+msgid "Add extra points on downbeats"
+msgstr "小節の1拍目にポイントを追加"
+
+msgid "Add extra points on quarter notes"
+msgstr "4分音符の位置にポイントを追加"
+
+msgid "Omit barlines on non-downbeats"
+msgstr "小節の1拍目以外の小節線を省略"
+
+msgid "Taiko & Mania Compatibility"
+msgstr "Taiko と Mania の互換性"
+
+msgid "Prevent double barlines"
+msgstr "小節線の重複を防ぐ"
+
+msgid "Beat Saber Settings"
+msgstr "Beat Saber 設定"
+
+msgid "Beat Saber Info.dat export format"
+msgstr "Beat Saber Info.dat のエクスポート形式"
+
+msgid "Reset to Defaults"
+msgstr "初期値に戻す"
+
+msgid "Visual Settings"
+msgstr "表示設定"
+
+msgid "Spectrogram"
+msgstr "スペクトログラム"
+
+msgid "stepSize (Default: 64)"
+msgstr "移動幅（初期値: 64）"
+
+msgid "fftSize (Default: 256)"
+msgstr "FFT サイズ（初期値: 256）"
+
+msgid "maxFreq (Default: 2200)"
+msgstr "最大周波数（初期値: 2200）"
+
+msgid "Intensity (Default: 5)"
+msgstr "強度（初期値: 5）"
+
+msgid "Apply"
+msgstr "適用"
+
+msgid "Reset timing?"
+msgstr "タイミングをリセットしますか？"
+
+msgid "Save Project"
+msgstr "プロジェクトを保存"
+
+msgid "Export osz"
+msgstr "osz をエクスポート"
+
+msgid "Export Beat Saber (v{0})"
+msgstr "Beat Saber 用にエクスポート (v{0})"
+
+msgid "Export Guitar Game (.chart)"
+msgstr "ギターゲーム用にエクスポート (.chart)"
+
+msgid "Saved to {0}"
+msgstr "{0} に保存しました。"
+
+msgid "Loaded {0}"
+msgstr "{0} を読み込みました。"
+
+msgid "Audio loaded!"
+msgstr "オーディオを読み込みました！"
+
+msgid "Audio loaded! You are currently editing {0}"
+msgstr "オーディオを読み込みました！現在 {0} を編集中です。"
+
+msgid "Note: convert audio file to .ogg in Audacity"
+msgstr "注意: Audacity でオーディオファイルを .ogg に変換してください。"
+
+msgid "Saved visual options."
+msgstr "表示設定を保存しました。"
+
+msgid "Visual options were not saved."
+msgstr "表示設定は保存されませんでした。"
+
+msgid "Saved export options."
+msgstr "エクスポート設定を保存しました。"
+
+msgid "Export options were not saved."
+msgstr "エクスポート設定は保存されませんでした。"
+
+msgid "Open"
+msgstr "開く"
+
+msgid "Save"
+msgstr "保存"
+
+msgid "Cancel"
+msgstr "キャンセル"
+
+msgid "OK"
+msgstr "OK"
+
+msgid "Ok"
+msgstr "OK"
+
+msgid "Open a File"
+msgstr "ファイルを開く"
+
+msgid "Save a File"
+msgstr "ファイルを保存"
+
+msgid "File:"
+msgstr "ファイル:"
+
+msgid "File name:"
+msgstr "ファイル名:"
+
+msgid "Path:"
+msgstr "パス:"
+
+msgid "Drive"
+msgstr "ドライブ"
+
+msgid "All Files"
+msgstr "すべてのファイル"
+
+msgid "All Recognized"
+msgstr "対応するすべてのファイル"
+
+msgid "Go to previous folder."
+msgstr "前のフォルダーに移動"
+
+msgid "Go to next folder."
+msgstr "次のフォルダーに移動"
+
+msgid "Go to parent folder."
+msgstr "親フォルダーに移動"
+
+msgid "Refresh files."
+msgstr "ファイルを更新"
+
+msgid "(Un)favorite current folder."
+msgstr "現在のフォルダーをお気に入りに追加・解除"
+
+msgid "Create a new folder."
+msgstr "新しいフォルダーを作成"
+
+msgid "Favorites:"
+msgstr "お気に入り:"
+
+msgid "Recent:"
+msgstr "最近の項目:"
+
+msgid "Directories & Files:"
+msgstr "フォルダーとファイル:"
+
+msgid "Toggle the visibility of hidden files."
+msgstr "隠しファイルの表示を切り替え"
+
+msgid "View items as a grid of thumbnails."
+msgstr "サムネイルのグリッドで表示"
+
+msgid "View items as a list."
+msgstr "一覧で表示"
+
+msgid "Toggle the visibility of the filter for file names."
+msgstr "ファイル名フィルターの表示を切り替え"
+
+msgid "Sort files"
+msgstr "ファイルの並べ替え"
+
+msgid "Sort by Name (Ascending)"
+msgstr "名前順（昇順）"
+
+msgid "Sort by Name (Descending)"
+msgstr "名前順（降順）"
+
+msgid "Sort by Type (Ascending)"
+msgstr "種類順（昇順）"
+
+msgid "Sort by Type (Descending)"
+msgstr "種類順（降順）"
+
+msgid "Sort by Modified Time (Newest First)"
+msgstr "更新日時順（新しい順）"
+
+msgid "Sort by Modified Time (Oldest First)"
+msgstr "更新日時順（古い順）"
+
+msgid "Filter:"
+msgstr "フィルター:"
+
+msgid "Filename Filter:"
+msgstr "ファイル名フィルター:"
+
+msgid "Create Folder"
+msgstr "フォルダーを作成"
+
+msgid "Name:"
+msgstr "名前:"
+
+msgid "Could not create folder."
+msgstr "フォルダーを作成できませんでした。"
+
+msgid "Invalid extension, or empty filename."
+msgstr "拡張子が無効か、ファイル名が空です。"
+
+msgid "Copy Path"
+msgstr "パスをコピー"
+
+msgid "Delete"
+msgstr "削除"
+
+msgid "New Folder..."
+msgstr "新しいフォルダー..."
+
+msgid "Refresh"
+msgstr "更新"
+
+msgid "Open in File Manager"
+msgstr "ファイルマネージャーで開く"
+
+msgid "Show in File Manager"
+msgstr "ファイルマネージャーで表示"
+
+msgid "Show Package Contents"
+msgstr "パッケージの内容を表示"
+
+msgid "You don't have permission to access contents of this folder."
+msgstr "このフォルダーの内容にアクセスする権限がありません。"
+
+msgid "Cut"
+msgstr "切り取り"
+
+msgid "Copy"
+msgstr "コピー"
+
+msgid "Paste"
+msgstr "貼り付け"
+
+msgid "Select All"
+msgstr "すべて選択"
+
+msgid "Clear"
+msgstr "クリア"
+
+msgid "Undo"
+msgstr "元に戻す"
+
+msgid "Redo"
+msgstr "やり直す"
+
+msgid "Text Writing Direction"
+msgstr "文字の方向"
+
+msgid "Same as Layout Direction"
+msgstr "レイアウト方向と同じ"
+
+msgid "Auto-Detect Direction"
+msgstr "方向を自動検出"
+
+msgid "Left-to-Right"
+msgstr "左から右"
+
+msgid "Right-to-Left"
+msgstr "右から左"
+
+msgid "Display Control Characters"
+msgstr "制御文字を表示"
+
+msgid "Insert Control Character"
+msgstr "制御文字を挿入"
+
+msgid "Emoji & Symbols"
+msgstr "絵文字と記号"
+
+msgid "Left-to-Right Mark (LRM)"
+msgstr "左から右へのマーク (LRM)"
+
+msgid "Right-to-Left Mark (RLM)"
+msgstr "右から左へのマーク (RLM)"
+
+msgid "Start of Left-to-Right Embedding (LRE)"
+msgstr "左から右への埋め込み開始 (LRE)"
+
+msgid "Start of Right-to-Left Embedding (RLE)"
+msgstr "右から左への埋め込み開始 (RLE)"
+
+msgid "Start of Left-to-Right Override (LRO)"
+msgstr "左から右への上書き開始 (LRO)"
+
+msgid "Start of Right-to-Left Override (RLO)"
+msgstr "右から左への上書き開始 (RLO)"
+
+msgid "Pop Direction Formatting (PDF)"
+msgstr "方向書式を終了 (PDF)"
+
+msgid "Arabic Letter Mark (ALM)"
+msgstr "アラビア文字マーク (ALM)"
+
+msgid "Left-to-Right Isolate (LRI)"
+msgstr "左から右への分離 (LRI)"
+
+msgid "Right-to-Left Isolate (RLI)"
+msgstr "右から左への分離 (RLI)"
+
+msgid "First Strong Isolate (FSI)"
+msgstr "最初の強い方向で分離 (FSI)"
+
+msgid "Pop Direction Isolate (PDI)"
+msgstr "方向分離を終了 (PDI)"
+
+msgid "Zero-Width Joiner (ZWJ)"
+msgstr "幅ゼロの接合子 (ZWJ)"
+
+msgid "Zero-Width Non-Joiner (ZWNJ)"
+msgstr "幅ゼロの非接合子 (ZWNJ)"
+
+msgid "Word Joiner (WJ)"
+msgstr "単語結合子 (WJ)"
+
+msgid "Soft Hyphen (SHY)"
+msgstr "ソフトハイフン (SHY)"
+
+msgid ""
+"File \"%s\" already exists.\n"
+"Do you want to overwrite it?"
+msgstr ""
+"ファイル「%s」はすでに存在します。\n"
+"上書きしますか？"
+
+msgid ""
+"Delete the selected file?\n"
+"Depending on your filesystem configuration, the files will either be moved to the system trash or deleted permanently."
+msgstr ""
+"選択したファイルを削除しますか？\n"
+"ファイルシステムの設定に応じて、ゴミ箱に移動するか完全に削除します。"
+
+msgid "Alert!"
+msgstr "通知"
+
+msgid "Please Confirm..."
+msgstr "確認してください..."

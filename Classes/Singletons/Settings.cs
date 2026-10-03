@@ -41,6 +41,18 @@ public partial class Settings : Node
     private double metronomeVolumeNormalized = 1f;
     private double masterVolumeNormalized = 0.25f;
     private int beatsaberExportFormat = 4;
+    private string language = "automatic";
+
+    public string Language
+    {
+        get => language;
+        set
+        {
+            language = value;
+            TranslationServer.SetLocale(value == "automatic" ? OS.GetLocale() : value);
+            SaveSettings();
+        }
+    }
 
     public static Settings Instance { get => instance; set => instance = value; }
     public static readonly Dictionary<int, int> GridSliderToDivisorDict = new() {
@@ -280,6 +292,7 @@ public partial class Settings : Node
 
     private enum Setting
     {
+        Language,
         ProjectFilesDirectory,
         OszFilesDirectory,
         BeatSaberFilesDirectory,
@@ -313,6 +326,8 @@ public partial class Settings : Node
     }
     private Dictionary<Setting, string> settingStrings = new()
        {
+        // Keep the persisted key used by existing language preferences.
+        {Setting.Language, "HelpLanguage"},
         {Setting.ProjectFilesDirectory, "ProjectFilesDirectory"},
         {Setting.OszFilesDirectory, "OszFilesDirectory"},
         {Setting.BeatSaberFilesDirectory, "BeatSaberFilesDirectory"},
@@ -354,6 +369,7 @@ public partial class Settings : Node
     {
         Instance = this;
         LoadSettings();
+        TranslationServer.SetLocale(language == "automatic" ? OS.GetLocale() : language);
         ApplyVolumeSettingsToAudioServer();
     }
 
@@ -381,6 +397,9 @@ public partial class Settings : Node
 
             switch (lineSplit[0])
             {
+                case var value when value == settingStrings[Setting.Language]:
+                    Language = lineSplit[1];
+                    break;
                 case var value when value == settingStrings[Setting.ProjectFilesDirectory]:
                     ProjectFilesDirectory = lineSplit[1];
                     break;
@@ -502,6 +521,7 @@ public partial class Settings : Node
     public void SaveSettings()
     {
         string settingsFile = "";
+        settingsFile += GetSettingsFileLine(settingStrings[Setting.Language], Language);
         settingsFile += GetSettingsFileLine(settingStrings[Setting.ProjectFilesDirectory], ProjectFilesDirectory);
         settingsFile += GetSettingsFileLine(settingStrings[Setting.OszFilesDirectory], OszFilesDirectory);
         settingsFile += GetSettingsFileLine(settingStrings[Setting.BeatSaberFilesDirectory], BeatSaberFilesDirectory);

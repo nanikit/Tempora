@@ -29,12 +29,23 @@ public partial class MessageLabel : Label
         Project.Instance.NotificationMessageChanged += OnNotificationMessageChanged;
     }
 
+    public override void _ExitTree()
+    {
+        Project.Instance.NotificationMessageChanged -= OnNotificationMessageChanged;
+    }
+
+    public override void _Notification(int what)
+    {
+        if (what == NotificationTranslationChanged && IsNodeReady())
+            Text = Project.Instance.NotificationMessage;
+    }
+
     private void OnNotificationMessageChanged(object? sender, EventArgs e) => DisplayMessage();
 
     private void DisplayMessage()
     {
         Text = Project.Instance.NotificationMessage;
-        timer.Start();
+        timer.Start(Project.Instance.NotificationDuration);
         Visible = true;
     }
 

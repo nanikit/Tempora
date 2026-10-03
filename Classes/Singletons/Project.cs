@@ -47,16 +47,23 @@ public partial class Project : Node
     }
 
     public event EventHandler NotificationMessageChanged = null!;
-    private string notificationMessage = null!;
+    private string notificationMessage = "";
+    private object[] notificationArguments = [];
 
     public string NotificationMessage
     {
-        get => notificationMessage;
-        set
-        {
-            notificationMessage = value;
-            NotificationMessageChanged?.Invoke(this, EventArgs.Empty);
-        }
+        get => string.Format(Tr(notificationMessage), notificationArguments);
+        set => ShowNotification(value);
+    }
+
+    public double NotificationDuration { get; private set; } = 2.5d;
+
+    public void ShowNotification(string message, double duration = 2.5d, object[]? arguments = null)
+    {
+        notificationMessage = message;
+        notificationArguments = arguments ?? [];
+        NotificationDuration = duration;
+        NotificationMessageChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public static Project Instance { get => instance; set => instance = value; }

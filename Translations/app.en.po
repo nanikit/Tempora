@@ -1,0 +1,584 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Tempora\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "HELP_BODY"
+msgstr ""
+"[center][font_size=40]Tempora[/font_size]\n"
+"by kongehund[/center]\n"
+"\n"
+"[font_size=25]Getting started[/font_size]\n"
+"Drag an .mp3 or .ogg file into Tempora to load a song.\n"
+"Each row is one measure. The red line marks where a measure starts.\n"
+"A downbeat is the first beat you hear in a measure. Match each downbeat to the red line, then export for your rhythm game.\n"
+"\n"
+"[font_size=25]Listen[/font_size]\n"
+"[i]Space\t\t\t\t\t\t\t\t\t\t[/i] Start / stop playback\n"
+"[i]Right-click\t\t\t\t\t\t\t\t[/i] Start playback from the clicked position\n"
+"\n"
+"[font_size=25]Timing[/font_size]\n"
+"A timing point pins the music to the grid.\n"
+"1. Find a downbeat by ear.\n"
+"2. Click that position or drag the red line.\n"
+"3. Repeat for every downbeat.\n"
+"4. Play back (slow it down if needed) and fix any drift.\n"
+"\n"
+"[i]Click\t\t\t\t\t\t\t\t\t\t[/i] Create a timing point\n"
+"[i]Hold Shift\t\t\t\t\t\t\t\t[/i] Snap to the grid when placing a point\n"
+"[i]Double-click\t\t\t\t\t\t\t[/i] Remove a timing point\n"
+"[i]Shift + Scroll wheel\t\t\t\t[/i] Nudge the nearest point's offset, or its selection. (alt = larger steps)\n"
+"[i]Ctrl + Scroll wheel\t\t\t\t[/i] Change the nearest point's BPM (last point only). (alt = larger steps, shift = smaller steps)\n"
+"\n"
+"With the cursor on a timing point (or while holding one):\n"
+"[i]Drag\t\t\t\t\t\t\t\t\t\t[/i] Move the point along the timeline\n"
+"[i]Shift + Drag\t\t\t\t\t\t\t[/i] Change its offset, or the selected points' offsets\n"
+"[i]Ctrl + Drag\t\t\t\t\t\t\t\t[/i] Change its BPM (last point only)\n"
+"\n"
+"Scroll shortcuts also work with trackpad scrolling.\n"
+"\n"
+"Beats between downbeats? Raise the \"Grid\" slider (e.g. to 2) to add points inside a measure.\n"
+"Set the time signature on the left (default 4/4).\n"
+"\n"
+"[font_size=25]Export[/font_size]\n"
+"Open the [i]File[/i] menu and pick an export.\n"
+"\n"
+"[font_size=25]Audio[/font_size]\n"
+"Set the volumes in the top right. The metronome plays every 1/4 note by default.\n"
+"[i]\"Playback\"\t\t\t\t\t\t\t\t[/i] Change the playback rate\n"
+"[i]X\t\t\t\t\t\t\t\t\t\t\t\t[/i] Toggle the playback rate between two states\n"
+"[i]Hold Z\t\t\t\t\t\t\t\t\t\t[/i] Mute the metronome\n"
+"\n"
+"[font_size=25]Navigation & shortcuts[/font_size]\n"
+"[i]Scroll wheel\t\t\t\t\t\t\t[/i] Move the timeline\n"
+"\t[i]+ Alt\t\t\t\t\t\t\t\t\t[/i] Jump 5 measures\n"
+"[i]Ctrl + S\t\t\t\t\t\t\t\t\t[/i] Save project\n"
+"[i]Ctrl + Z / Y\t\t\t\t\t\t\t\t[/i] Undo / Redo\n"
+"[i]Ctrl + A\t\t\t\t\t\t\t\t\t[/i] Select all timing points\n"
+"[i]Delete / Backspace\t\t\t\t[/i] Delete selected timing points\n"
+"[i]Alt + Click + drag\t\t\t\t\t[/i] Select / deselect timing points\n"
+"[i]Alt + Click\t\t\t\t\t\t\t\t[/i] (on a timing point) Select / deselect\n"
+"[i]Alt + Double-click / Esc\t\t[/i] Deselect all timing points\n"
+"\n"
+"The [i]File[/i] menu also has New Project, Open and Save As.\n"
+"\n"
+"[font_size=25]Options[/font_size]\n"
+"[b]Preserve BPM on new time signature[/b]\n"
+"When on, changing the time signature keeps each later point's BPM instead of its position.\n"
+"[font_size=6] [/font_size]\n"
+"[b]Metronome Follows Grid[/b]\n"
+"Metronome plays at every grid line instead of at quarter-note positions.\n"
+"[font_size=6] [/font_size]\n"
+"[b]Show All Settings[/b]\n"
+"Reveals additional timeline settings.\n"
+"\n"
+
+msgid "HELP_TITLE"
+msgstr "Help"
+
+msgid "LANGUAGE_MENU"
+msgstr "Language"
+
+msgid "HELP_AUTOMATIC"
+msgstr "Automatic (system)"
+
+msgid "Can only change BPM of last timing point."
+msgstr "Can only change BPM of last timing point."
+
+msgid "File"
+msgstr "File"
+
+msgid "Options"
+msgstr "Options"
+
+msgid "New Project"
+msgstr "New Project"
+
+msgid "Open..."
+msgstr "Open..."
+
+msgid "Save As..."
+msgstr "Save As..."
+
+msgid "Export & Open .osz"
+msgstr "Export & Open .osz"
+
+msgid "Export .osz..."
+msgstr "Export .osz..."
+
+msgid "Export Beat Saber..."
+msgstr "Export Beat Saber..."
+
+msgid "Export Guitar Game (.chart)..."
+msgstr "Export Guitar Game (.chart)..."
+
+msgid "Export Settings"
+msgstr "Export Settings"
+
+msgid "Preserve BPM on new time signature"
+msgstr "Preserve BPM on new time signature"
+
+msgid "Metronome Follows Grid"
+msgstr "Metronome Follows Grid"
+
+msgid "Auto-scroll when adding timing points"
+msgstr "Auto-scroll when adding timing points"
+
+msgid "Round BPM to nearest 0.1"
+msgstr "Round BPM to nearest 0.1"
+
+msgid "Show All Settings"
+msgstr "Show All Settings"
+
+msgid "Playback when adding points"
+msgstr "Playback when adding points"
+
+msgid "Spectrogram View"
+msgstr "Spectrogram View"
+
+msgid "Spectrogram Settings..."
+msgstr "Spectrogram Settings..."
+
+msgid "Double BPM"
+msgstr "Double BPM"
+
+msgid "Halve BPM"
+msgstr "Halve BPM"
+
+msgid "Delete Timing Points"
+msgstr "Delete Timing Points"
+
+msgid "Delete Timing Point"
+msgstr "Delete Timing Point"
+
+msgid "Select all points from beginning to here"
+msgstr "Select all points from beginning to here"
+
+msgid "Extend selection to the beginning"
+msgstr "Extend selection to the beginning"
+
+msgid "Select all points from here to the end"
+msgstr "Select all points from here to the end"
+
+msgid "Extend selection to the end"
+msgstr "Extend selection to the end"
+
+msgid "Grid"
+msgstr "Grid"
+
+msgid "Playback"
+msgstr "Playback"
+
+msgid "Rows"
+msgstr "Rows"
+
+msgid "Offset"
+msgstr "Offset"
+
+msgid "Overlap"
+msgstr "Overlap"
+
+msgid "{0}:"
+msgstr "{0}:"
+
+msgid "Distance between grid lines"
+msgstr "Distance between grid lines"
+
+msgid "Playback rate. Press X to toggle between two states."
+msgstr "Playback rate. Press X to toggle between two states."
+
+msgid "Number of audio rows to display"
+msgstr "Number of audio rows to display"
+
+msgid "Offsets the start of each row by X% into the previous measure."
+msgstr "Offsets the start of each row by X% into the previous measure."
+
+msgid "How much of the previous and next measure to show at the beginning and end of each row."
+msgstr "How much of the previous and next measure to show at the beginning and end of each row."
+
+msgid "Music"
+msgstr "Music"
+
+msgid "Metronome"
+msgstr "Metronome"
+
+msgid "Master"
+msgstr "Master"
+
+msgid "Music Volume"
+msgstr "Music Volume"
+
+msgid "Metronome Volume. Hold Z to mute temporarily."
+msgstr "Metronome Volume. Hold Z to mute temporarily."
+
+msgid "Master Volume"
+msgstr "Master Volume"
+
+msgid "Help"
+msgstr "Help"
+
+msgid "General"
+msgstr "General"
+
+msgid "Main"
+msgstr "Main"
+
+msgid "Timing Point Efficiency"
+msgstr "Timing Point Efficiency"
+
+msgid "Remove points that change nothing"
+msgstr "Remove points that change nothing"
+
+msgid "Export offset [ms] (Default: -14)"
+msgstr "Export offset [ms] (Default: -14)"
+
+msgid "Add metronome resets on unsupported time signatures"
+msgstr "Add metronome resets on unsupported time signatures"
+
+msgid "Nightcore & main menu compatibility"
+msgstr "Nightcore & main menu compatibility"
+
+msgid "Add extra points on downbeats"
+msgstr "Add extra points on downbeats"
+
+msgid "Add extra points on quarter notes"
+msgstr "Add extra points on quarter notes"
+
+msgid "Omit barlines on non-downbeats"
+msgstr "Omit barlines on non-downbeats"
+
+msgid "Taiko & Mania Compatibility"
+msgstr "Taiko & Mania Compatibility"
+
+msgid "Prevent double barlines"
+msgstr "Prevent double barlines"
+
+msgid "Beat Saber Settings"
+msgstr "Beat Saber Settings"
+
+msgid "Beat Saber Info.dat export format"
+msgstr "Beat Saber Info.dat export format"
+
+msgid "Reset to Defaults"
+msgstr "Reset to Defaults"
+
+msgid "Visual Settings"
+msgstr "Visual Settings"
+
+msgid "Spectrogram"
+msgstr "Spectrogram"
+
+msgid "stepSize (Default: 64)"
+msgstr "Step size (Default: 64)"
+
+msgid "fftSize (Default: 256)"
+msgstr "FFT size (Default: 256)"
+
+msgid "maxFreq (Default: 2200)"
+msgstr "Maximum frequency (Default: 2200)"
+
+msgid "Intensity (Default: 5)"
+msgstr "Intensity (Default: 5)"
+
+msgid "Apply"
+msgstr "Apply"
+
+msgid "Reset timing?"
+msgstr "Reset timing?"
+
+msgid "Save Project"
+msgstr "Save Project"
+
+msgid "Export osz"
+msgstr "Export osz"
+
+msgid "Export Beat Saber (v{0})"
+msgstr "Export Beat Saber (v{0})"
+
+msgid "Export Guitar Game (.chart)"
+msgstr "Export Guitar Game (.chart)"
+
+msgid "Saved to {0}"
+msgstr "Saved to {0}"
+
+msgid "Loaded {0}"
+msgstr "Loaded {0}"
+
+msgid "Audio loaded!"
+msgstr "Audio loaded!"
+
+msgid "Audio loaded! You are currently editing {0}"
+msgstr "Audio loaded! You are currently editing {0}"
+
+msgid "Note: convert audio file to .ogg in Audacity"
+msgstr "Note: convert audio file to .ogg in Audacity"
+
+msgid "Saved visual options."
+msgstr "Saved visual options."
+
+msgid "Visual options were not saved."
+msgstr "Visual options were not saved."
+
+msgid "Saved export options."
+msgstr "Saved export options."
+
+msgid "Export options were not saved."
+msgstr "Export options were not saved."
+
+msgid "Open"
+msgstr "Open"
+
+msgid "Save"
+msgstr "Save"
+
+msgid "Cancel"
+msgstr "Cancel"
+
+msgid "OK"
+msgstr "OK"
+
+msgid "Ok"
+msgstr "Ok"
+
+msgid "Open a File"
+msgstr "Open a File"
+
+msgid "Save a File"
+msgstr "Save a File"
+
+msgid "File:"
+msgstr "File:"
+
+msgid "File name:"
+msgstr "File name:"
+
+msgid "Path:"
+msgstr "Path:"
+
+msgid "Drive"
+msgstr "Drive"
+
+msgid "All Files"
+msgstr "All Files"
+
+msgid "All Recognized"
+msgstr "All Recognized"
+
+msgid "Go to previous folder."
+msgstr "Go to previous folder."
+
+msgid "Go to next folder."
+msgstr "Go to next folder."
+
+msgid "Go to parent folder."
+msgstr "Go to parent folder."
+
+msgid "Refresh files."
+msgstr "Refresh files."
+
+msgid "(Un)favorite current folder."
+msgstr "(Un)favorite current folder."
+
+msgid "Create a new folder."
+msgstr "Create a new folder."
+
+msgid "Favorites:"
+msgstr "Favorites:"
+
+msgid "Recent:"
+msgstr "Recent:"
+
+msgid "Directories & Files:"
+msgstr "Directories & Files:"
+
+msgid "Toggle the visibility of hidden files."
+msgstr "Toggle the visibility of hidden files."
+
+msgid "View items as a grid of thumbnails."
+msgstr "View items as a grid of thumbnails."
+
+msgid "View items as a list."
+msgstr "View items as a list."
+
+msgid "Toggle the visibility of the filter for file names."
+msgstr "Toggle the visibility of the filter for file names."
+
+msgid "Sort files"
+msgstr "Sort files"
+
+msgid "Sort by Name (Ascending)"
+msgstr "Sort by Name (Ascending)"
+
+msgid "Sort by Name (Descending)"
+msgstr "Sort by Name (Descending)"
+
+msgid "Sort by Type (Ascending)"
+msgstr "Sort by Type (Ascending)"
+
+msgid "Sort by Type (Descending)"
+msgstr "Sort by Type (Descending)"
+
+msgid "Sort by Modified Time (Newest First)"
+msgstr "Sort by Modified Time (Newest First)"
+
+msgid "Sort by Modified Time (Oldest First)"
+msgstr "Sort by Modified Time (Oldest First)"
+
+msgid "Filter:"
+msgstr "Filter:"
+
+msgid "Filename Filter:"
+msgstr "Filename Filter:"
+
+msgid "Create Folder"
+msgstr "Create Folder"
+
+msgid "Name:"
+msgstr "Name:"
+
+msgid "Could not create folder."
+msgstr "Could not create folder."
+
+msgid "Invalid extension, or empty filename."
+msgstr "Invalid extension, or empty filename."
+
+msgid "Copy Path"
+msgstr "Copy Path"
+
+msgid "Delete"
+msgstr "Delete"
+
+msgid "New Folder..."
+msgstr "New Folder..."
+
+msgid "Refresh"
+msgstr "Refresh"
+
+msgid "Open in File Manager"
+msgstr "Open in File Manager"
+
+msgid "Show in File Manager"
+msgstr "Show in File Manager"
+
+msgid "Show Package Contents"
+msgstr "Show Package Contents"
+
+msgid "You don't have permission to access contents of this folder."
+msgstr "You don't have permission to access contents of this folder."
+
+msgid "Cut"
+msgstr "Cut"
+
+msgid "Copy"
+msgstr "Copy"
+
+msgid "Paste"
+msgstr "Paste"
+
+msgid "Select All"
+msgstr "Select All"
+
+msgid "Clear"
+msgstr "Clear"
+
+msgid "Undo"
+msgstr "Undo"
+
+msgid "Redo"
+msgstr "Redo"
+
+msgid "Text Writing Direction"
+msgstr "Text Writing Direction"
+
+msgid "Same as Layout Direction"
+msgstr "Same as Layout Direction"
+
+msgid "Auto-Detect Direction"
+msgstr "Auto-Detect Direction"
+
+msgid "Left-to-Right"
+msgstr "Left-to-Right"
+
+msgid "Right-to-Left"
+msgstr "Right-to-Left"
+
+msgid "Display Control Characters"
+msgstr "Display Control Characters"
+
+msgid "Insert Control Character"
+msgstr "Insert Control Character"
+
+msgid "Emoji & Symbols"
+msgstr "Emoji & Symbols"
+
+msgid "Left-to-Right Mark (LRM)"
+msgstr "Left-to-Right Mark (LRM)"
+
+msgid "Right-to-Left Mark (RLM)"
+msgstr "Right-to-Left Mark (RLM)"
+
+msgid "Start of Left-to-Right Embedding (LRE)"
+msgstr "Start of Left-to-Right Embedding (LRE)"
+
+msgid "Start of Right-to-Left Embedding (RLE)"
+msgstr "Start of Right-to-Left Embedding (RLE)"
+
+msgid "Start of Left-to-Right Override (LRO)"
+msgstr "Start of Left-to-Right Override (LRO)"
+
+msgid "Start of Right-to-Left Override (RLO)"
+msgstr "Start of Right-to-Left Override (RLO)"
+
+msgid "Pop Direction Formatting (PDF)"
+msgstr "Pop Direction Formatting (PDF)"
+
+msgid "Arabic Letter Mark (ALM)"
+msgstr "Arabic Letter Mark (ALM)"
+
+msgid "Left-to-Right Isolate (LRI)"
+msgstr "Left-to-Right Isolate (LRI)"
+
+msgid "Right-to-Left Isolate (RLI)"
+msgstr "Right-to-Left Isolate (RLI)"
+
+msgid "First Strong Isolate (FSI)"
+msgstr "First Strong Isolate (FSI)"
+
+msgid "Pop Direction Isolate (PDI)"
+msgstr "Pop Direction Isolate (PDI)"
+
+msgid "Zero-Width Joiner (ZWJ)"
+msgstr "Zero-Width Joiner (ZWJ)"
+
+msgid "Zero-Width Non-Joiner (ZWNJ)"
+msgstr "Zero-Width Non-Joiner (ZWNJ)"
+
+msgid "Word Joiner (WJ)"
+msgstr "Word Joiner (WJ)"
+
+msgid "Soft Hyphen (SHY)"
+msgstr "Soft Hyphen (SHY)"
+
+msgid ""
+"File \"%s\" already exists.\n"
+"Do you want to overwrite it?"
+msgstr ""
+"File \"%s\" already exists.\n"
+"Do you want to overwrite it?"
+
+msgid ""
+"Delete the selected file?\n"
+"Depending on your filesystem configuration, the files will either be moved to the system trash or deleted permanently."
+msgstr ""
+"Delete the selected file?\n"
+"Depending on your filesystem configuration, the files will either be moved to the system trash or deleted permanently."
+
+msgid "Alert!"
+msgstr "Alert!"
+
+msgid "Please Confirm..."
+msgstr "Please Confirm..."

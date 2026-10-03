@@ -1,0 +1,582 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Tempora\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "HELP_BODY"
+msgstr ""
+"[center][font_size=40]Tempora[/font_size]\n"
+"作者: kongehund[/center]\n"
+"\n"
+"[font_size=25]開始使用[/font_size]\n"
+"將 .mp3 或 .ogg 檔案拖入 Tempora 以載入歌曲。\n"
+"每列代表一小節。紅線表示小節的起點。\n"
+"將每小節的第一拍對齊紅線，然後匯出供節奏遊戲使用。\n"
+"\n"
+"[font_size=25]播放[/font_size]\n"
+"[i]Space[/i] — 播放 / 停止\n"
+"[i]按滑鼠右鍵[/i] — 從點擊位置開始播放\n"
+"\n"
+"[font_size=25]校準節奏[/font_size]\n"
+"時間點將歌曲中的特定位置固定到格線上。\n"
+"1. 聆聽歌曲，找到小節的第一拍。\n"
+"2. 點擊該位置或拖曳紅線。\n"
+"3. 對每小節的第一拍重複操作。\n"
+"4. 播放並修正偏差，必要時降低播放速度。\n"
+"\n"
+"[i]點擊[/i] — 建立時間點\n"
+"[i]按住 Shift[/i] — 放置時間點時貼齊格線\n"
+"[i]連按兩下[/i] — 刪除時間點\n"
+"[i]Shift + 滾輪[/i] — 調整最近的時間點或所選時間點群組的偏移（Alt: 大幅調整）\n"
+"[i]Ctrl + 滾輪[/i] — 調整最近時間點的 BPM，僅限最後一個時間點（Alt: 大幅調整，Shift: 微調）\n"
+"\n"
+"游標位於時間點上，或正在按住時間點時:\n"
+"[i]拖曳[/i] — 沿時間軸移動時間點\n"
+"[i]Shift + 拖曳[/i] — 調整該時間點或所選時間點群組的偏移\n"
+"[i]Ctrl + 拖曳[/i] — 調整 BPM，僅限最後一個時間點\n"
+"\n"
+"滾輪快捷鍵也適用於觸控板捲動。\n"
+"\n"
+"要在小節內部新增時間點，請提高「格線」滑桿的數值，例如設為 2。\n"
+"在左側設定拍號，預設為 4/4。\n"
+"\n"
+"[font_size=25]匯出[/font_size]\n"
+"開啟 [i]檔案[/i] 選單並選擇匯出格式。\n"
+"\n"
+"[font_size=25]音訊[/font_size]\n"
+"在右上角調整音量。節拍器預設每四分音符響一次。\n"
+"[i]「播放速度」[/i] — 調整播放速度\n"
+"[i]X[/i] — 在兩種播放速度狀態間切換\n"
+"[i]按住 Z[/i] — 按住期間將節拍器靜音\n"
+"\n"
+"[font_size=25]導覽與快捷鍵[/font_size]\n"
+"[i]滾輪[/i] — 移動時間軸（Alt: 每次移動 5 小節）\n"
+"[i]Ctrl + S[/i] — 儲存專案\n"
+"[i]Ctrl + Z / Y[/i] — 復原 / 重做\n"
+"[i]Ctrl + A[/i] — 選取所有時間點\n"
+"[i]Delete / Backspace[/i] — 刪除所選時間點\n"
+"[i]Alt + 點擊並拖曳[/i] — 選取 / 取消選取時間點\n"
+"[i]Alt + 點擊[/i] — 選取 / 取消選取該時間點\n"
+"[i]Alt + 連按兩下 / Esc[/i] — 取消所有選取\n"
+"\n"
+"[i]檔案[/i] 選單還提供新增專案、開啟和另存新檔。\n"
+"\n"
+"[font_size=25]選項[/font_size]\n"
+"[b]變更拍號時保留 BPM[/b]\n"
+"啟用後，變更拍號時會保留後續時間點的 BPM，而非其位置。\n"
+"[font_size=6] [/font_size]\n"
+"[b]節拍器跟隨格線[/b]\n"
+"節拍器在每條格線處響起，而非在四分音符的位置響起。\n"
+"[font_size=6] [/font_size]\n"
+"[b]顯示所有設定[/b]\n"
+"顯示更多時間軸設定。\n"
+
+msgid "HELP_TITLE"
+msgstr "說明"
+
+msgid "LANGUAGE_MENU"
+msgstr "語言 / Language"
+
+msgid "HELP_AUTOMATIC"
+msgstr "自動（系統）"
+
+msgid "Can only change BPM of last timing point."
+msgstr "只能修改最後一個時間點的 BPM。"
+
+msgid "File"
+msgstr "檔案"
+
+msgid "Options"
+msgstr "選項"
+
+msgid "New Project"
+msgstr "新增專案"
+
+msgid "Open..."
+msgstr "開啟..."
+
+msgid "Save As..."
+msgstr "另存新檔..."
+
+msgid "Export & Open .osz"
+msgstr "匯出並開啟 .osz"
+
+msgid "Export .osz..."
+msgstr "匯出 .osz..."
+
+msgid "Export Beat Saber..."
+msgstr "匯出為 Beat Saber..."
+
+msgid "Export Guitar Game (.chart)..."
+msgstr "匯出為吉他遊戲 (.chart)..."
+
+msgid "Export Settings"
+msgstr "匯出設定"
+
+msgid "Preserve BPM on new time signature"
+msgstr "變更拍號時保留 BPM"
+
+msgid "Metronome Follows Grid"
+msgstr "節拍器跟隨格線"
+
+msgid "Auto-scroll when adding timing points"
+msgstr "新增時間點時自動捲動"
+
+msgid "Round BPM to nearest 0.1"
+msgstr "將 BPM 四捨五入至小數點後一位"
+
+msgid "Show All Settings"
+msgstr "顯示所有設定"
+
+msgid "Playback when adding points"
+msgstr "新增時間點時播放"
+
+msgid "Spectrogram View"
+msgstr "頻譜圖檢視"
+
+msgid "Spectrogram Settings..."
+msgstr "頻譜圖設定..."
+
+msgid "Double BPM"
+msgstr "BPM 加倍"
+
+msgid "Halve BPM"
+msgstr "BPM 減半"
+
+msgid "Delete Timing Points"
+msgstr "刪除多個時間點"
+
+msgid "Delete Timing Point"
+msgstr "刪除時間點"
+
+msgid "Select all points from beginning to here"
+msgstr "選取從開頭到此處的所有時間點"
+
+msgid "Extend selection to the beginning"
+msgstr "將選取範圍延伸至開頭"
+
+msgid "Select all points from here to the end"
+msgstr "選取從此處到結尾的所有時間點"
+
+msgid "Extend selection to the end"
+msgstr "將選取範圍延伸至結尾"
+
+msgid "Grid"
+msgstr "格線"
+
+msgid "Playback"
+msgstr "播放速度"
+
+msgid "Rows"
+msgstr "列數"
+
+msgid "Offset"
+msgstr "偏移"
+
+msgid "Overlap"
+msgstr "重疊"
+
+msgid "{0}:"
+msgstr "{0}："
+
+msgid "Distance between grid lines"
+msgstr "格線之間的間距"
+
+msgid "Playback rate. Press X to toggle between two states."
+msgstr "播放速度。按 X 在兩種速度狀態間切換。"
+
+msgid "Number of audio rows to display"
+msgstr "顯示的音訊列數"
+
+msgid "Offsets the start of each row by X% into the previous measure."
+msgstr "將每列的起點向前一小節移動 X%。"
+
+msgid "How much of the previous and next measure to show at the beginning and end of each row."
+msgstr "每列開頭和結尾顯示的前後小節範圍"
+
+msgid "Music"
+msgstr "音樂"
+
+msgid "Metronome"
+msgstr "節拍器"
+
+msgid "Master"
+msgstr "主音量"
+
+msgid "Music Volume"
+msgstr "音樂音量"
+
+msgid "Metronome Volume. Hold Z to mute temporarily."
+msgstr "節拍器音量。按住 Z 暫時靜音。"
+
+msgid "Master Volume"
+msgstr "主音量"
+
+msgid "Help"
+msgstr "說明"
+
+msgid "General"
+msgstr "一般"
+
+msgid "Main"
+msgstr "基本"
+
+msgid "Timing Point Efficiency"
+msgstr "時間點最佳化"
+
+msgid "Remove points that change nothing"
+msgstr "移除未產生變化的時間點"
+
+msgid "Export offset [ms] (Default: -14)"
+msgstr "匯出偏移 [ms]（預設值：-14）"
+
+msgid "Add metronome resets on unsupported time signatures"
+msgstr "為不支援的拍號新增節拍器重設"
+
+msgid "Nightcore & main menu compatibility"
+msgstr "Nightcore 與主選單相容性"
+
+msgid "Add extra points on downbeats"
+msgstr "在小節第一拍新增額外時間點"
+
+msgid "Add extra points on quarter notes"
+msgstr "在四分音符位置新增額外時間點"
+
+msgid "Omit barlines on non-downbeats"
+msgstr "省略小節第一拍以外的小節線"
+
+msgid "Taiko & Mania Compatibility"
+msgstr "Taiko 與 Mania 相容性"
+
+msgid "Prevent double barlines"
+msgstr "防止小節線重疊"
+
+msgid "Beat Saber Settings"
+msgstr "Beat Saber 設定"
+
+msgid "Beat Saber Info.dat export format"
+msgstr "Beat Saber Info.dat 匯出格式"
+
+msgid "Reset to Defaults"
+msgstr "還原預設值"
+
+msgid "Visual Settings"
+msgstr "視覺化設定"
+
+msgid "Spectrogram"
+msgstr "頻譜圖"
+
+msgid "stepSize (Default: 64)"
+msgstr "步長（預設值：64）"
+
+msgid "fftSize (Default: 256)"
+msgstr "FFT 大小（預設值：256）"
+
+msgid "maxFreq (Default: 2200)"
+msgstr "最高頻率（預設值：2200）"
+
+msgid "Intensity (Default: 5)"
+msgstr "強度（預設值：5）"
+
+msgid "Apply"
+msgstr "套用"
+
+msgid "Reset timing?"
+msgstr "重設時間點？"
+
+msgid "Save Project"
+msgstr "儲存專案"
+
+msgid "Export osz"
+msgstr "匯出 osz"
+
+msgid "Export Beat Saber (v{0})"
+msgstr "匯出為 Beat Saber (v{0})"
+
+msgid "Export Guitar Game (.chart)"
+msgstr "匯出為吉他遊戲 (.chart)"
+
+msgid "Saved to {0}"
+msgstr "已儲存至 {0}"
+
+msgid "Loaded {0}"
+msgstr "已載入 {0}"
+
+msgid "Audio loaded!"
+msgstr "音訊已載入！"
+
+msgid "Audio loaded! You are currently editing {0}"
+msgstr "音訊已載入！目前正在編輯 {0}"
+
+msgid "Note: convert audio file to .ogg in Audacity"
+msgstr "提示：請在 Audacity 中將音訊檔案轉換為 .ogg。"
+
+msgid "Saved visual options."
+msgstr "已儲存視覺化設定。"
+
+msgid "Visual options were not saved."
+msgstr "未儲存視覺化設定。"
+
+msgid "Saved export options."
+msgstr "已儲存匯出設定。"
+
+msgid "Export options were not saved."
+msgstr "未儲存匯出設定。"
+
+msgid "Open"
+msgstr "開啟"
+
+msgid "Save"
+msgstr "儲存"
+
+msgid "Cancel"
+msgstr "取消"
+
+msgid "OK"
+msgstr "確定"
+
+msgid "Ok"
+msgstr "確定"
+
+msgid "Open a File"
+msgstr "開啟檔案"
+
+msgid "Save a File"
+msgstr "儲存檔案"
+
+msgid "File:"
+msgstr "檔案："
+
+msgid "File name:"
+msgstr "檔案名稱："
+
+msgid "Path:"
+msgstr "路徑："
+
+msgid "Drive"
+msgstr "磁碟機"
+
+msgid "All Files"
+msgstr "所有檔案"
+
+msgid "All Recognized"
+msgstr "所有支援的檔案"
+
+msgid "Go to previous folder."
+msgstr "移至上一個資料夾"
+
+msgid "Go to next folder."
+msgstr "移至下一個資料夾"
+
+msgid "Go to parent folder."
+msgstr "移至上層資料夾"
+
+msgid "Refresh files."
+msgstr "重新整理檔案"
+
+msgid "(Un)favorite current folder."
+msgstr "新增或取消目前資料夾收藏"
+
+msgid "Create a new folder."
+msgstr "建立新資料夾"
+
+msgid "Favorites:"
+msgstr "收藏："
+
+msgid "Recent:"
+msgstr "最近使用："
+
+msgid "Directories & Files:"
+msgstr "資料夾與檔案："
+
+msgid "Toggle the visibility of hidden files."
+msgstr "切換隱藏檔案的顯示"
+
+msgid "View items as a grid of thumbnails."
+msgstr "以縮圖格線顯示"
+
+msgid "View items as a list."
+msgstr "以清單顯示"
+
+msgid "Toggle the visibility of the filter for file names."
+msgstr "切換檔案名稱篩選器的顯示"
+
+msgid "Sort files"
+msgstr "檔案排序"
+
+msgid "Sort by Name (Ascending)"
+msgstr "依名稱排序（遞增）"
+
+msgid "Sort by Name (Descending)"
+msgstr "依名稱排序（遞減）"
+
+msgid "Sort by Type (Ascending)"
+msgstr "依類型排序（遞增）"
+
+msgid "Sort by Type (Descending)"
+msgstr "依類型排序（遞減）"
+
+msgid "Sort by Modified Time (Newest First)"
+msgstr "依修改時間排序（最新優先）"
+
+msgid "Sort by Modified Time (Oldest First)"
+msgstr "依修改時間排序（最舊優先）"
+
+msgid "Filter:"
+msgstr "篩選："
+
+msgid "Filename Filter:"
+msgstr "檔案名稱篩選："
+
+msgid "Create Folder"
+msgstr "建立資料夾"
+
+msgid "Name:"
+msgstr "名稱："
+
+msgid "Could not create folder."
+msgstr "無法建立資料夾。"
+
+msgid "Invalid extension, or empty filename."
+msgstr "副檔名無效或檔案名稱空白。"
+
+msgid "Copy Path"
+msgstr "複製路徑"
+
+msgid "Delete"
+msgstr "刪除"
+
+msgid "New Folder..."
+msgstr "新增資料夾..."
+
+msgid "Refresh"
+msgstr "重新整理"
+
+msgid "Open in File Manager"
+msgstr "在檔案管理員中開啟"
+
+msgid "Show in File Manager"
+msgstr "在檔案管理員中顯示"
+
+msgid "Show Package Contents"
+msgstr "顯示套件內容"
+
+msgid "You don't have permission to access contents of this folder."
+msgstr "您沒有權限存取此資料夾的內容。"
+
+msgid "Cut"
+msgstr "剪下"
+
+msgid "Copy"
+msgstr "複製"
+
+msgid "Paste"
+msgstr "貼上"
+
+msgid "Select All"
+msgstr "全選"
+
+msgid "Clear"
+msgstr "清除"
+
+msgid "Undo"
+msgstr "復原"
+
+msgid "Redo"
+msgstr "重做"
+
+msgid "Text Writing Direction"
+msgstr "文字書寫方向"
+
+msgid "Same as Layout Direction"
+msgstr "與版面配置方向相同"
+
+msgid "Auto-Detect Direction"
+msgstr "自動偵測方向"
+
+msgid "Left-to-Right"
+msgstr "由左至右"
+
+msgid "Right-to-Left"
+msgstr "由右至左"
+
+msgid "Display Control Characters"
+msgstr "顯示控制字元"
+
+msgid "Insert Control Character"
+msgstr "插入控制字元"
+
+msgid "Emoji & Symbols"
+msgstr "表情符號與符號"
+
+msgid "Left-to-Right Mark (LRM)"
+msgstr "由左至右標記 (LRM)"
+
+msgid "Right-to-Left Mark (RLM)"
+msgstr "由右至左標記 (RLM)"
+
+msgid "Start of Left-to-Right Embedding (LRE)"
+msgstr "由左至右嵌入起始 (LRE)"
+
+msgid "Start of Right-to-Left Embedding (RLE)"
+msgstr "由右至左嵌入起始 (RLE)"
+
+msgid "Start of Left-to-Right Override (LRO)"
+msgstr "由左至右覆寫起始 (LRO)"
+
+msgid "Start of Right-to-Left Override (RLO)"
+msgstr "由右至左覆寫起始 (RLO)"
+
+msgid "Pop Direction Formatting (PDF)"
+msgstr "結束方向格式 (PDF)"
+
+msgid "Arabic Letter Mark (ALM)"
+msgstr "阿拉伯字母標記 (ALM)"
+
+msgid "Left-to-Right Isolate (LRI)"
+msgstr "由左至右隔離 (LRI)"
+
+msgid "Right-to-Left Isolate (RLI)"
+msgstr "由右至左隔離 (RLI)"
+
+msgid "First Strong Isolate (FSI)"
+msgstr "首個強方向隔離 (FSI)"
+
+msgid "Pop Direction Isolate (PDI)"
+msgstr "結束方向隔離 (PDI)"
+
+msgid "Zero-Width Joiner (ZWJ)"
+msgstr "零寬連接符 (ZWJ)"
+
+msgid "Zero-Width Non-Joiner (ZWNJ)"
+msgstr "零寬非連接符 (ZWNJ)"
+
+msgid "Word Joiner (WJ)"
+msgstr "單字連接符 (WJ)"
+
+msgid "Soft Hyphen (SHY)"
+msgstr "軟連字號 (SHY)"
+
+msgid ""
+"File \"%s\" already exists.\n"
+"Do you want to overwrite it?"
+msgstr ""
+"檔案「%s」已存在。\n"
+"是否覆寫？"
+
+msgid ""
+"Delete the selected file?\n"
+"Depending on your filesystem configuration, the files will either be moved to the system trash or deleted permanently."
+msgstr ""
+"刪除所選檔案？\n"
+"依檔案系統設定，檔案將移至垃圾桶或永久刪除。"
+
+msgid "Alert!"
+msgstr "提示"
+
+msgid "Please Confirm..."
+msgstr "請確認..."

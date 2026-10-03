@@ -6,7 +6,7 @@
 
 [tasks.build]
 description = "Build C# project"
-run = "dotnet build Tempora.csproj"
+run = "dotnet build Tempora.csproj -c Debug"
 
 [tasks.test]
 description = "Run gdUnit4 C# tests"
@@ -14,6 +14,8 @@ run = 'dotnet test Tempora.csproj --settings .runsettings -e GODOT_BIN={{ tools[
 
 [tasks.export]
 description = "Export Windows release with Godot Mono"
+# Godot serializes C# exported properties using the editor's Debug assembly.
+depends = ["build"]
 shell = "pwsh -NoProfile -Command"
 usage = '''
 arg "[preset]" default="Windows"

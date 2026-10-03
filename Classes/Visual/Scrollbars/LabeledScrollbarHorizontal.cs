@@ -50,10 +50,16 @@ public partial class LabeledScrollbarHorizontal : HBoxContainer
         hScrollBar.MaxValue = maxValue;
         hScrollBar.Step = step;
         outsideTitleLabel.Text = title;
-        insideTitleLabel.Text = $"{title}:";
+        insideTitleLabel.Text = $"{Tr(title)}:";
 
         outsideTitleLabel.Visible = !showTitleInside;
         insideTitleLabel.Visible = showTitleInside;
+    }
+
+    public override void _Notification(int what)
+    {
+        if (what == NotificationTranslationChanged && IsNodeReady())
+            insideTitleLabel.Text = $"{Tr(title)}:";
     }
 
     protected virtual void OnValueChanged(double value)

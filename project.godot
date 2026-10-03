@@ -48,6 +48,12 @@ window/size/viewport_height=720
 
 project/assembly_name="Tempora"
 
+[internationalization]
+
+locale/translations=PackedStringArray("res://Translations/app.en.po", "res://Translations/app.ko.po", "res://Translations/app.ja.po", "res://Translations/app.zh_CN.po", "res://Translations/app.zh_TW.po")
+locale/fallback="en"
+locale/include_text_server_data=true
+
 [rendering]
 
 renderer/rendering_method="gl_compatibility"
