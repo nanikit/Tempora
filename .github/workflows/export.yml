@@ -11,8 +11,45 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  export_game:
+  wait_for_test:
+    name: Wait for main Test
     if: github.ref_name == 'release'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      actions: write
+    steps:
+      - name: wait for Test on the release commit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          run_id=$(gh run list --workflow test.yml --branch main --event push \
+            --commit "$GITHUB_SHA" --limit 1 --json databaseId --jq '.[0].databaseId // empty')
+          if [ -z "$run_id" ]; then
+            # Path filters may skip Test; pin its checkout even if main has advanced.
+            run_id=$(gh api --method POST "repos/$GH_REPO/actions/workflows/test.yml/dispatches" \
+              -H 'X-GitHub-Api-Version: 2026-03-10' \
+              -f ref=main -f "inputs[commit]=$GITHUB_SHA" --jq '.workflow_run_id')
+          fi
+          echo "Waiting for Test run $run_id on $GITHUB_SHA..."
+
+          while true; do
+            result=$(gh run view "$run_id" --json status,conclusion \
+              --jq 'if .status == "completed" then .conclusion else "pending" end')
+            case "$result" in
+              success) exit 0 ;;
+              pending) echo "Waiting for main Test on $GITHUB_SHA..." ;;
+              *) echo "main Test did not succeed: $result" >&2; exit 1 ;;
+            esac
+            sleep 30
+          done
+
+  export_game:
+    needs: wait_for_test
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.version.outputs.tag }}

@@ -33,6 +33,12 @@ on:
       - "export_presets.cfg"
       - "mise.toml"
       - "project.godot"
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: Commit SHA to test for a release
+        required: true
+        type: string
 
 jobs:
   test:
@@ -43,6 +49,8 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.commit || github.sha }}
 
       - name: setup dotnet
         uses: actions/setup-dotnet@v5
