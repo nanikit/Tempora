@@ -13,6 +13,8 @@ description = "Run gdUnit4 C# tests"
 run = 'dotnet test Tempora.csproj --settings .runsettings -e GODOT_BIN={{ tools["http:godot-mono"].path }}/Godot_v{{ tools["http:godot-mono"].version }}_mono_win64_console.exe'
 
 [tasks.export]
+# Export may finish while the Godot console wrapper keeps waiting for the .NET build server.
+# https://github.com/godotengine/godot/issues/110101
 description = "Export Windows release with Godot Mono"
 # Godot serializes C# exported properties using the editor's Debug assembly.
 depends = ["build"]
