@@ -23,7 +23,11 @@ namespace Tempora.Classes.Visual.AudioDisplay;
 
 public partial class AudioVisualsContainer : VBoxContainer
 {
-    //[Export] public int NumberOfBlocks = 10;
+    // Fits BPM and pointer time inside their row, including the time label's outline.
+    private const float MinimumRowHeight = 52;
+
+    public int VisibleRowCount { get; private set; } = 1;
+    public event Action? VisibleRowCountChanged;
 
     /// Accumulated pan gesture delta for converting continuous gestures to discrete scroll steps
     private float panGestureAccumulator;
@@ -47,7 +51,7 @@ public partial class AudioVisualsContainer : VBoxContainer
     public int FirstTopMeasure => Timing.Instance.TimeSignaturePoints.Count > 0
             ? Math.Min((int)Timing.Instance.OffsetToMeasurePosition(0), Timing.Instance.TimeSignaturePoints[0].Measure)
             : (int)Timing.Instance.OffsetToMeasurePosition(0);
-    public int LastTopMeasure => Timing.Instance.GetLastMeasure() - (Settings.Instance.NumberOfRows - 1);
+    public int LastTopMeasure => Math.Max(FirstTopMeasure, Timing.Instance.GetLastMeasure() - (VisibleRowCount - 1));
 
     public int NominalMeasurePositionStartForTopBlock
     {
@@ -115,6 +119,8 @@ public partial class AudioVisualsContainer : VBoxContainer
 
     public override void _Ready()
     {
+        CustomMinimumSize = new Vector2(CustomMinimumSize.X, MinimumRowHeight);
+        Resized += UpdateNumberOfVisibleBlocks;
         MouseExited += OnMouseExited;
         MusicPlayer.Paused += OnMusicPaused;
         MusicPlayer.Finished += OnMusicFinished;
@@ -201,12 +207,22 @@ public partial class AudioVisualsContainer : VBoxContainer
 
     public void UpdateNumberOfVisibleBlocks()
     {
-        Godot.Collections.Array<Node> children = GetChildren();
+        if (AudioBlocks.Count == 0)
+            return;
 
-        for (int i = 0; i < children.Count; i++)
+        int separation = GetThemeConstant("separation");
+        int fittingRows = Math.Max(1, (int)((Size.Y + separation) / (MinimumRowHeight + separation)));
+        int visibleRows = Math.Clamp(Settings.Instance.NumberOfRows, 1, Math.Min(fittingRows, AudioBlocks.Count));
+        bool countChanged = VisibleRowCount != visibleRows;
+        VisibleRowCount = visibleRows;
+
+        for (int i = 0; i < AudioBlocks.Count; i++)
+            AudioBlocks[i].Visible = i < VisibleRowCount;
+
+        if (countChanged)
         {
-            var waveformWindow = (AudioBlock)children[i];
-            waveformWindow.Visible = i < Settings.Instance.NumberOfRows;
+            NominalMeasurePositionStartForTopBlock = Math.Clamp(NominalMeasurePositionStartForTopBlock, FirstTopMeasure, LastTopMeasure);
+            VisibleRowCountChanged?.Invoke();
         }
     }
 

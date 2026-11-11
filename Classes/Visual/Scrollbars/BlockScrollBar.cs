@@ -13,8 +13,8 @@
 
 using System;
 using Godot;
-using Tempora.Classes.Utility;
 using Tempora.Classes.TimingClasses;
+using Tempora.Classes.Utility;
 
 namespace Tempora.Classes.Visual.AudioDisplay;
 
@@ -32,7 +32,13 @@ public partial class BlockScrollBar : VScrollBar
         GlobalEvents.Instance.AudioFileChanged += OnAudioFileChanged;
         GlobalEvents.Instance.AudioVisualsContainerScrolled += OnScrolled;
         ValueChanged += OnValueChanged;
+        audioVisualsContainer.VisibleRowCountChanged += UpdateScrollBar;
         UpdateScrollBar();
+    }
+
+    public override void _ExitTree()
+    {
+        audioVisualsContainer.VisibleRowCountChanged -= UpdateScrollBar;
     }
 
     private void OnTimingChanged(object? sender, EventArgs e)
@@ -55,10 +61,7 @@ public partial class BlockScrollBar : VScrollBar
     private void UpdateAudioVisualsContainer(double value)
     {
         if (isRangeChanging)
-        {
-            isRangeChanging = false;
             return; // If not in place, inadvertent scrolling occurs due to MinValue or MaxValue changing Value.
-        }
 
         audioVisualsContainer.NominalMeasurePositionStartForTopBlock = (int)value;
     }
@@ -66,19 +69,11 @@ public partial class BlockScrollBar : VScrollBar
     public void UpdateLimits()
     {
         int firstMeasure = audioVisualsContainer.FirstTopMeasure;
-        int lastMeasure = Timing.Instance.GetLastMeasure() - (Settings.Instance.NumberOfRows - 1);
-        if (MinValue != firstMeasure)
-        {
-            isRangeChanging = true;
-            MinValue = firstMeasure;
-        }
-        if (MaxValue != lastMeasure)
-        {
-            isRangeChanging = true;
-            MaxValue = lastMeasure;
-        }
-
-        //GD.Print($"UpdateRange() result: Range: {MinValue}...{MaxValue} with Value = {Value}");
+        int lastMeasure = audioVisualsContainer.LastTopMeasure;
+        isRangeChanging = true;
+        MinValue = firstMeasure;
+        MaxValue = lastMeasure;
+        isRangeChanging = false;
     }
 
     private void OnScrolled(object? sender, EventArgs e)

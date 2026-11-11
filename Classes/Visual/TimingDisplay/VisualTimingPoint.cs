@@ -89,6 +89,8 @@ public partial class VisualTimingPoint : Control
     {
         //numberLabel.Text = Timing.Instance.TimingPoints.IndexOf(TimingPoint).ToString();
         UpdateLabels(TimingPoint);
+        BpmLabel.Resized += CenterBpmLabel;
+        CenterBpmLabel();
 
         //SystemTimeWhenCreated = Time.GetTicksMsec();
 
@@ -101,6 +103,7 @@ public partial class VisualTimingPoint : Control
         TimingPointSelection.Instance.SelectionChanged += OnSelectionChanged;
         BpmLabel.DoubleClicked += OnBPMLabelDoubleClicked;
         BpmEdit.BpmSubmitted += OnBpmSubmitted;
+        BpmEdit.VisibilityChanged += OnBpmEditVisibilityChanged;
 
         VisibilityChanged += OnVisibilityChanged;
 
@@ -115,7 +118,9 @@ public partial class VisualTimingPoint : Control
         GlobalEvents.Instance.TimingPointNearestCursorChanged -= OnTimingPointNearestCursorChanged;
         TimingPointSelection.Instance.SelectionChanged -= OnSelectionChanged;
         BpmLabel.DoubleClicked -= OnBPMLabelDoubleClicked;
+        BpmLabel.Resized -= CenterBpmLabel;
         BpmEdit.BpmSubmitted -= OnBpmSubmitted;
+        BpmEdit.VisibilityChanged -= OnBpmEditVisibilityChanged;
         VisibilityChanged -= OnVisibilityChanged;
         flashTimer.Timeout -= OnFlashTimerTimeout;
 
@@ -128,23 +133,20 @@ public partial class VisualTimingPoint : Control
         if (!Visible)
             return;
 
+        UpdateBpmColor();
 
+        if (BpmEdit.Visible || GetViewport().GuiGetFocusOwner() is BpmEdit activeEditor
+            && activeEditor.GetGlobalRect().HasPoint(GetGlobalMousePosition()))
+            return;
 
-        Vector2 mousePosition = GetLocalMousePosition();
-        Rect2 rectangle = GrabArea.GetRect();
-        bool hasMouseInside = rectangle.HasPoint(mousePosition);
-
-        if (!hasMouseInside)
+        if (IsBpmLabelDoubleClick(@event))
         {
-            BpmLabel.Visible = BpmEdit.Visible ? false : true;
+            OnBPMLabelDoubleClicked(this, EventArgs.Empty);
+            GetViewport().SetInputAsHandled();
             return;
         }
 
-        BpmLabel.Visible = false;
-
-        //Input.SetDefaultCursorShape(Input.CursorShape.PointingHand);
-
-        if (@event is not InputEventMouseButton mouseEvent)
+        if (!GrabArea.GetRect().HasPoint(GetLocalMousePosition()) || @event is not InputEventMouseButton mouseEvent)
             return;
         else if (mouseEvent.ButtonIndex == MouseButton.Left && mouseEvent.DoubleClick && !Input.IsKeyPressed(Key.Alt))
         {
@@ -168,6 +170,14 @@ public partial class VisualTimingPoint : Control
 
         GetViewport().SetInputAsHandled();
     }
+
+    private bool IsBpmLabelDoubleClick(InputEvent inputEvent)
+        => inputEvent is InputEventMouseButton { ButtonIndex: MouseButton.Left, DoubleClick: true }
+            && !Input.IsKeyPressed(Key.Alt)
+            && BpmLabel.GetGlobalRect().HasPoint(GetGlobalMousePosition());
+
+    private void CenterBpmLabel()
+        => BpmLabel.Position = new Vector2(-BpmLabel.Size.X * BpmLabel.Scale.X / 2, BpmLabel.Position.Y);
 
     #endregion
 
@@ -250,13 +260,13 @@ public partial class VisualTimingPoint : Control
             return;
         }
         BpmEdit.ShowAndEdit();
-        BpmLabel.Visible = false;
     }
+
+    private void OnBpmEditVisibilityChanged() => BpmLabel.Visible = !BpmEdit.Visible;
 
     private void OnBpmSubmitted(object? sender, EventArgs e)
     {
         timingPoint.SetManualBpm(BpmEdit.Text.ToFloat());
-        BpmLabel.Visible = true;
     }
     #endregion
 
@@ -275,6 +285,13 @@ public partial class VisualTimingPoint : Control
         if (!Visible) return;
         SetLineColor(isRed ? lineColorRed : isSelected ? lineColorSelection : isNearestCursor ? lineColorNearestCursor : lineColorDefault);
         SetLineSize(isRed ? lineSizeRed : isNearestCursor ? lineSizeNearedCursor : lineSizeDefault);
+        UpdateBpmColor();
+    }
+
+    private void UpdateBpmColor()
+    {
+        bool isHovered = GrabArea.GetRect().HasPoint(GetLocalMousePosition());
+        BpmLabel.AddThemeColorOverride("font_color", isRed ? lineColorRed : isHovered ? lineColorNearestCursor : Colors.White);
     }
 
     private void SetLineSize(float multiplier)

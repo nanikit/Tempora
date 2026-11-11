@@ -11,17 +11,18 @@ using static GdUnit4.Assertions;
 
 [TestSuite]
 [RequireGodotRuntime]
-public class TimingShortcutTests
+public partial class TimingShortcutTests
 {
     [TestCase]
     public async Task Users_can_edit_timing_with_shortcuts_see_why_BPM_cannot_change_and_use_a_remembered_language_across_the_app()
     {
         // A sized viewport supplies cursor positions even when Godot runs headlessly.
         var viewport = new SubViewport { Size = new Vector2I(1280, 720) };
-        viewport.AddChild(ResourceLoader.Load<PackedScene>("res://Classes/Visual/Main.tscn").Instantiate());
-        using ISceneRunner runner = ISceneRunner.Load(viewport, autoFree: true);
+        using ISceneRunner runner = LoadWithAutosavedTiming(viewport);
+        viewport.NotifyMouseEntered();
         var container = (AudioVisualsContainer)runner.FindChild("AudioVisualsContainer")!;
         await runner.AwaitIdleFrame();
+        await VerifyRestoredBpmPosition(runner, container);
 
         bool roundBpm = Settings.Instance.RoundBPM;
         int rows = Settings.Instance.NumberOfRows;
@@ -170,6 +171,7 @@ public class TimingShortcutTests
             Wheel(viewport, cursor, MouseButton.WheelDown);
             await runner.AwaitInputProcessed();
             AssertThat(container.NominalMeasurePositionStartForTopBlock).IsEqual(1);
+            await VerifyPointerTimeLayout(runner, viewport, container);
             await VerifyAppLanguages(runner);
         }
         finally
@@ -301,7 +303,10 @@ public class TimingShortcutTests
         => SendInput(viewport, new InputEventKey { Keycode = key, PhysicalKeycode = key, Pressed = pressed });
 
     private static void Wheel(SubViewport viewport, Vector2 cursor, MouseButton direction)
-        => SendInput(viewport, new InputEventMouseButton { Position = cursor, ButtonIndex = direction, Pressed = true });
+    {
+        SendInput(viewport, new InputEventMouseButton { Position = cursor, ButtonIndex = direction, Pressed = true });
+        SendInput(viewport, new InputEventMouseButton { Position = cursor, ButtonIndex = direction });
+    }
 
     private static void Pan(SubViewport viewport, Vector2 cursor, float amount)
         => SendInput(viewport, new InputEventPanGesture { Position = cursor, Delta = new Vector2(0, amount) });

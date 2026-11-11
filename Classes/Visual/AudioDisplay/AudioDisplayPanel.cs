@@ -320,7 +320,8 @@ public partial class AudioDisplayPanel : Control
                 break;
 
             case InputEventMouseButton { ButtonIndex: MouseButton.Left, Pressed: true } mouseButtonEvent
-            when !Input.IsKeyPressed(Key.Alt) && !Context.Instance.AreAnySubwindowsVisible && mouseIsInside:
+            when !Input.IsKeyPressed(Key.Alt) && !Context.Instance.AreAnySubwindowsVisible && mouseIsInside
+                && GetViewport().GuiGetFocusOwner() is not BpmEdit:
                 mousePos = GetLocalMousePosition();
                 measurePosition = GetMouseMeasurePosition(mousePos);
                 float sampletime = (float)Timing.Instance.MeasurePositionToOffset(measurePosition);
@@ -633,9 +634,8 @@ public partial class AudioDisplayPanel : Control
             visualTimingPoint.Position = new Vector2(x, Size.Y / 2);
             visualTimingPoint.GrabArea.Size = new Vector2(visualTimingPoint.GrabWidth, Size.Y);
             visualTimingPoint.GrabArea.Position = new Vector2(-visualTimingPoint.GrabWidth / 2, -Size.Y / 2);
-            visualTimingPoint.BpmLabel.Position = new Vector2(0, -Size.Y / 2);
-            visualTimingPoint.BpmLabel.Position = new Vector2(0, -Size.Y / 2); // This is dumb, but it's the easiest way to fix Position being wrong when scrolling.
-            visualTimingPoint.BpmEdit.Position = new Vector2(0, -Size.Y / 2);
+            visualTimingPoint.BpmLabel.Position = new Vector2(visualTimingPoint.BpmLabel.Position.X, -Size.Y / 2);
+            visualTimingPoint.BpmEdit.Position = new Vector2(visualTimingPoint.BpmEdit.Position.X, -Size.Y / 2);
             visualTimingPoint.OffsetLine.Points = [
                 new(0, -Size.Y * 1 / 4f),
                 new(0, Size.Y * 1 / 4f)

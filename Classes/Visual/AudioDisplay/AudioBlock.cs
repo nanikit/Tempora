@@ -13,8 +13,8 @@
 
 using System;
 using Godot;
-using Tempora.Classes.Utility;
 using Tempora.Classes.TimingClasses;
+using Tempora.Classes.Utility;
 
 namespace Tempora.Classes.Visual.AudioDisplay;
 
@@ -65,6 +65,11 @@ public partial class AudioBlock : Control
     private void OnVisibilityChanged()
     {
         AudioDisplayPanel.Visible = Visible;
+        if (Visible)
+        {
+            AudioDisplayPanel.UpdateTimingPointsIndices();
+            AudioDisplayPanel.UpdateVisuals();
+        }
     }
 
     private void OnTimingSignatureSubmitted(object? sender, EventArgs e)

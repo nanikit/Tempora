@@ -1,8 +1,7 @@
-[gd_scene load_steps=5 format=3 uid="uid://b8325rmwu4cpb"]
+[gd_scene load_steps=4 format=3 uid="uid://b8325rmwu4cpb"]
 
 [ext_resource type="Script" uid="uid://ce8m0d3oanbbq" path="res://Classes/Visual/TimingDisplay/VisualTimingPoint.cs" id="1_3rehq"]
 [ext_resource type="Script" uid="uid://djk3thus3uguy" path="res://Classes/Visual/TimingDisplay/BpmLabel.cs" id="2_gtwp5"]
-[ext_resource type="PackedScene" uid="uid://c5ghoqiqusvkk" path="res://Classes/Visual/Components/ControlOriginComponent.tscn" id="2_igj6l"]
 [ext_resource type="Script" uid="uid://c7v68wyic6ja5" path="res://Classes/Visual/TimingDisplay/BpmEdit.cs" id="4_r6rb5"]
 
 [node name="VisualTimingPoint" type="Control" node_paths=PackedStringArray("BpmLabel", "OffsetLine", "flashTimer", "GrabArea", "BpmEdit")]
@@ -41,18 +40,10 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="BPMLabel" type="Label" parent="."]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -14.5
-offset_top = -20.5
-offset_right = -13.5
-offset_bottom = 75.5
-grow_horizontal = 2
-grow_vertical = 2
+z_index = 120
+z_as_relative = false
+layout_mode = 0
+offset_bottom = 96.0
 scale = Vector2(0.2, 0.2)
 mouse_filter = 1
 theme_override_colors/font_color = Color(1, 1, 1, 1)
@@ -63,10 +54,6 @@ horizontal_alignment = 1
 vertical_alignment = 2
 script = ExtResource("2_gtwp5")
 
-[node name="ControlOriginComponent" parent="BPMLabel" node_paths=PackedStringArray("targetControl") instance=ExtResource("2_igj6l")]
-targetControl = NodePath("..")
-anchor = 7
-
 [node name="FlashTimer" type="Timer" parent="."]
 wait_time = 0.33
 one_shot = true
@@ -76,12 +63,12 @@ width = 5.0
 default_color = Color(1, 0.6, 0, 1)
 
 [node name="BPMEdit" type="LineEdit" parent="."]
+z_index = 120
+z_as_relative = false
 visible = false
 layout_mode = 0
-offset_right = 67.0625
+offset_left = -33.53125
+offset_right = 33.53125
 offset_bottom = 31.0
+grow_horizontal = 2
 script = ExtResource("4_r6rb5")
-
-[node name="ControlOriginComponent" parent="BPMEdit" node_paths=PackedStringArray("targetControl") instance=ExtResource("2_igj6l")]
-targetControl = NodePath("..")
-anchor = 7
