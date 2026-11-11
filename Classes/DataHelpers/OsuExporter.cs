@@ -21,8 +21,10 @@ using Tempora.Classes.TimingClasses;
 
 namespace Tempora.Classes.Utility;
 
-public partial class OsuExporter : Node
+public partial class OsuExporter : Node, ISettingsConsumer
 {
+    public Settings Settings { get; set; } = null!;
+
     private static string defaultDotOsuFormer = @"osu file format v14
 
 [General]
@@ -79,7 +81,7 @@ SliderTickRate:1
 
 [HitObjects]";
 
-    private int exportOffsetMs => Settings.Instance.ExportOffsetMs;
+    private int exportOffsetMs => Settings.ExportOffsetMs;
     public static string DefaultDotOsuFormer { get => defaultDotOsuFormer; set => defaultDotOsuFormer = value; }
     public static string DefaultDotOsuLatter { get => defaultDotOsuLatter; set => defaultDotOsuLatter = value; }
 
@@ -94,7 +96,7 @@ SliderTickRate:1
     public string GetDotOsu(Timing timing, AudioFile audioFile)
     {
         var newTiming = Timing.CloneAndParseForOsu(timing, audioFile);
-        if (Settings.Instance.PreventDoubleBarlines)
+        if (Settings.PreventDoubleBarlines)
             FixBpmsToEnsureProperLineups(newTiming);
         string timingPointsData = TimingToDotOsuTimingPoints(newTiming);
         string extension = audioFile.Extension;
@@ -120,7 +122,7 @@ SliderTickRate:1
         return result;
     }
 
-    private static bool ShouldOmitBarline(TimingPoint timingPoint) => Settings.Instance.OmitBarlines ? timingPoint.MeasurePosition % 1 != 0 : false;
+    private bool ShouldOmitBarline(TimingPoint timingPoint) => Settings.OmitBarlines ? timingPoint.MeasurePosition % 1 != 0 : false;
 
     private string TimingPointToDotOsuLine(TimingPoint timingPoint)
     {

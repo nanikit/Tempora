@@ -1,6 +1,7 @@
 namespace Tempora.Tests;
 
 using GdUnit4;
+using Tempora.Classes.Utility;
 using Tempora.Classes.TimingClasses;
 using static GdUnit4.Assertions;
 
@@ -16,7 +17,7 @@ public class TimingConversionTests
         double startMeasure = 2;
         double endMeasure = 66;
         double measuresPerSecond = TimingMath.CalculateMeasuresPerSecond(startMeasure, endMeasure, startOffset, endOffset);
-        Timing timing = new Timing { IsInstantiating = true };
+        Timing timing = new Timing(Project.Instance.Settings) { IsInstantiating = true };
         timing.AddTimingPoint(startMeasure, startOffset, measuresPerSecond);
         timing.IsInstantiating = false;
 

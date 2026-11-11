@@ -25,6 +25,10 @@ namespace Tempora.Classes.TimingClasses;
 /// </summary>
 public partial class Timing : IMementoOriginator
 {
+    public Settings Settings { get; }
+
+    public Timing(Settings settings) => Settings = settings;
+
     #region Properties & Signals
 
     private bool isInstantiating;
@@ -43,7 +47,7 @@ public partial class Timing : IMementoOriginator
     private bool ShouldCancelBatchOperation = false;
 
     public static Timing Instance { get => instance; set => instance = value; }
-    private static Timing instance = new();
+    private static Timing instance = null!;
 
     private List<TimingPoint> timingPoints = [];
 

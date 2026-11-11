@@ -1,6 +1,7 @@
 namespace Tempora.Tests;
 
 using GdUnit4;
+using Tempora.Classes.Utility;
 using Tempora.Classes.TimingClasses;
 using static GdUnit4.Assertions;
 
@@ -16,7 +17,7 @@ public class TimingPointRuntimeTest
     [TestCase]
     public void Constructs_via_real_constructor_under_godot_runtime()
     {
-        var timingPoint = new TimingPoint(time: 2.473544123456789, measurePosition: 310d, timeSignature: [4, 4]);
+        var timingPoint = new TimingPoint(Project.Instance.Settings, time: 2.473544123456789, measurePosition: 310d, timeSignature: [4, 4]);
 
         AssertThat(timingPoint.Offset).IsEqual(2.473544123456789);
         AssertThat(timingPoint.MeasurePosition!.Value).IsEqual(310d);

@@ -20,8 +20,10 @@ using Tempora.Classes.Utility;
 
 namespace Tempora.Classes.Visual;
 
-public partial class LoadButton : Button
+public partial class LoadButton : Button, ISettingsConsumer
 {
+    public Settings Settings { get; set; } = null!;
+
     MusicPlayer MusicPlayer => MusicPlayer.Instance;
 
     private FileDialog fileDialog = null!;
@@ -37,7 +39,7 @@ public partial class LoadButton : Button
 
     private void OnPressed()
     {
-        fileDialog.CurrentDir = Settings.Instance.ProjectFilesDirectory;
+        fileDialog.CurrentDir = Settings.ProjectFilesDirectory;
         fileDialog.Popup();
     }
     //private void OnFileSelected(string selectedPath) => FileHandler.CopyFile(PathToCopyFrom, selectedPath);
@@ -71,6 +73,6 @@ public partial class LoadButton : Button
         }
 
         string dir = Path.GetDirectoryName(selectedPath) ?? "";
-        Settings.Instance.ProjectFilesDirectory = dir;
+        Settings.ProjectFilesDirectory = dir;
     }
 }

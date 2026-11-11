@@ -17,8 +17,10 @@ using Tempora.Classes.Utility;
 
 namespace Tempora.Classes.Visual;
 
-public partial class SaveButton : Button
+public partial class SaveButton : Button, ISettingsConsumer
 {
+    public Settings Settings { get; set; } = null!;
+
     [Export]
     private FileDialog saveFileDialog = null!;
 
@@ -31,7 +33,7 @@ public partial class SaveButton : Button
 
     private void OnPressed()
     {
-        saveFileDialog.CurrentDir = Settings.Instance.ProjectFilesDirectory;
+        saveFileDialog.CurrentDir = Settings.ProjectFilesDirectory;
         saveFileDialog.Popup();
     }
     //private void OnFileSelected(string selectedPath) => FileHandler.CopyFile(PathToCopyFrom, selectedPath);
@@ -41,6 +43,6 @@ public partial class SaveButton : Button
         ProjectFileManager.SaveProjectAs(selectedPath);
 
         string dir = Path.GetDirectoryName(selectedPath) ?? "";
-        Settings.Instance.ProjectFilesDirectory = dir;
+        Settings.ProjectFilesDirectory = dir;
     }
 }

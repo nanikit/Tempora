@@ -1,4 +1,4 @@
-﻿// Copyright 2024 https://github.com/kongehund
+// Copyright 2024 https://github.com/kongehund
 // 
 // This file is licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0).
 // You are free to:
@@ -23,13 +23,13 @@ public partial class Timing
     public static Timing CloneAndParseForOsu(Timing timing, AudioFile audioFile)
     {
         var newTiming = CopyTiming(timing);
-        if (Settings.Instance.RemovePointsThatChangeNothing)
+        if (timing.Settings.RemovePointsThatChangeNothing)
             newTiming.RemovePointsThatChangeNothing();
-        if (Settings.Instance.AddExtraPointsOnDownbeats)
+        if (timing.Settings.AddExtraPointsOnDownbeats)
             newTiming.AddExtraPointsOnDownbeats();
-        if (Settings.Instance.AddExtraPointsOnQuarterNotes)
+        if (timing.Settings.AddExtraPointsOnQuarterNotes)
             newTiming.AddExtraPointsOnQuarterNotes();
-        if (Settings.Instance.MeasureResetsOnUnsupportedTimeSignatures)
+        if (timing.Settings.MeasureResetsOnUnsupportedTimeSignatures)
             newTiming.AddExtraPointsOnUnsupportedSignatures(audioFile);
         return newTiming;
     }
@@ -37,7 +37,7 @@ public partial class Timing
     public static Timing CloneAndParseForBeatSaber(Timing timing)
     {
         var newTiming = CopyTiming(timing);
-        if (Settings.Instance.RemovePointsThatChangeNothing)
+        if (timing.Settings.RemovePointsThatChangeNothing)
             newTiming.RemovePointsThatChangeNothing();
         
         return newTiming;
@@ -45,7 +45,7 @@ public partial class Timing
 
     public static Timing CopyTiming(Timing timing)
     {
-        var newTiming = new Timing
+        var newTiming = new Timing(timing.Settings)
         {
             TimingPoints = CloneUtility.CloneList<TimingPoint>(timing.timingPoints),
             TimeSignaturePoints = CloneUtility.CloneList<TimeSignaturePoint>(timing.TimeSignaturePoints)

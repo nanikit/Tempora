@@ -1,4 +1,4 @@
-﻿// Copyright 2024 https://github.com/kongehund
+// Copyright 2024 https://github.com/kongehund
 // 
 // This file is licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0).
 // You are free to:
@@ -99,7 +99,7 @@ public partial class Timing
     {
         int downbeatPosition = (measurePosition >= 0) ? (int)measurePosition : (int)measurePosition - 1;
         int[] timeSignature = GetTimeSignature(measurePosition);
-        int divisor = Settings.Instance.GridDivisor;
+        int divisor = Settings.GridDivisor;
         double divisionLength = GetRelativeNotePosition(timeSignature, divisor, 1);
         double relativePosition = (measurePosition >= 0)
             ? measurePosition % 1
@@ -120,7 +120,7 @@ public partial class Timing
         //int[] timeSignature = operatingTimingPoint.TimeSignature;
 
         int[] timeSignature = GetTimeSignature(measurePosition);
-        int gridDivisor = Settings.Instance.GridDivisor;
+        int gridDivisor = Settings.GridDivisor;
 
         int nextMeasure = (int)(measurePosition + 1);
         double previousAbsolutePosition = GetRelativeNotePosition(timeSignature, gridDivisor, 0) + Math.Floor(measurePosition);
@@ -150,7 +150,7 @@ public partial class Timing
     //    //int[] timeSignature = operatingTimingPoint.TimeSignature;
 
     //    int[] timeSignature = GetTimeSignature(measurePosition);
-    //    int gridDivisor = Settings.Instance.GridDivisor;
+    //    int gridDivisor = Settings.GridDivisor;
 
     //    int nextMeasure = (int)(measurePosition + 1);
     //    for (int index = 0; index < 30; index++)
@@ -291,7 +291,7 @@ public partial class Timing
 
     public double SnapMeasurePosition(double measurePosition)
     {
-        if (!Settings.Instance.SnapToGridEnabled)
+        if (!Settings.SnapToGridEnabled)
             return measurePosition;
 
         return GetNearestGridPosition(measurePosition);

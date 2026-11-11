@@ -66,7 +66,7 @@ public class ProjectFileRoundTripTest
         Project.Instance.AudioFile = new AudioFile(audioPath);
 
         // Save a project file that contains a single timing point.
-        Timing.Instance = new Timing { IsInstantiating = true };
+        Timing.Instance = new Timing(Project.Instance.Settings) { IsInstantiating = true };
         Timing.Instance.AddTimingPoint(0d, 1.0d, 0.5d);
         Timing.Instance.IsInstantiating = false;
         string savePath = ProjectSettings.GlobalizePath($"{SaveDir}/single.tmpr");
@@ -94,7 +94,7 @@ public class ProjectFileRoundTripTest
         string audioPath = ProjectSettings.GlobalizePath("res://Audio/click-quick.ogg");
         Project.Instance.AudioFile = new AudioFile(audioPath);
 
-        Timing.Instance = new Timing { IsInstantiating = true };
+        Timing.Instance = new Timing(Project.Instance.Settings) { IsInstantiating = true };
         Timing.Instance.AddTimingPoint(measurePosition, offset, measuresPerSecond);
         Timing.Instance.IsInstantiating = false;
 

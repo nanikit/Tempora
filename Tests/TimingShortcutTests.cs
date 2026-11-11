@@ -43,15 +43,18 @@ public partial class TimingShortcutTests
         viewport.NotifyMouseEntered();
         var container = (AudioVisualsContainer)runner.FindChild("AudioVisualsContainer")!;
         await runner.AwaitIdleFrame();
+        var application = ((SceneTree)Engine.GetMainLoop()).Root.GetNode<Application>("Application");
+        AssertThat(((Control)runner.FindChild("MessageLabel")!).GetThemeFontSize("font_size"))
+            .IsEqual((int)System.Math.Round(25 * application.SystemTextScale, System.MidpointRounding.AwayFromZero));
         await VerifyRestoredBpmPosition(runner, container);
 
-        bool roundBpm = Settings.Instance.RoundBPM;
-        int rows = Settings.Instance.NumberOfRows;
+        bool roundBpm = Project.Instance.Settings.RoundBPM;
+        int rows = Project.Instance.Settings.NumberOfRows;
         AudioFile originalAudio = Project.Instance.AudioFile;
         Timing originalTiming = Timing.Instance;
-        Timing timing = new Timing { IsInstantiating = true };
+        Timing timing = new Timing(Project.Instance.Settings) { IsInstantiating = true };
         Timing.Instance = timing;
-        Settings.Instance.RoundBPM = false;
+        Project.Instance.Settings.RoundBPM = false;
         timing.AddTimingPoint(0d, 0d, 0.5d);
         timing.AddTimingPoint(0.35d, 0.7d, 0.5d);
         TimingPoint point = timing.TimingPoints[1];
@@ -177,7 +180,7 @@ public partial class TimingShortcutTests
 
             // A long bundled song keeps both scroll sizes away from the timeline ends.
             Project.Instance.AudioFile = new AudioFile(ResourceLoader.Load<AudioStreamMP3>("res://Audio/Loop.mp3"));
-            Settings.Instance.NumberOfRows = 1;
+            Project.Instance.Settings.NumberOfRows = 1;
             container.UpdateNumberOfVisibleBlocks();
             await runner.AwaitIdleFrame();
             cursor = panel.GlobalPosition + new Vector2(panel.Size.X / 2, panel.Size.Y / 2);
@@ -193,6 +196,8 @@ public partial class TimingShortcutTests
             await runner.AwaitInputProcessed();
             AssertThat(container.NominalMeasurePositionStartForTopBlock).IsEqual(1);
             await VerifyPointerTimeLayout(runner, viewport, container);
+            await VerifyTextScaleChanges(runner, viewport, container);
+            await VerifySettingsApplyAndCancel(runner);
             await VerifyAppLanguages(runner);
         }
         finally
@@ -204,17 +209,101 @@ public partial class TimingShortcutTests
             Context.Instance.HeldTimingPoint = null;
             TimingPointSelection.Instance.DeselectAll();
             Timing.Instance = originalTiming;
-            Settings.Instance.RoundBPM = roundBpm;
-            Settings.Instance.NumberOfRows = rows;
+            Project.Instance.Settings.RoundBPM = roundBpm;
+            Project.Instance.Settings.NumberOfRows = rows;
             Project.Instance.AudioFile = originalAudio;
+        }
+    }
+
+    private static async Task VerifyTextScaleChanges(ISceneRunner runner, SubViewport viewport, AudioVisualsContainer container)
+    {
+        var application = ((SceneTree)Engine.GetMainLoop()).Root.GetNode<Application>("Application");
+        double original = application.SystemTextScale;
+        try
+        {
+            foreach (double scale in new[] { 1.5, 2.25, 1.0 })
+            {
+                application.ApplySystemTextScale(scale);
+                await runner.AwaitIdleFrame();
+                await runner.AwaitIdleFrame();
+                AssertThat(((Control)runner.FindChild("MessageLabel")!).GetThemeFontSize("font_size"))
+                    .IsEqual((int)System.Math.Round(25 * scale, System.MidpointRounding.AwayFromZero));
+                await VerifyPointerTimeLayout(runner, viewport, container);
+                await VerifySettingsDialogSizes(runner);
+            }
+        }
+        finally
+        {
+            application.ApplySystemTextScale(original);
+        }
+    }
+
+    private static async Task VerifySettingsDialogSizes(ISceneRunner runner)
+    {
+        foreach (string name in new[] { "ExportWindow", "VisualSettingsWindow" })
+        {
+            var window = (Window)runner.FindChild(name)!;
+            window.Size = new Vector2I(520, 360);
+            window.Popup();
+            var tabs = (TabContainer)window.FindChild("TabContainer");
+            for (int tab = 0; tab < tabs.GetTabCount(); tab++)
+            {
+                tabs.CurrentTab = tab;
+                await runner.AwaitIdleFrame();
+                await runner.AwaitIdleFrame();
+                Vector2 minimum = window.GetNode<Control>("Margin").GetCombinedMinimumSize();
+                AssertThat(minimum.X).IsLessEqual((float)window.Size.X);
+                AssertThat(minimum.Y).IsLessEqual((float)window.Size.Y);
+            }
+            window.Hide();
+        }
+    }
+
+    private static async Task VerifySettingsApplyAndCancel(ISceneRunner runner)
+    {
+        var volume = (HScrollBar)runner.FindChild("VolumeSliderMusic")!;
+        double originalVolume = volume.Value;
+        try
+        {
+            volume.Value = originalVolume == 0.4 ? 0.6 : 0.4;
+            AssertThat(Mathf.DbToLinear(AudioServer.GetBusVolumeDb(AudioServer.GetBusIndex("Music"))))
+                .IsEqualApprox((float)volume.Value, 0.0001f);
+            AssertThat(new SettingsStore().Load().MusicVolumeNormalized).IsEqual(volume.Value);
+        }
+        finally
+        {
+            volume.Value = originalVolume;
+        }
+        var window = (Window)runner.FindChild("VisualSettingsWindow")!;
+        var input = window.GetNode<LineEdit>("Margin/Layout/TabContainer/Spectrogram/Intensity/LineEdit");
+        int original = Project.Instance.Settings.SpectrogramIntensity;
+        try
+        {
+            window.Popup();
+            input.Text = (original + 1).ToString();
+            window.EmitSignal(Window.SignalName.CloseRequested);
+            window.Popup();
+            AssertThat(input.Text).IsEqual(original.ToString());
+            input.Text = (original + 1).ToString();
+            window.GetNode<Button>("Margin/Layout/BottomButtonsHBox/ApplyButton").EmitSignal(Button.SignalName.Pressed);
+            input.Text = (original + 2).ToString();
+            window.EmitSignal(Window.SignalName.CloseRequested);
+            window.Popup();
+            await runner.AwaitIdleFrame();
+            AssertThat(input.Text).IsEqual((original + 1).ToString());
+        }
+        finally
+        {
+            input.Text = original.ToString();
+            window.GetNode<Button>("Margin/Layout/BottomButtonsHBox/OkButton").EmitSignal(Button.SignalName.Pressed);
         }
     }
 
     private static async Task VerifyAppLanguages(ISceneRunner runner)
     {
-        string originalSettings = FileAccess.GetFileAsString("user://settings.txt");
+        string originalSettings = FileAccess.GetFileAsString("user://settings.cfg");
         string originalLocale = TranslationServer.GetLocale();
-        string originalLanguage = Settings.Instance.Language;
+        string originalLanguage = Project.Instance.Settings.Language;
         try
         {
             var language = (PopupMenu)runner.FindChild("LanguageMenu")!;
@@ -244,7 +333,7 @@ public partial class TimingShortcutTests
                 AssertThat(file.Tr(file.GetItemText(0)).ToString()).IsEqual(newProject[i]);
                 AssertThat(gridTitle.Text).IsEqual(grid.Tr("Grid") + ":");
                 AssertThat(message.Text).IsEqual(message.Tr("Saved visual options.").ToString());
-                AssertThat(saveDialog.Title).IsEqual(string.Format(saveDialog.Tr("Export Beat Saber (v{0})"), Settings.Instance.BeatSaberExportFormat));
+                AssertThat(saveDialog.Title).IsEqual(string.Format(saveDialog.Tr("Export Beat Saber (v{0})"), Project.Instance.Settings.BeatSaberExportFormat));
                 if (i > 0)
                 {
                     var exportLabel = export.FindChild("RemovePointsThatChangeNothing").GetNode<Label>("Label");
@@ -299,7 +388,9 @@ public partial class TimingShortcutTests
             AssertThat(message.GetNode<Timer>("Timer").TimeLeft).IsLessEqual(remaining);
 
             TranslationServer.SetLocale("en");
-            Settings.Instance.LoadSettings();
+            var restored = new SettingsStore().Load();
+            AssertThat(restored.Language).IsEqual("zh_TW");
+            TranslationServer.SetLocale(restored.Language);
             await runner.AwaitIdleFrame();
             AssertThat(body.GetParsedText()).Contains("開始使用");
 
@@ -316,9 +407,9 @@ public partial class TimingShortcutTests
         finally
         {
             ProjectFileManager.Instance.SaveFileDialog.Hide();
-            Settings.Instance.Language = originalLanguage;
+            Project.Instance.Settings.Language = originalLanguage;
             TranslationServer.SetLocale(originalLocale);
-            using var settingsFile = FileAccess.Open("user://settings.txt", FileAccess.ModeFlags.Write);
+            using var settingsFile = FileAccess.Open("user://settings.cfg", FileAccess.ModeFlags.Write);
             settingsFile.StoreString(originalSettings);
         }
     }

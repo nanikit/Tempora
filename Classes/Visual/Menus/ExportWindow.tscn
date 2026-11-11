@@ -7,6 +7,7 @@ title = "Export Settings"
 position = Vector2i(0, 36)
 size = Vector2i(640, 420)
 min_size = Vector2i(520, 420)
+wrap_controls = true
 script = ExtResource("1_ad7ek")
 exportOffsetEdit = NodePath("Margin/Layout/TabContainer/Osu/ExportOffset/LineEdit")
 unsupportedTimeSignatures = NodePath("Margin/Layout/TabContainer/Osu/UnsupportedTimeSignatures/CheckBox")

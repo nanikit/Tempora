@@ -3,8 +3,10 @@ using System;
 using System.Runtime.CompilerServices;
 using Tempora.Classes.Utility;
 
-public partial class ExportWindow : Window
+public partial class ExportWindow : Window, ISettingsConsumer
 {
+    public Settings Settings { get; set; } = null!;
+
     [Export]
     LineEdit exportOffsetEdit = null!;
 
@@ -59,14 +61,14 @@ public partial class ExportWindow : Window
 
     private void OnAboutToPopup()
     {
-        LoadValuesFromSettings(Settings.Instance);
+        LoadValuesFromSettings(Settings);
     }
 
     private void OnOkButtonPressed()
     {
-        SaveSettings(Settings.Instance);
+        SaveSettings(Settings);
         Hide();
-        Settings.Instance.SaveSettings();
+
         Project.Instance.NotificationMessage = "Saved export options.";
     }
 
@@ -92,17 +94,7 @@ public partial class ExportWindow : Window
         settings.BeatSaberExportFormat = beatSaberExportFormat.GetSelectedId();
     }
 
-    private void ResetToDefaults()
-    {
-        exportOffsetEdit.Text = (-14).ToString();
-        unsupportedTimeSignatures.ButtonPressed = true;
-        removePointsThatChangeNothing.ButtonPressed = true;
-        addExtraPointsOnDownbeats.ButtonPressed = true;
-        addExtraPointsOnQuarterNotes.ButtonPressed = true;
-        omitBarlines.ButtonPressed = true;
-        preventDoubleBarlines.ButtonPressed = true;
-        beatSaberExportFormat.Selected = 0;
-    }
+    private void ResetToDefaults() => LoadValuesFromSettings(new Settings());
 
     private void CloseWithoutSaving()
     {

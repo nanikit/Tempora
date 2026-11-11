@@ -7,6 +7,7 @@ title = "Visual Settings"
 position = Vector2i(0, 36)
 size = Vector2i(640, 360)
 min_size = Vector2i(520, 360)
+wrap_controls = true
 script = ExtResource("1_irav1")
 stepSizeLineEdit = NodePath("Margin/Layout/TabContainer/Spectrogram/stepSize/LineEdit")
 fftSizeLineEdit = NodePath("Margin/Layout/TabContainer/Spectrogram/fftSize/LineEdit")

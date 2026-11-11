@@ -19,8 +19,10 @@ using Tempora.Classes.Utility;
 
 namespace Tempora.Classes.Audio;
 
-public partial class MusicPlayer : AudioStreamPlayer
+public partial class MusicPlayer : AudioStreamPlayer, ISettingsConsumer
 {
+    public Settings Settings { get; set; } = null!;
+
     public static MusicPlayer Instance = null!;
     //new public float VolumeDb; // Hides actual volume from other API's, so they can't mess with volume while fading.
 
@@ -118,7 +120,7 @@ public partial class MusicPlayer : AudioStreamPlayer
     {
         if (e is not GlobalEvents.ObjectArgument<TimingPoint> timingPointArg)
             return;
-        if (!Settings.Instance.SeekPlaybackOnTimingPointChanges)
+        if (!Settings.SeekPlaybackOnTimingPointChanges)
             return;
         var timingPoint = timingPointArg.Value;
         SeekPlay((float)(timingPoint.Offset - 0.05d));

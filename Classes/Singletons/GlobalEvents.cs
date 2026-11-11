@@ -31,7 +31,6 @@ public partial class GlobalEvents : Node
     public event EventHandler? MouseLeftReleased;
     public event EventHandler? AudioVisualsContainerScrolled;
     public event EventHandler? SelectedPositionChanged;
-    public event EventHandler? SettingsChanged;
     public event EventHandler? TimingChanged;
     public event EventHandler? TimingPointCountChanged;
     public event EventHandler? TimingPointHolding;

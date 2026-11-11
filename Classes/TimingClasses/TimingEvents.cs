@@ -1,4 +1,4 @@
-﻿// Copyright 2024 https://github.com/kongehund
+// Copyright 2024 https://github.com/kongehund
 // 
 // This file is licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0).
 // You are free to:
@@ -164,7 +164,7 @@ public partial class Timing
             return;
         }
 
-        if (!Settings.Instance.PreserveBPMWhenChangingTimeSignature)
+        if (!Settings.PreserveBPMWhenChangingTimeSignature)
             return;
 
         double bpmToPreserve = timingPoint.ManualBpm
@@ -287,7 +287,7 @@ public partial class Timing
                 double newBpm = (double)newValue!;
                 double calculatedBpm = timingPoint.MpsToBpm(calculatedMPS.Value);
 
-                return Settings.Instance.RoundBPM
+                return Settings.RoundBPM
                     ? Math.Abs(calculatedBpm - newBpm) < 0.1
                     : Math.Abs(calculatedBpm - newBpm) < 0.0001;
 

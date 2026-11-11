@@ -17,8 +17,10 @@ using Tempora.Classes.Utility;
 
 namespace Tempora.Classes.Visual;
 
-public partial class OptionsMenu : PopupMenu
+public partial class OptionsMenu : PopupMenu, ISettingsConsumer
 {
+    public Settings Settings { get; set; } = null!;
+
     [Export]
     private Control blockAmountScrollBar = null!;
     [Export]
@@ -36,13 +38,13 @@ public partial class OptionsMenu : PopupMenu
     public override void _Ready()
     {
         IndexPressed += OnIndexPressed;
-        SetItemChecked(index_PreserveBpm, Settings.Instance.PreserveBPMWhenChangingTimeSignature);
-        SetItemChecked(index_MetronopmeFollowsGrid, Settings.Instance.MetronomeFollowsGrid);
-        SetItemChecked(index_AutoScroll, Settings.Instance.AutoScrollWhenAddingTimingPoints);
-        SetItemChecked(index_RoundBPM, Settings.Instance.RoundBPM);
-        SetItemChecked(index_PlaybackOnNewPoints, Settings.Instance.SeekPlaybackOnTimingPointChanges);
-        SetItemChecked(index_MoreSettings, Settings.Instance.ShowMoreSettings);
-        SetItemChecked(index_Spectrogram, Settings.Instance.RenderAsSpectrogram);
+        SetItemChecked(index_PreserveBpm, Settings.PreserveBPMWhenChangingTimeSignature);
+        SetItemChecked(index_MetronopmeFollowsGrid, Settings.MetronomeFollowsGrid);
+        SetItemChecked(index_AutoScroll, Settings.AutoScrollWhenAddingTimingPoints);
+        SetItemChecked(index_RoundBPM, Settings.RoundBPM);
+        SetItemChecked(index_PlaybackOnNewPoints, Settings.SeekPlaybackOnTimingPointChanges);
+        SetItemChecked(index_MoreSettings, Settings.ShowMoreSettings);
+        SetItemChecked(index_Spectrogram, Settings.RenderAsSpectrogram);
         languageMenu.IdPressed += OnLanguageSelected;
         languageMenu.AboutToPopup += UpdateLanguageSelection;
         AddSubmenuNodeItem("LANGUAGE_MENU", languageMenu);
@@ -64,11 +66,11 @@ public partial class OptionsMenu : PopupMenu
         {
             case var expression when (index == index_PreserveBpm):
                 ToggleCheckBox(index_PreserveBpm, out bool newStatus);
-                Settings.Instance.PreserveBPMWhenChangingTimeSignature = newStatus;
+                Settings.PreserveBPMWhenChangingTimeSignature = newStatus;
                 break;
             case var expression when (index == index_MetronopmeFollowsGrid):
                 ToggleCheckBox(index_MetronopmeFollowsGrid, out newStatus);
-                Settings.Instance.MetronomeFollowsGrid = newStatus;
+                Settings.MetronomeFollowsGrid = newStatus;
                 break;
             case var expression when (index == index_MoreSettings):
                 ToggleCheckBox(index_MoreSettings, out newStatus);
@@ -76,19 +78,19 @@ public partial class OptionsMenu : PopupMenu
                 break;
             case var expression when (index == index_AutoScroll):
                 ToggleCheckBox(index_AutoScroll, out newStatus);
-                Settings.Instance.AutoScrollWhenAddingTimingPoints = newStatus;
+                Settings.AutoScrollWhenAddingTimingPoints = newStatus;
                 break;
             case var expression when (index == index_RoundBPM):
                 ToggleCheckBox(index_RoundBPM, out newStatus);
-                Settings.Instance.RoundBPM = newStatus;
+                Settings.RoundBPM = newStatus;
                 break;
             case var expression when (index == index_PlaybackOnNewPoints):
                 ToggleCheckBox(index_PlaybackOnNewPoints, out newStatus);
-                Settings.Instance.SeekPlaybackOnTimingPointChanges = newStatus;
+                Settings.SeekPlaybackOnTimingPointChanges = newStatus;
                 break;
             case var expression when (index == index_Spectrogram):
                 ToggleCheckBox(index_Spectrogram, out newStatus);
-                Settings.Instance.RenderAsSpectrogram = newStatus;
+                Settings.RenderAsSpectrogram = newStatus;
                 break;
             case var expression when (index == index_SpectrogramSettings):
                 visualSettingsWindow.Popup();
@@ -105,14 +107,14 @@ public partial class OptionsMenu : PopupMenu
 
     private void OnLanguageSelected(long id)
     {
-        Settings.Instance.Language = locales[id];
+        Settings.Language = locales[id];
         UpdateLanguageSelection();
     }
 
     private void UpdateLanguageSelection()
     {
         for (int i = 0; i < locales.Length; i++)
-            languageMenu.SetItemChecked(i, locales[i] == Settings.Instance.Language);
+            languageMenu.SetItemChecked(i, locales[i] == Settings.Language);
     }
 
     private void ShowHideMoreSettings(bool visible)

@@ -31,7 +31,7 @@ public class TimingPointBpmTests
     [TestCase]
     public void Bpm_returns_manual_bpm_without_changing_computed_bpm()
     {
-        Settings.Instance.RoundBPM = false;
+        Project.Instance.Settings.RoundBPM = false;
         TimingPoint point = MakePoint(154.99335007388657 / 240d);
 
         point.SetManualBpm(155d);
@@ -44,7 +44,7 @@ public class TimingPointBpmTests
     [TestCase]
     public void Rounded_manual_bpm_does_not_change_computed_bpm()
     {
-        Settings.Instance.RoundBPM = true;
+        Project.Instance.Settings.RoundBPM = true;
         double measuresPerSecond = 154.99335007388657 / 240d;
         TimingPoint point = MakePoint(measuresPerSecond);
 
@@ -58,7 +58,7 @@ public class TimingPointBpmTests
     [TestCase]
     public void ClearManualBpm_returns_bpm_to_computed_value()
     {
-        Settings.Instance.RoundBPM = false;
+        Project.Instance.Settings.RoundBPM = false;
         TimingPoint point = MakePoint(154.99335007388657 / 240d);
         point.SetManualBpm(155d);
 
@@ -71,7 +71,7 @@ public class TimingPointBpmTests
     [TestCase]
     public void SetManualBpm_does_not_mark_point_manual_when_change_is_rejected()
     {
-        Settings.Instance.RoundBPM = false;
+        Project.Instance.Settings.RoundBPM = false;
         TimingPoint point = MakePoint(0.5d);
         point.PropertyChanged += (_, e) =>
         {
@@ -91,7 +91,7 @@ public class TimingPointBpmTests
     [TestCase]
     public void SetManualBpm_preserves_existing_manual_bpm_when_new_change_is_rejected()
     {
-        Settings.Instance.RoundBPM = false;
+        Project.Instance.Settings.RoundBPM = false;
         TimingPoint point = MakePoint(0.5d);
         point.SetManualBpm(125d);
         point.PropertyChanged += (_, e) =>
@@ -119,7 +119,7 @@ public class TimingPointBpmTests
 
     private static TimingPoint MakePoint(double measuresPerSecond)
     {
-        TimingPoint point = new TimingPoint(time: 0d, timeSignature: [4, 4]);
+        TimingPoint point = new TimingPoint(Project.Instance.Settings, time: 0d, timeSignature: [4, 4]);
         point.MeasuresPerSecond = measuresPerSecond;
         return point;
     }

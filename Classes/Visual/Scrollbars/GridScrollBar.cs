@@ -16,8 +16,10 @@ using Tempora.Classes.Utility;
 
 namespace Tempora.Classes.Visual;
 
-public partial class GridScrollBar : LabeledScrollbarHorizontal
+public partial class GridScrollBar : LabeledScrollbarHorizontal, ISettingsConsumer
 {
+    public Settings Settings { get; set; } = null!;
+
     protected static readonly Dictionary<int, string> GridDivisorToLabelDict = new() {
         { 1, "4/4" },
         { 2, "2/4" },
@@ -36,7 +38,7 @@ public partial class GridScrollBar : LabeledScrollbarHorizontal
         valueLabel.Text = label;
     }
 
-    protected override void UpdateTarget() => Settings.Instance.GridDivisor = Settings.GridSliderToDivisorDict[(int)hScrollBar.Value];
+    protected override void UpdateTarget() => Settings.GridDivisor = Settings.GridSliderToDivisorDict[(int)hScrollBar.Value];
 
-    protected override void SetInitialValue() => hScrollBar.Value = Settings.DivisorToSliderValue(Settings.Instance.GridDivisor);
+    protected override void SetInitialValue() => hScrollBar.Value = Settings.DivisorToSliderValue(Settings.GridDivisor);
 }

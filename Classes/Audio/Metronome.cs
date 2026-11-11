@@ -19,8 +19,10 @@ using Tempora.Classes.Utility;
 
 namespace Tempora.Classes.Audio;
 
-public partial class Metronome : Node
+public partial class Metronome : Node, ISettingsConsumer
 {
+    public Settings Settings { get; set; } = null!;
+
     [Export]
     private MusicPlayer musicPlayer = null!;
 
@@ -79,9 +81,10 @@ public partial class Metronome : Node
         musicPlayer.PitchScaleChanged += OnPitchScaleChanged;
         GlobalEvents.Instance.TimingChanged += OnTimingChanged;
 
-        GlobalEvents.Instance.SettingsChanged += OnSettingsChanged;
-        lastMetronomeFollowsGrid = Settings.Instance.MetronomeFollowsGrid;
-        lastGridDivisor = Settings.Instance.GridDivisor;
+        Settings.DisplayChanged += OnSettingsChanged;
+        TreeExiting += () => Settings.DisplayChanged -= OnSettingsChanged;
+        lastMetronomeFollowsGrid = Settings.MetronomeFollowsGrid;
+        lastGridDivisor = Settings.GridDivisor;
     }
     public override void _Process(double delta)
     {
@@ -221,14 +224,14 @@ public partial class Metronome : Node
 
     private void OnSettingsChanged(object? sender, EventArgs e)
     {
-        if (Settings.Instance.MetronomeFollowsGrid != lastMetronomeFollowsGrid)
+        if (Settings.MetronomeFollowsGrid != lastMetronomeFollowsGrid)
         {
-            lastMetronomeFollowsGrid = Settings.Instance.MetronomeFollowsGrid;
+            lastMetronomeFollowsGrid = Settings.MetronomeFollowsGrid;
             RefillBuffer();
         }
-        if (Settings.Instance.GridDivisor != lastGridDivisor)
+        if (Settings.GridDivisor != lastGridDivisor)
         {
-            lastGridDivisor = Settings.Instance.GridDivisor;
+            lastGridDivisor = Settings.GridDivisor;
             RefillBuffer();
         }
     }
@@ -241,9 +244,9 @@ public partial class Metronome : Node
     #endregion
 
 
-    private static double GetTriggerPosition(double measurePosition)
+    private double GetTriggerPosition(double measurePosition)
     {
-        return Settings.Instance.MetronomeFollowsGrid
+        return Settings.MetronomeFollowsGrid
             ? Timing.Instance.GetNextOperatingGridPosition(measurePosition)
             : Timing.Instance.GetNextOperatingBeatPosition(measurePosition);
     }

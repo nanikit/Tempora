@@ -17,16 +17,17 @@ using Tempora.Classes.Utility;
 
 namespace Tempora.Classes.Visual;
 
-public partial class VolumeSlider : HScrollBar
+public partial class VolumeSlider : HScrollBar, ISettingsConsumer
 {
-    private int busIndex;
+    public Settings Settings { get; set; } = null!;
+
     [Export] public string BusName = null!;
 
     // Called when the node enters the scene tree for the first time.
     public override void _Ready()
     {
-        busIndex = AudioServer.GetBusIndex(BusName);
-        ValueChanged += OnValueChanged;
+        int busIndex = AudioServer.GetBusIndex(BusName);
+        ValueChanged += SaveToSettings;
 
         float invertedValue = Mathf.DbToLinear(AudioServer.GetBusVolumeDb(busIndex));
         //Value = Math.Abs(1 - invertedValue);
@@ -34,26 +35,18 @@ public partial class VolumeSlider : HScrollBar
         Value = invertedValue;
     }
 
-    private void OnValueChanged(double value)
-    {
-        AudioServer.SetBusVolumeDb(
-            busIndex,
-            Mathf.LinearToDb((float)value));
-        SaveToSettings(value);
-    }
-
     private void SaveToSettings(double value)
     {
         switch (BusName)
         {
             case "Music":
-                Settings.Instance.MusicVolumeNormalized = value;
+                Settings.MusicVolumeNormalized = value;
                 break;
             case "Metronome":
-                Settings.Instance.MetronomeVolumeNormalized = value;
+                Settings.MetronomeVolumeNormalized = value;
                 break;
             case "Master":
-                Settings.Instance.MasterVolumeNormalized = value;
+                Settings.MasterVolumeNormalized = value;
                 break;
         }
     }

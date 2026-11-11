@@ -47,10 +47,10 @@ public partial class TimingShortcutTests
 
     private static async Task VerifyPointerTimeLayout(ISceneRunner runner, SubViewport viewport, AudioVisualsContainer container)
     {
-        int originalRows = Settings.Instance.NumberOfRows;
+        int originalRows = Project.Instance.Settings.NumberOfRows;
         Vector2I originalSize = viewport.Size;
         Timing originalTiming = Timing.Instance;
-        Timing timing = new Timing { IsInstantiating = true };
+        Timing timing = new Timing(Project.Instance.Settings) { IsInstantiating = true };
         Timing.Instance = timing;
 
         try
@@ -67,10 +67,10 @@ public partial class TimingShortcutTests
 
             foreach (int rows in new[] { 10, 30, 1 })
             {
-                Settings.Instance.NumberOfRows = rows;
+                Project.Instance.Settings.NumberOfRows = rows;
                 foreach (int height in new[] { 720, 480, 471, 1080 })
                     await VerifyPointerTimeAtHeight(runner, viewport, container, height);
-                AssertThat(Settings.Instance.NumberOfRows).IsEqual(rows);
+                AssertThat(Project.Instance.Settings.NumberOfRows).IsEqual(rows);
             }
             await VerifyBpmEditing(runner, viewport, container);
         }
@@ -81,7 +81,7 @@ public partial class TimingShortcutTests
             Context.Instance.TimingPointNearestCursor = null;
             TimingPointSelection.Instance.DeselectAll();
             Timing.Instance = originalTiming;
-            Settings.Instance.NumberOfRows = originalRows;
+            Project.Instance.Settings.NumberOfRows = originalRows;
             viewport.Size = originalSize;
         }
     }
@@ -173,25 +173,27 @@ public partial class TimingShortcutTests
     private static async Task VerifyRestoredRows(ISceneRunner runner, SubViewport viewport, AudioVisualsContainer container)
     {
         var scrollbar = (BlockScrollBar)runner.FindChild("BlockScrollBar")!;
-        Settings.Instance.NumberOfRows = 10;
+        Project.Instance.Settings.NumberOfRows = 10;
         scrollbar.Value = 0;
         viewport.Size = new Vector2I(1280, 720);
         await runner.AwaitIdleFrame();
         await runner.AwaitIdleFrame();
         await runner.AwaitIdleFrame();
 
+        int restoredIndex = container.VisibleRowCount - 1;
+
         viewport.Size = new Vector2I(1280, 471);
         await runner.AwaitIdleFrame();
         await runner.AwaitIdleFrame();
         await runner.AwaitIdleFrame();
-        AssertThat(container.AudioBlocks[8].Visible).IsFalse();
-        scrollbar.Value = 5;
+        AssertThat(container.AudioBlocks[restoredIndex].Visible).IsFalse();
+        scrollbar.Value = 13 - restoredIndex;
 
         viewport.Size = new Vector2I(1280, 720);
         await runner.AwaitIdleFrame();
         await runner.AwaitIdleFrame();
         await runner.AwaitIdleFrame();
-        AudioDisplayPanel restored = container.AudioBlocks[8].AudioDisplayPanel;
+        AudioDisplayPanel restored = container.AudioBlocks[restoredIndex].AudioDisplayPanel;
         IAudioSegmentDisplay waveform = restored.GetNode<Node2D>("AudioSegments").GetChildren().OfType<IAudioSegmentDisplay>().First(segment => segment.Visible);
         AssertThat(waveform.TimeRange[0]).IsEqualApprox((float)Timing.Instance.MeasurePositionToOffset(restored.ActualMeasurePositionStartForPanel), 0.001f);
         AssertThat(VisibleTimingPoints(restored).Last().TimingPoint.MeasurePosition!.Value).IsEqual(13d);
@@ -200,11 +202,11 @@ public partial class TimingShortcutTests
     private static async Task VerifyPointerTimeAtHeight(ISceneRunner runner, SubViewport viewport, AudioVisualsContainer container, int height)
     {
         viewport.Size = new Vector2I(1280, height);
+        ((BlockScrollBar)runner.FindChild("BlockScrollBar")!).Value = 0;
         await runner.AwaitIdleFrame();
         await runner.AwaitIdleFrame();
         await runner.AwaitIdleFrame();
         AssertThat(container.NominalMeasurePositionStartForTopBlock).IsLessEqual(container.LastTopMeasure);
-        ((BlockScrollBar)runner.FindChild("BlockScrollBar")!).Value = 0;
 
         AudioDisplayPanel panel = container.AudioBlocks[0].AudioDisplayPanel;
         panel.UpdateTimingPointsIndices();
@@ -217,7 +219,7 @@ public partial class TimingShortcutTests
         AssertReadable(panel, point);
         AssertThat(point.BpmLabel.GetThemeColor("font_color")).IsEqual(new Color("ff9900"));
 
-        if (height == 471 && Settings.Instance.NumberOfRows == 30)
+        if (height == 471 && Project.Instance.Settings.NumberOfRows == 30)
         {
             await VerifyRejectedDrag(runner, viewport, panel, cursor);
             AssertThat(point.OffsetLine.DefaultColor).IsEqual(Colors.Red);

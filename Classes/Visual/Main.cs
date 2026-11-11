@@ -23,8 +23,10 @@ using Tempora.Classes.Utility;
 
 namespace Tempora.Classes.Visual.AudioDisplay;
 
-public partial class Main : Control
+public partial class Main : Control, ISettingsConsumer
 {
+    public Settings Settings { get; set; } = null!;
+
     //[Export]
     //private string audioPath = "res://Audio/UMO.mp3";
     [Export]
@@ -55,7 +57,8 @@ public partial class Main : Control
         else
             Project.Instance.AudioFile = new AudioFile(defaultMP3);
 
-        GlobalEvents.Instance.SettingsChanged += OnSettingsChanged;
+        Settings.DisplayChanged += OnSettingsChanged;
+        TreeExiting += () => Settings.DisplayChanged -= OnSettingsChanged;
         audioVisualsContainer.SeekPlaybackTime += OnSeekPlaybackTime;
         GetTree().Root.FilesDropped += OnFilesDropped;
 

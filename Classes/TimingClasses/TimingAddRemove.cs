@@ -1,4 +1,4 @@
-﻿// Copyright 2024 https://github.com/kongehund
+// Copyright 2024 https://github.com/kongehund
 // 
 // This file is licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0).
 // You are free to:
@@ -28,7 +28,7 @@ public partial class Timing
     /// <param name="time"></param>
     public void AddTimingPoint(double measurePosition, double time)
     {
-        var timingPoint = new TimingPoint(time, measurePosition, GetTimeSignature(measurePosition));
+        var timingPoint = new TimingPoint(Settings, time, measurePosition, GetTimeSignature(measurePosition));
         TimingPoints.Add(timingPoint);
         SubscribeToEvents(timingPoint);
         TimingPoints.Sort();
@@ -64,7 +64,7 @@ public partial class Timing
     /// <param name="time"></param>
     public void AddTimingPoint(double measurePosition)
     {
-        var timingPoint = new TimingPoint(measurePosition);
+        var timingPoint = new TimingPoint(Settings, measurePosition);
         timingPoint.Offset = MeasurePositionToOffset(measurePosition);
         TimingPoints.Add(timingPoint);
         SubscribeToEvents(timingPoint);
@@ -84,7 +84,7 @@ public partial class Timing
     /// </summary>
     public void AddTimingPoint(double measurePosition, double time, double measuresPerSecond)
     {
-        var timingPoint = new TimingPoint(time, measurePosition, GetTimeSignature(measurePosition), measuresPerSecond);
+        var timingPoint = new TimingPoint(Settings, time, measurePosition, GetTimeSignature(measurePosition), measuresPerSecond);
         TimingPoints.Add(timingPoint);
         SubscribeToEvents(timingPoint);
         TimingPoints.Sort();
@@ -112,7 +112,7 @@ public partial class Timing
     /// <param name="time"></param>
     public void AddTimingPoint(double time, out TimingPoint? timingPoint)
     {
-        timingPoint = new TimingPoint(time, GetTimeSignature(OffsetToMeasurePosition(time)));
+        timingPoint = new TimingPoint(Settings, time, GetTimeSignature(OffsetToMeasurePosition(time)));
         TimingPoints.Add(timingPoint);
         TimingPoints.Sort();
 

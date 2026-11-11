@@ -15,7 +15,7 @@ public class TimingResourceTests
     {
         Timing originalTiming = Timing.Instance;
         int orphanCount = Node.GetOrphanNodeIds().Count;
-        Timing timing = new Timing { IsInstantiating = true };
+        Timing timing = new Timing(Project.Instance.Settings) { IsInstantiating = true };
         Timing.Instance = timing;
         try
         {

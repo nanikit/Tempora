@@ -23,13 +23,15 @@ namespace Tempora.Classes.Utility;
 /// <summary>
 /// Contains data about the current project.
 /// </summary>
-public partial class Project : Node
+public partial class Project : Node, ISettingsConsumer
 {
+    public Settings Settings { get; set; } = null!;
+
     private static Project instance = null!;
 
     private AudioFile audioFile = null!;
 
-    private Settings settings = null!;
+
 
     private string? projectPath = null;
     public string? ProjectPath
@@ -85,11 +87,11 @@ public partial class Project : Node
 
     public void UpdateSpectrogramContextFromSettings()
     {
-        int stepSize = Settings.Instance.SpectrogramStepSize;
-        int fftSize = Settings.Instance.SpectrogramFftSize;
-        int maxFreq = Settings.Instance.SpectrogramMaxFreq;
-        bool dB = Settings.Instance.SpectrogramUseDb;
-        int intensity = Settings.Instance.SpectrogramIntensity;
+        int stepSize = Settings.SpectrogramStepSize;
+        int fftSize = Settings.SpectrogramFftSize;
+        int maxFreq = Settings.SpectrogramMaxFreq;
+        bool dB = Settings.SpectrogramUseDb;
+        int intensity = Settings.SpectrogramIntensity;
         SpectrogramContext = new(SpectrogramHelper.GetSpectrogramGenerator(AudioFile, stepSize, fftSize, maxFreq, 16000));
         SpectrogramContext.DB = dB;
         SpectrogramContext.Intensity = intensity;

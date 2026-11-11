@@ -14,7 +14,7 @@ public class TimingPointOffsetSnapTests
     [TestCase]
     public void SnapOffsetChangeToBpmIncrement_stops_when_current_point_bpm_reaches_next_tenth()
     {
-        Settings.Instance.RoundBPM = true;
+        Project.Instance.Settings.RoundBPM = true;
         const double offsetChange = 0.002d;
         double initialOffsetDifference = 1d / TimingMath.BpmToMeasuresPerSecond(120.05d, [4, 4]);
         double targetOffsetDifference = 1d / TimingMath.BpmToMeasuresPerSecond(120.1d, [4, 4]);
@@ -28,7 +28,7 @@ public class TimingPointOffsetSnapTests
     [TestCase]
     public void SnapOffsetChangeToBpmIncrement_stops_when_previous_point_bpm_reaches_next_tenth()
     {
-        Settings.Instance.RoundBPM = true;
+        Project.Instance.Settings.RoundBPM = true;
         const double offsetChange = 0.002d;
         double initialOffsetDifference = 1d / TimingMath.BpmToMeasuresPerSecond(120.05d, [4, 4]);
         double targetOffsetDifference = 1d / TimingMath.BpmToMeasuresPerSecond(120d, [4, 4]);
@@ -42,7 +42,7 @@ public class TimingPointOffsetSnapTests
     [TestCase]
     public void SnapOffsetChangeToBpmIncrement_keeps_requested_change_when_tenth_is_farther_than_step()
     {
-        Settings.Instance.RoundBPM = true;
+        Project.Instance.Settings.RoundBPM = true;
         const double offsetChange = 0.0001d;
         double initialOffsetDifference = 1d / TimingMath.BpmToMeasuresPerSecond(120.05d, [4, 4]);
         Timing timing = MakeTiming((offset: 1d, measurePosition: 1d), (1d + initialOffsetDifference, 2d));
@@ -55,7 +55,7 @@ public class TimingPointOffsetSnapTests
     [TestCase]
     public void SnapOffsetChangeToBpmIncrement_keeps_requested_change_when_round_bpm_is_disabled()
     {
-        Settings.Instance.RoundBPM = false;
+        Project.Instance.Settings.RoundBPM = false;
         const double offsetChange = 0.002d;
         double initialOffsetDifference = 1d / TimingMath.BpmToMeasuresPerSecond(120.05d, [4, 4]);
         Timing timing = MakeTiming((offset: 1d, measurePosition: 1d), (1d + initialOffsetDifference, 2d));
@@ -70,7 +70,7 @@ public class TimingPointOffsetSnapTests
         // AddTimingPoint's MPS recalculation raises the global TimingChanged event, and ProjectFileManager
         // decides whether to AutoSave based on Timing.Instance.IsInstantiating. So assign the test timing as
         // Instance and keep IsInstantiating on during construction.
-        Timing timing = new Timing { IsInstantiating = true };
+        Timing timing = new Timing(Project.Instance.Settings) { IsInstantiating = true };
         Timing.Instance = timing;
         foreach ((double offset, double measurePosition) in points)
             timing.AddTimingPoint(measurePosition, offset);

@@ -21,10 +21,10 @@ using Tempora.Classes.Utility;
 
 namespace Tempora.Classes.Visual.AudioDisplay;
 
-public partial class AudioVisualsContainer : VBoxContainer
+public partial class AudioVisualsContainer : VBoxContainer, ISettingsConsumer
 {
-    // Fits BPM and pointer time inside their row, including the time label's outline.
-    private const float MinimumRowHeight = 52;
+    public Settings Settings { get; set; } = null!;
+
 
     public int VisibleRowCount { get; private set; } = 1;
     public event Action? VisibleRowCountChanged;
@@ -119,7 +119,6 @@ public partial class AudioVisualsContainer : VBoxContainer
 
     public override void _Ready()
     {
-        CustomMinimumSize = new Vector2(CustomMinimumSize.X, MinimumRowHeight);
         Resized += UpdateNumberOfVisibleBlocks;
         MouseExited += OnMouseExited;
         MusicPlayer.Paused += OnMusicPaused;
@@ -177,7 +176,7 @@ public partial class AudioVisualsContainer : VBoxContainer
         int measurePositionStart = NominalMeasurePositionStartForTopBlock;
 
         // Instantiate block scenes and add as children
-        for (int i = 0; i < Settings.Instance.MaxNumberOfBlocks; i++)
+        for (int i = 0; i < Settings.MaxNumberOfBlocks; i++)
         {
             if (packedAudioBlock.Instantiate() is not AudioBlock audioBlock)
             {
@@ -198,6 +197,7 @@ public partial class AudioVisualsContainer : VBoxContainer
 
             audioDisplayPanel.SeekPlaybackTime += OnSeekPlaybackTime;
             audioDisplayPanel.AttemptToAddTimingPoint += OnAttemptToAddTimingPoint;
+            audioDisplayPanel.TextLayoutChanged += UpdateNumberOfVisibleBlocks;
 
             audioDisplayPanel.IsInstantiating = false;
         }
@@ -211,8 +211,10 @@ public partial class AudioVisualsContainer : VBoxContainer
             return;
 
         int separation = GetThemeConstant("separation");
-        int fittingRows = Math.Max(1, (int)((Size.Y + separation) / (MinimumRowHeight + separation)));
-        int visibleRows = Math.Clamp(Settings.Instance.NumberOfRows, 1, Math.Min(fittingRows, AudioBlocks.Count));
+        float minimumHeight = AudioBlocks.Max(block => block.AudioDisplayPanel.MinimumRowHeight);
+        CustomMinimumSize = new Vector2(CustomMinimumSize.X, minimumHeight);
+        int fittingRows = Math.Max(1, (int)((Size.Y + separation) / (minimumHeight + separation)));
+        int visibleRows = Math.Clamp(Settings.NumberOfRows, 1, Math.Min(fittingRows, AudioBlocks.Count));
         bool countChanged = VisibleRowCount != visibleRows;
         VisibleRowCount = visibleRows;
 
@@ -279,7 +281,7 @@ public partial class AudioVisualsContainer : VBoxContainer
         if (e is not GlobalEvents.ObjectArgument<TimingPoint> timingPointArgument)
             throw new Exception($"{nameof(e)} was not of type {nameof(GlobalEvents.ObjectArgument<TimingPoint>)}");
 
-        if (!Settings.Instance.AutoScrollWhenAddingTimingPoints)
+        if (!Settings.AutoScrollWhenAddingTimingPoints)
             return;
 
         var timingPoint = timingPointArgument.Value;
@@ -301,7 +303,7 @@ public partial class AudioVisualsContainer : VBoxContainer
         int bestNominalMeasureStart = (int)(measurePosition - 1);
         for (int measure = bestNominalMeasureStart; measure <= bestNominalMeasureStart + 2; measure++)
         {
-            float actualStartForThisMeasure = AudioDisplayPanel.ActualMeasurePositionStart(measure);
+            float actualStartForThisMeasure = AudioDisplayPanel.ActualMeasurePositionStart(measure, Settings);
             if (actualStartForThisMeasure > measurePosition)
             {
                 NominalMeasurePositionStartForTopBlock = bestNominalMeasureStart;

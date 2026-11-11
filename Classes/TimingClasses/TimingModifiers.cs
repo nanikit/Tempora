@@ -1,4 +1,4 @@
-﻿// Copyright 2024 https://github.com/kongehund
+// Copyright 2024 https://github.com/kongehund
 // 
 // This file is licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0).
 // You are free to:
@@ -126,7 +126,7 @@ public partial class Timing
     /// <param name="oldTiming">Timing instance before the change occured</param>
     private void ShiftTimingPointsUponTimeSignatureChange(Timing oldTiming, TimeSignaturePoint changedTimeSignaturePoint)
     {
-        if (!Settings.Instance.PreserveBPMWhenChangingTimeSignature)
+        if (!Settings.PreserveBPMWhenChangingTimeSignature)
             return;
 
         ArgumentNullException.ThrowIfNull(changedTimeSignaturePoint);
@@ -321,7 +321,7 @@ public partial class Timing
 
     public double SnapOffsetChangeToBpmIncrement(int lowerIndex, int higherIndex, double offsetChange, double bpmIncrement = 0.1d)
     {
-        if (!Settings.Instance.RoundBPM || offsetChange == 0 || bpmIncrement <= 0)
+        if (!Settings.RoundBPM || offsetChange == 0 || bpmIncrement <= 0)
             return offsetChange;
         if (!ValidateIndices(lowerIndex, higherIndex, out lowerIndex, out higherIndex))
             return offsetChange;

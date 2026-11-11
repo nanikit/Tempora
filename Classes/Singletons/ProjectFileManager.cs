@@ -25,8 +25,10 @@ namespace Tempora.Classes.Utility;
 /// <summary>
 ///     Handles saving and loading of project files
 /// </summary>
-public partial class ProjectFileManager : Node
+public partial class ProjectFileManager : Node, ISettingsConsumer
 {
+    public Settings Settings { get; set; } = null!;
+
     #region Properties & Fields
     private static ProjectFileManager instance = null!;
 
@@ -39,7 +41,7 @@ public partial class ProjectFileManager : Node
     private MusicPlayer MusicPlayer => MusicPlayer.Instance;
 
     public static readonly string ProjectFileExtension = ".tmpr";
-    private Settings settings => Settings.Instance;
+
     private static readonly string[] separator = ["\r\n", "\r", "\n"];
 
     public const string AutoSavePath = "user://autosave";
@@ -92,16 +94,16 @@ public partial class ProjectFileManager : Node
         switch (config)
         {
             case SaveConfig.project:
-                SaveFileDialog.CurrentDir = Settings.Instance.ProjectFilesDirectory;
+                SaveFileDialog.CurrentDir = Settings.ProjectFilesDirectory;
                 break;
             case SaveConfig.osz:
-                SaveFileDialog.CurrentDir = Settings.Instance.OszFilesDirectory;
+                SaveFileDialog.CurrentDir = Settings.OszFilesDirectory;
                 break;
             case SaveConfig.beatSaber:
-                SaveFileDialog.CurrentDir = Settings.Instance.BeatSaberFilesDirectory;
+                SaveFileDialog.CurrentDir = Settings.BeatSaberFilesDirectory;
                 break;
             case SaveConfig.guitarGame:
-                SaveFileDialog.CurrentDir = Settings.Instance.GuitarGameFilesDirectory;
+                SaveFileDialog.CurrentDir = Settings.GuitarGameFilesDirectory;
                 break;
         }
         latestSaveConfig = config;
@@ -121,7 +123,7 @@ public partial class ProjectFileManager : Node
         {
             SaveConfig.project => Tr("Save Project"),
             SaveConfig.osz => Tr("Export osz"),
-            SaveConfig.beatSaber => string.Format(Tr("Export Beat Saber (v{0})"), Settings.Instance.BeatSaberExportFormat),
+            SaveConfig.beatSaber => string.Format(Tr("Export Beat Saber (v{0})"), Settings.BeatSaberExportFormat),
             SaveConfig.guitarGame => Tr("Export Guitar Game (.chart)"),
             _ => throw new ArgumentOutOfRangeException(nameof(latestSaveConfig))
         };
@@ -133,17 +135,17 @@ public partial class ProjectFileManager : Node
             case SaveConfig.project:
                 ProjectFileManager.SaveProjectAs(selectedPath);
                 string dir = Path.GetDirectoryName(selectedPath) ?? "";
-                Settings.Instance.ProjectFilesDirectory = dir;
+                Settings.ProjectFilesDirectory = dir;
                 break;
             case SaveConfig.osz:
                 OsuExporter.Instance.SaveOszAs_AndShowInFileExplorer(selectedPath);
                 dir = Path.GetDirectoryName(selectedPath) ?? "";
-                Settings.Instance.OszFilesDirectory = dir;
+                Settings.OszFilesDirectory = dir;
                 break;
             case SaveConfig.beatSaber:
                 BeatSaberExporter.Instance.SaveFilesToPath(selectedPath);
                 dir = Path.GetDirectoryName(selectedPath) ?? "";
-                Settings.Instance.BeatSaberFilesDirectory = dir;
+                Settings.BeatSaberFilesDirectory = dir;
                 break;
             case SaveConfig.guitarGame:
                 GuitarGameExporter.SaveChartToPath_AndShowInFileExplorer(
@@ -151,7 +153,7 @@ public partial class ProjectFileManager : Node
                     selectedPath,
                     Project.Instance.AudioFile.AudacityOrigin);
                 dir = Path.GetDirectoryName(selectedPath) ?? "";
-                Settings.Instance.GuitarGameFilesDirectory = dir;
+                Settings.GuitarGameFilesDirectory = dir;
                 break;
         }
     }
@@ -167,7 +169,7 @@ public partial class ProjectFileManager : Node
     #region Load Dialog
     public void LoadFileDialogPopup()
     {
-        LoadFileDialog.CurrentDir = Settings.Instance.ProjectFilesDirectory;
+        LoadFileDialog.CurrentDir = Settings.ProjectFilesDirectory;
         LoadFileDialog.Popup();
     }
 
@@ -197,7 +199,7 @@ public partial class ProjectFileManager : Node
             case var value when value == projectFileExtension:
                 ProjectFileManager.Instance.LoadProjectFromFilePath(selectedPath);
                 string dir = Path.GetDirectoryName(selectedPath) ?? "";
-                Settings.Instance.ProjectFilesDirectory = dir;
+                Settings.ProjectFilesDirectory = dir;
                 break;
         }
     }
@@ -355,7 +357,7 @@ public partial class ProjectFileManager : Node
 
     private void LoadProjectFromFile(string projectFile, string filePath)
     {
-        Timing.Instance = new Timing
+        Timing.Instance = new Timing(Settings)
         {
             IsInstantiating = true
         };

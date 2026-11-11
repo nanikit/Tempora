@@ -25,6 +25,8 @@ namespace Tempora.Classes.TimingClasses;
 /// </summary>
 public class TimingPoint : IComparable<TimingPoint>, ICloneable
 {
+    private readonly Settings Settings;
+
     #region Properties and Fields
 
     public bool IsInstantiating = true;
@@ -194,37 +196,42 @@ public class TimingPoint : IComparable<TimingPoint>, ICloneable
 
     #endregion
     #region Constructors
-    public TimingPoint(double time, int[] timeSignature)
+    public TimingPoint(Settings settings, double time, int[] timeSignature)
     {
+        Settings = settings;
         this.offset = time;
         this.timeSignature = timeSignature;
         SystemTimeWhenCreatedMsec = Time.GetTicksMsec();
     }
 
-    public TimingPoint(double measurePosition)
+    public TimingPoint(Settings settings, double measurePosition)
     {
+        Settings = settings;
         this.measurePosition = measurePosition;
         SystemTimeWhenCreatedMsec = Time.GetTicksMsec();
     }
 
-    public TimingPoint(double time, double measurePosition, double measuresPerSecond)
+    public TimingPoint(Settings settings, double time, double measurePosition, double measuresPerSecond)
     {
+        Settings = settings;
         this.offset = time;
         this.measurePosition = measurePosition;
         this.measuresPerSecond = measuresPerSecond;
         SystemTimeWhenCreatedMsec = Time.GetTicksMsec();
     }
 
-    public TimingPoint(double time, double measurePosition, int[] timeSignature)
+    public TimingPoint(Settings settings, double time, double measurePosition, int[] timeSignature)
     {
+        Settings = settings;
         this.offset = time;
         this.measurePosition = measurePosition;
         this.timeSignature = timeSignature;
         SystemTimeWhenCreatedMsec = Time.GetTicksMsec();
     }
 
-    public TimingPoint(double time, double measurePosition, int[] timeSignature, double measuresPerSecond)
+    public TimingPoint(Settings settings, double time, double measurePosition, int[] timeSignature, double measuresPerSecond)
     {
+        Settings = settings;
         this.offset = time;
         this.measurePosition = measurePosition;
         this.timeSignature = timeSignature;
@@ -235,8 +242,9 @@ public class TimingPoint : IComparable<TimingPoint>, ICloneable
     /// <summary>
     /// Constructor used only for cloning
     /// </summary>
-    private TimingPoint(double time, double? measurePosition, int[] timeSignature, double measuresPerSecond, double? manualBpm, bool isInstantiating)
+    private TimingPoint(Settings settings, double time, double? measurePosition, int[] timeSignature, double measuresPerSecond, double? manualBpm, bool isInstantiating)
     {
+        Settings = settings;
         this.offset = time;
         this.measurePosition = measurePosition;
         this.timeSignature = timeSignature;
@@ -251,7 +259,7 @@ public class TimingPoint : IComparable<TimingPoint>, ICloneable
 
     public object Clone()
     {
-        var timingPoint = new TimingPoint(Offset, MeasurePosition, TimeSignature, MeasuresPerSecond, ManualBpm, IsInstantiating);
+        var timingPoint = new TimingPoint(Settings, Offset, MeasurePosition, TimeSignature, MeasuresPerSecond, ManualBpm, IsInstantiating);
 
         return timingPoint;
     }
@@ -318,7 +326,7 @@ public class TimingPoint : IComparable<TimingPoint>, ICloneable
 
     public double BeatLengthSec => 1 / (Bpm / 60);
 
-    private static double RoundBpmIfNeeded(double bpm) => Settings.Instance.RoundBPM
+    private double RoundBpmIfNeeded(double bpm) => Settings.RoundBPM
         ? Math.Round(bpm * 10, MidpointRounding.ToEven) / 10d
         : bpm;
 

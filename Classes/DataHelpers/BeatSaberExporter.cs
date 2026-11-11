@@ -8,8 +8,10 @@ using Tempora.Classes.TimingClasses;
 
 namespace Tempora.Classes.Utility;
 
-public partial class BeatSaberExporter : Node
+public partial class BeatSaberExporter : Node, ISettingsConsumer
 {
+    public Settings Settings { get; set; } = null!;
+
     public static BeatSaberExporter Instance = null!;
 
     public override void _Ready()
@@ -43,7 +45,7 @@ public partial class BeatSaberExporter : Node
         string zipPath = Path.ChangeExtension(path, ".zip");
         zipPacker.Open(zipPath);
 
-        bool isV4Format = Settings.Instance.BeatSaberExportFormat == 4;
+        bool isV4Format = Settings.BeatSaberExportFormat == 4;
 
         // Info file
         var info = new Info { SongName = audioFilename };
@@ -170,7 +172,7 @@ public partial class BeatSaberExporter : Node
                 double secondsInFirstBeat = firstTimingPoint.Offset + timeOffset;
                 double bpm = 60d / secondsInFirstBeat;
 
-                var offsetTimingPoint = new TimingPoint(-timeOffset, -0.25f, [4, 4]);
+                var offsetTimingPoint = new TimingPoint(timing.Settings, -timeOffset, -0.25f, [4, 4]);
                 offsetTimingPoint.SetManualBpm(bpm);
                 timing.TimingPoints.Insert(0, offsetTimingPoint);
             }
@@ -181,7 +183,7 @@ public partial class BeatSaberExporter : Node
                 double secondsPerBeat = (firstTimingPoint.Offset + timeOffset) / beats;
                 double bpm = 60d / secondsPerBeat;
 
-                var zeroTimingPoint = new TimingPoint(-timeOffset, 0, [4, 4]);
+                var zeroTimingPoint = new TimingPoint(timing.Settings, -timeOffset, 0, [4, 4]);
                 zeroTimingPoint.SetManualBpm(bpm);
                 timing.TimingPoints.Insert(0, zeroTimingPoint);
             }
@@ -189,7 +191,7 @@ public partial class BeatSaberExporter : Node
         else
         {
             // Audio is miraculously already aligned at default 120 bpm
-            var initialTimingPoint = new TimingPoint(-timeOffset, 0, [4, 4]);
+            var initialTimingPoint = new TimingPoint(timing.Settings, -timeOffset, 0, [4, 4]);
             initialTimingPoint.SetManualBpm(120);
             timing.TimingPoints.Insert(0, initialTimingPoint);
         }

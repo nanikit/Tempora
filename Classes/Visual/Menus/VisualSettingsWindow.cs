@@ -3,8 +3,10 @@ using System;
 using System.Runtime.CompilerServices;
 using Tempora.Classes.Utility;
 
-public partial class VisualSettingsWindow : Window
+public partial class VisualSettingsWindow : Window, ISettingsConsumer
 {
+    public Settings Settings { get; set; } = null!;
+
     [Export]
     LineEdit stepSizeLineEdit = null!;
 
@@ -52,14 +54,14 @@ public partial class VisualSettingsWindow : Window
 
     private void OnAboutToPopup()
     {
-        LoadValuesFromSettings(Settings.Instance);
+        LoadValuesFromSettings(Settings);
     }
 
     private void OnOkButtonPressed()
     {
-        SaveSettings(Settings.Instance);
+        SaveSettings(Settings);
         Hide();
-        Settings.Instance.SaveSettings();
+
         Project.Instance.UpdateSpectrogramContextFromSettings();
         Project.Instance.NotificationMessage = "Saved visual options.";
     }
@@ -71,8 +73,8 @@ public partial class VisualSettingsWindow : Window
 
     private void OnApplyButtonPressed()
     {
-        SaveSettings(Settings.Instance);
-        Settings.Instance.SaveSettings();
+        SaveSettings(Settings);
+
         Project.Instance.UpdateSpectrogramContextFromSettings();
     }
 
@@ -97,14 +99,7 @@ public partial class VisualSettingsWindow : Window
         settings.SpectrogramUseDb = dBCheckbox.ButtonPressed;
     }
 
-    private void ResetToDefaults()
-    {
-        stepSizeLineEdit.Text = 64.ToString();
-        fftSizeLineEdit.Text = 256.ToString();
-        maxFreqLineEdit.Text = 2200.ToString();
-        intensityLineEdit.Text = 5.ToString();
-        dBCheckbox.ButtonPressed = true;
-    }
+    private void ResetToDefaults() => LoadValuesFromSettings(new Settings());
 
     private void CloseWithoutSaving()
     {

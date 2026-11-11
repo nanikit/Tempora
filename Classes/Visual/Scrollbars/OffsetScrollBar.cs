@@ -15,11 +15,13 @@ using Tempora.Classes.Utility;
 
 namespace Tempora.Classes.Visual;
 
-public partial class OffsetScrollBar : LabeledScrollbarHorizontal
+public partial class OffsetScrollBar : LabeledScrollbarHorizontal, ISettingsConsumer
 {
+    public Settings Settings { get; set; } = null!;
+
     protected override void UpdateValueLabel() => valueLabel.Text = (hScrollBar.Value * 100).ToString("0.0") + " %";
 
-    protected override void UpdateTarget() => Settings.Instance.DownbeatPositionOffset = (float)hScrollBar.Value;
+    protected override void UpdateTarget() => Settings.DownbeatPositionOffset = (float)hScrollBar.Value;
 
-    protected override void SetInitialValue() => hScrollBar.Value = Settings.Instance.DownbeatPositionOffset;
+    protected override void SetInitialValue() => hScrollBar.Value = Settings.DownbeatPositionOffset;
 }
