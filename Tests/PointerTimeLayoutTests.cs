@@ -50,7 +50,7 @@ public partial class TimingShortcutTests
         int originalRows = Settings.Instance.NumberOfRows;
         Vector2I originalSize = viewport.Size;
         Timing originalTiming = Timing.Instance;
-        Timing timing = AutoFree(new Timing { IsInstantiating = true })!;
+        Timing timing = new Timing { IsInstantiating = true };
         Timing.Instance = timing;
 
         try

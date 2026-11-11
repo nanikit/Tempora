@@ -16,7 +16,7 @@ public class TimingPointRuntimeTest
     [TestCase]
     public void Constructs_via_real_constructor_under_godot_runtime()
     {
-        var timingPoint = AutoFree(new TimingPoint(time: 2.473544123456789, measurePosition: 310d, timeSignature: [4, 4]))!;
+        var timingPoint = new TimingPoint(time: 2.473544123456789, measurePosition: 310d, timeSignature: [4, 4]);
 
         AssertThat(timingPoint.Offset).IsEqual(2.473544123456789);
         AssertThat(timingPoint.MeasurePosition!.Value).IsEqual(310d);

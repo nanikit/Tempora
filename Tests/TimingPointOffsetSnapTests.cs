@@ -70,7 +70,7 @@ public class TimingPointOffsetSnapTests
         // AddTimingPoint's MPS recalculation raises the global TimingChanged event, and ProjectFileManager
         // decides whether to AutoSave based on Timing.Instance.IsInstantiating. So assign the test timing as
         // Instance and keep IsInstantiating on during construction.
-        Timing timing = AutoFree(new Timing { IsInstantiating = true })!;
+        Timing timing = new Timing { IsInstantiating = true };
         Timing.Instance = timing;
         foreach ((double offset, double measurePosition) in points)
             timing.AddTimingPoint(measurePosition, offset);

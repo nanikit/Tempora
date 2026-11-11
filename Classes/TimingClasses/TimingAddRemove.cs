@@ -147,7 +147,6 @@ public partial class Timing
     {
         TimingPoint? previousTimingPoint = GetPreviousTimingPoint(timingPoint);
 
-        timingPoint.QueueFree();
         TimingPoints.Remove(timingPoint);
 
         if (previousTimingPoint != null && TimingPoints.IndexOf(previousTimingPoint) != TimingPoints.Count - 1)
@@ -184,11 +183,6 @@ public partial class Timing
         TimingPoint? previousTimingPoint = (indexFrom - 1) >= 0 ? TimingPoints[(indexFrom - 1)] : null;
         bool isIndexToLast = indexTo == TimingPoints.Count;
 
-        for (int i = indexFrom; i < indexTo; i++)
-        {
-            TimingPoint timingPoint = TimingPoints[i];
-            timingPoint.QueueFree();
-        }
         TimingPoints.RemoveRange(indexFrom, indexTo - indexFrom);
 
         if (!isIndexToLast && previousTimingPoint != null)

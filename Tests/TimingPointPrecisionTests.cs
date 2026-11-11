@@ -12,7 +12,7 @@ public class TimingPointPrecisionTests
     [TestCase]
     public void TimingPoint_preserves_double_precision_core_values()
     {
-        TimingPoint point = AutoFree(new TimingPoint(time: 0d, timeSignature: [4, 4]))!;
+        TimingPoint point = new TimingPoint(time: 0d, timeSignature: [4, 4]);
         double offset = 2.473544123456789;
         double measurePosition = 310.00000000000006;
         double measuresPerSecond = TimingMath.BpmToMeasuresPerSecond(154.99335007388657, [4, 4]);

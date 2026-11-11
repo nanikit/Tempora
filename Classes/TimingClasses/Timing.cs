@@ -14,7 +14,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Godot;
 using Tempora.Classes.DataHelpers;
 using Tempora.Classes.Utility;
 using GD = Tempora.Classes.DataHelpers.GD;
@@ -24,23 +23,8 @@ namespace Tempora.Classes.TimingClasses;
 /// <summary>
 ///     Data class controlling how the tempo of the song varies with time. Class is split into multiple scripts as it's pretty big.
 /// </summary>
-public partial class Timing : Node, IMementoOriginator
+public partial class Timing : IMementoOriginator
 {
-    // Called when the node enters the scene tree for the first time.
-    public override void _Ready()
-    {
-        if (Instance == null)
-        {
-            Instance = this;
-            Name = "The Timing Singleton";
-        }
-        else
-        {
-            throw new Exception("A new Timing instance tried to enter the Godot scene tree despite a Timing singleton already exisiting");
-        }
-    }
-
-
     #region Properties & Signals
 
     private bool isInstantiating;
@@ -59,7 +43,7 @@ public partial class Timing : Node, IMementoOriginator
     private bool ShouldCancelBatchOperation = false;
 
     public static Timing Instance { get => instance; set => instance = value; }
-    private static Timing instance = null!;
+    private static Timing instance = new();
 
     private List<TimingPoint> timingPoints = [];
 

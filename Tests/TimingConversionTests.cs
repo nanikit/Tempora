@@ -16,7 +16,7 @@ public class TimingConversionTests
         double startMeasure = 2;
         double endMeasure = 66;
         double measuresPerSecond = TimingMath.CalculateMeasuresPerSecond(startMeasure, endMeasure, startOffset, endOffset);
-        Timing timing = AutoFree(new Timing { IsInstantiating = true })!;
+        Timing timing = new Timing { IsInstantiating = true };
         timing.AddTimingPoint(startMeasure, startOffset, measuresPerSecond);
         timing.IsInstantiating = false;
 

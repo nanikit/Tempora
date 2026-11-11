@@ -7,15 +7,15 @@ using Tempora.Classes.Utility;
 using static GdUnit4.Assertions;
 
 /// <summary>
-/// Singletons are registered as autoloads (.tscn) in project.godot.
-/// Round-trip integration tests depend on them, so this pins that the autoloads are alive in the test runtime.
+/// Round-trip integration tests depend on autoload services and the current timing data.
+/// This pins that all required instances are available in the test runtime.
 /// </summary>
 [TestSuite]
 [RequireGodotRuntime]
 public class SingletonAutoloadTest
 {
     [TestCase]
-    public void Autoload_singletons_are_alive_in_test_runtime()
+    public void Required_singletons_are_available_in_test_runtime()
     {
         AssertThat(GlobalEvents.Instance).IsNotNull();
         AssertThat(Project.Instance).IsNotNull();

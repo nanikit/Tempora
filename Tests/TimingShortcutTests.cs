@@ -13,6 +13,27 @@ using static GdUnit4.Assertions;
 [RequireGodotRuntime]
 public partial class TimingShortcutTests
 {
+    private Vector2I originalWindowSize;
+    private int originalOrphanCount;
+
+    [BeforeTest]
+    public void PrepareWindow()
+    {
+        Window root = ((SceneTree)Engine.GetMainLoop()).Root;
+        originalWindowSize = root.Size;
+        root.Size = new Vector2I(1280, 720);
+        originalOrphanCount = Node.GetOrphanNodeIds().Count;
+    }
+
+    [AfterTest]
+    public async Task RestoreWindowAndCheckResources()
+    {
+        var tree = (SceneTree)Engine.GetMainLoop();
+        tree.Root.Size = originalWindowSize;
+        await tree.ToSignal(tree, SceneTree.SignalName.ProcessFrame);
+        AssertThat(Node.GetOrphanNodeIds().Count).IsEqual(originalOrphanCount);
+    }
+
     [TestCase]
     public async Task Users_can_edit_timing_with_shortcuts_see_why_BPM_cannot_change_and_use_a_remembered_language_across_the_app()
     {
@@ -28,7 +49,7 @@ public partial class TimingShortcutTests
         int rows = Settings.Instance.NumberOfRows;
         AudioFile originalAudio = Project.Instance.AudioFile;
         Timing originalTiming = Timing.Instance;
-        Timing timing = AutoFree(new Timing { IsInstantiating = true })!;
+        Timing timing = new Timing { IsInstantiating = true };
         Timing.Instance = timing;
         Settings.Instance.RoundBPM = false;
         timing.AddTimingPoint(0d, 0d, 0.5d);
@@ -207,8 +228,11 @@ public partial class TimingShortcutTests
             var gridTitle = grid.GetNode<Label>("HScrollBar/HBoxContainer/InsideTitleLabel");
             var message = (Label)runner.FindChild("MessageLabel")!;
             Project.Instance.NotificationMessage = "Saved visual options.";
-            ProjectFileManager.Instance.SaveBeatSaberFileDialogPopup();
             var saveDialog = ProjectFileManager.Instance.SaveFileDialog;
+            AssertThat(saveDialog.GetParent().GetViewport().GetVisibleRect()
+                .Intersects(new Rect2(saveDialog.Position, saveDialog.Size))).IsTrue();
+            ProjectFileManager.Instance.SaveBeatSaberFileDialogPopup();
+            AssertThat(saveDialog.Visible).IsTrue();
             string[] headings = ["Getting started", "시작하기", "はじめに", "开始使用", "開始使用"];
             string[] newProject = ["New Project", "새 프로젝트", "新規プロジェクト", "新建项目", "新增專案"];
             AssertThat(options.GetItemSubmenuNode(options.ItemCount - 1)).IsEqual(language);

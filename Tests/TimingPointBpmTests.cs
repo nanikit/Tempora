@@ -119,7 +119,7 @@ public class TimingPointBpmTests
 
     private static TimingPoint MakePoint(double measuresPerSecond)
     {
-        TimingPoint point = AutoFree(new TimingPoint(time: 0d, timeSignature: [4, 4]))!;
+        TimingPoint point = new TimingPoint(time: 0d, timeSignature: [4, 4]);
         point.MeasuresPerSecond = measuresPerSecond;
         return point;
     }

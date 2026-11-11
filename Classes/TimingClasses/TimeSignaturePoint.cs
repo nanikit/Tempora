@@ -12,11 +12,10 @@
 // Full license text is available at: https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode
 
 using System;
-using Godot;
 
 namespace Tempora.Classes.TimingClasses;
 
-public partial class TimeSignaturePoint(int[] timeSignature, int measure) : Node, IComparable<TimeSignaturePoint>, ICloneable
+public class TimeSignaturePoint(int[] timeSignature, int measure) : IComparable<TimeSignaturePoint>, ICloneable
 {
     public int Measure = measure;
     public int[] TimeSignature = timeSignature;
@@ -24,7 +23,4 @@ public partial class TimeSignaturePoint(int[] timeSignature, int measure) : Node
     public int CompareTo(TimeSignaturePoint? other) => Measure.CompareTo(other?.Measure);
 
     public object Clone() => new TimeSignaturePoint(TimeSignature, Measure);
-
-    // Called when the node enters the scene tree for the first time.
-    public override void _Ready() { }
 }

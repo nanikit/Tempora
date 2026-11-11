@@ -659,12 +659,9 @@ public partial class AudioDisplayPanel : Control
         int divisionIndex = 0;
         while (divisionIndex < 50)
         {
-            //using (
-            GridLine gridLine = GetGridLine(timeSignature, divisor, divisionIndex, measureOffset); //)
-                                                                                                   //{
-            divisionIndex++;
-
-            float measurePosition = gridLine.RelativeMeasurePosition + NominalMeasurePosition + measureOffset;
+            int index = divisionIndex++;
+            float measurePosition = (float)Timing.GetRelativeNotePosition(timeSignature, divisor, index)
+                + NominalMeasurePosition + measureOffset;
 
             if (measurePosition >= NominalMeasurePosition && measureOffset == -1)
             {
@@ -687,12 +684,11 @@ public partial class AudioDisplayPanel : Control
             if (measurePosition > ActualMeasurePositionStartForPanel + 1 + (2 * Settings.Instance.MeasureOverlap))
                 break;
 
-            timeSignature = Timing.Instance.GetTimeSignature(measurePosition);
-
+            GridLine gridLine = GetGridLine(timeSignature, divisor, index, measureOffset);
             gridLine.ZIndex = 0;
-
             GridFolder.AddChild(gridLine);
-            //}
+
+            timeSignature = Timing.Instance.GetTimeSignature(measurePosition);
         }
     }
 

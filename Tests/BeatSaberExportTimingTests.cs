@@ -31,7 +31,7 @@ public class BeatSaberExportTimingTests
 
     private static TimingPoint MakePoint(double offset, double measurePosition, double bpm)
     {
-        TimingPoint point = AutoFree(new TimingPoint(offset, measurePosition, [4, 4]))!;
+        TimingPoint point = new TimingPoint(offset, measurePosition, [4, 4]);
         point.MeasuresPerSecond = TimingMath.BpmToMeasuresPerSecond(bpm, point.TimeSignature);
         return point;
     }

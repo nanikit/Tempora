@@ -23,7 +23,7 @@ namespace Tempora.Classes.TimingClasses;
 /// The Bpm (<see cref="Bpm"/>) is calculated via the subsequent <see cref="TimingPoint"/>
 /// in <see cref="Timing.TimingPoints"/> if the subsequent point exists.
 /// </summary>
-public partial class TimingPoint : Node, IComparable<TimingPoint>, ICloneable
+public class TimingPoint : IComparable<TimingPoint>, ICloneable
 {
     #region Properties and Fields
 
