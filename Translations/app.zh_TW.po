@@ -276,8 +276,8 @@ msgstr "步長（預設值：64）"
 msgid "fftSize (Default: 256)"
 msgstr "FFT 大小（預設值：256）"
 
-msgid "maxFreq (Default: 2200)"
-msgstr "最高頻率（預設值：2200）"
+msgid "minFreq (Default: 2200)"
+msgstr "最低頻率（預設值：2200）"
 
 msgid "Intensity (Default: 5)"
 msgstr "強度（預設值：5）"

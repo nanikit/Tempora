@@ -109,8 +109,15 @@ public partial class AudioDataHelper
             startSilenceSamples = encoderDelaySamples + decoderDelaySamples + 1;
         }
 
-        shortsMixed_byte = new byte[reader.Length];
-        numRawBytes = reader.Read(shortsMixed_byte, 0, shortsMixed_byte.Length * channels);
+        // NLayer outputs float PCM; callers consume interleaved 16-bit PCM.
+        var pcm16 = new WaveFloatTo16Provider(reader);
+        using var decoded = new MemoryStream();
+        byte[] buffer = new byte[pcm16.WaveFormat.AverageBytesPerSecond];
+        int count;
+        while ((count = pcm16.Read(buffer, 0, buffer.Length)) > 0)
+            decoded.Write(buffer, 0, count);
+        shortsMixed_byte = decoded.ToArray();
+        numRawBytes = shortsMixed_byte.Length;
     }
 
     /// <summary>

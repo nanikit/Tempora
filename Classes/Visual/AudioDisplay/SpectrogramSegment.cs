@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Security.AccessControl;
+﻿using System;
+using System.Collections.Generic;
 using Godot;
 using Spectrogram;
 using Tempora.Classes.Audio;
@@ -83,11 +83,15 @@ public partial class SpectrogramSegment : Sprite2D, IAudioSegmentDisplay
 
     public void Render()
     {
+        if (Width <= 0 || Height <= 0)
+        {
+            Texture = null;
+            return;
+        }
         int sampleIndexStart = AudioDataRange[0];
         int sampleEndIndex = AudioDataRange[1];
 
-        Texture = spectrogramContext.GetSpectrogramSlice(sampleIndexStart, sampleEndIndex, (int)Height, (int)Width);
-
-        var textureSize = Texture.GetSize();
+        Texture = spectrogramContext.GetSpectrogramSlice(sampleIndexStart, sampleEndIndex, (int)Math.Ceiling(Height), (int)Math.Ceiling(Width));
+        Scale = new Vector2(Width, Height) / Texture.GetSize();
     }
 }

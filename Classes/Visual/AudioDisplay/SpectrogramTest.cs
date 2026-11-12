@@ -28,7 +28,7 @@ public partial class SpectrogramTest : Node2D
  //       int targetWidthPx = 3000;
  //       int stepSize = audio.Length / targetWidthPx;
 
- //       var sg = new SpectrogramGenerator(sampleRate, fftSize, stepSize, maxFreq: 2200);
+ //       var sg = new SpectrogramGenerator(sampleRate, fftSize, stepSize, minFreq: 2200);
  //       sg.Add(audio);
  //       sg.Colormap = new Colormap(new CustomColormap(new List<Color> { GlobalConstants.TemporaBlue, new("ffffff") }));
  //       sg.SaveImage("song.png", intensity: 5, dB: true);

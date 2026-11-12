@@ -526,37 +526,23 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
     {
         List<float[]> panelSegments = new(2);
 
-        //float margin = Settings.MeasureOverlap;
-        float offsetOfFirstSampleInThisPanel = MathF.Max((float)Timing.Instance.MeasurePositionToOffset(ActualMeasurePositionStartForPanel), 0);
-        float offsetOfLastSampleInThisPanel = MathF.Min((float)Timing.Instance.MeasurePositionToOffset(ActualMeasurePositionEndForPanel), Project.Instance.AudioFile.GetAudioLength());
+        float segmentStart = MathF.Max((float)Timing.Instance.MeasurePositionToOffset(ActualMeasurePositionStartForPanel), 0);
+        float panelEnd = MathF.Min((float)Timing.Instance.MeasurePositionToOffset(ActualMeasurePositionEndForPanel), Project.Instance.AudioFile.GetAudioLength());
+        if (segmentStart >= panelEnd)
+            return panelSegments;
 
         TimingPoint? previousTimingPoint = Timing.Instance.GetOperatingTimingPoint_ByMeasurePosition(ActualMeasurePositionStartForPanel);
         TimingPoint? firstTimingPointInPanel = Timing.Instance.GetNextTimingPoint(previousTimingPoint);
-        firstTimingPointInPanel = firstTimingPointInPanel?.MeasurePosition > ActualMeasurePositionEndForPanel ? null : firstTimingPointInPanel;
-
-        panelSegments.Add([offsetOfFirstSampleInThisPanel, (float)(firstTimingPointInPanel?.Offset ?? offsetOfLastSampleInThisPanel)]);
-
-        if (firstTimingPointInPanel == null)
-            return panelSegments;
-
-        int firstPointIndex = Timing.Instance.TimingPoints.IndexOf(firstTimingPointInPanel);
-        for (int i = firstPointIndex; Timing.Instance.TimingPoints[i]?.MeasurePosition < ActualMeasurePositionEndForPanel; i++)
+        int firstPointIndex = firstTimingPointInPanel == null ? Timing.Instance.TimingPoints.Count : Timing.Instance.TimingPoints.IndexOf(firstTimingPointInPanel);
+        for (int i = firstPointIndex; i < Timing.Instance.TimingPoints.Count && Timing.Instance.TimingPoints[i].MeasurePosition < ActualMeasurePositionEndForPanel; i++)
         {
-            TimingPoint timingPoint = Timing.Instance.TimingPoints[i];
-
-            bool isNextPointOutOfRange = (i + 1 >= Timing.Instance.TimingPoints.Count);
-            bool isNextPointOutsideOfPanel = isNextPointOutOfRange
-                || (Timing.Instance.TimingPoints[i + 1].MeasurePosition > ActualMeasurePositionEndForPanel);
-
-            float panelSegmentStartTime = (float)timingPoint.Offset;
-            float panelSegmentEndTime = (float)(isNextPointOutsideOfPanel ? offsetOfLastSampleInThisPanel : Timing.Instance.TimingPoints[i + 1].Offset);
-
-            panelSegments.Add([panelSegmentStartTime, panelSegmentEndTime]);
-
-            if (isNextPointOutOfRange)
-                break;
+            float segmentEnd = Math.Clamp((float)Timing.Instance.TimingPoints[i].Offset, segmentStart, panelEnd);
+            if (segmentStart < segmentEnd)
+                panelSegments.Add([segmentStart, segmentEnd]);
+            segmentStart = segmentEnd;
         }
-
+        if (segmentStart < panelEnd)
+            panelSegments.Add([segmentStart, panelEnd]);
         return panelSegments;
     }
 

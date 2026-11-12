@@ -12,6 +12,11 @@ run = "dotnet build Tempora.csproj -c Debug"
 description = "Run gdUnit4 C# tests"
 run = 'dotnet test Tempora.csproj --settings .runsettings -e GODOT_BIN={{ tools["http:godot-mono"].path }}/Godot_v{{ tools["http:godot-mono"].version }}_mono_win64_console.exe'
 
+[tasks."test:export-startup"]
+description = "Capture Windows export startup screens and check runtime errors"
+usage = 'arg "<executable>"'
+run = 'pwsh -NoProfile -File Tests/ExportStartupSmoke.ps1 -Executable "{{ usage.executable }}"'
+
 [tasks.release]
 description = "Bump an already published version, commit, and push main and release"
 shell = "pwsh -NoProfile -Command"

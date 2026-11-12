@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bmawdtoq15vkb" path="res://Classes/Visual/Menus/VisualSettingsWindow.cs" id="1_irav1"]
 
-[node name="VisualSettingsWindow" type="Window" node_paths=PackedStringArray("stepSizeLineEdit", "fftSizeLineEdit", "maxFreqLineEdit", "intensityLineEdit", "dBCheckbox", "okButton", "defaultsButton", "applyButton")]
+[node name="VisualSettingsWindow" type="Window" node_paths=PackedStringArray("stepSizeLineEdit", "fftSizeLineEdit", "minFreqLineEdit", "intensityLineEdit", "dBCheckbox", "okButton", "defaultsButton", "applyButton")]
 title = "Visual Settings"
 position = Vector2i(0, 36)
 size = Vector2i(640, 360)
@@ -11,7 +11,7 @@ wrap_controls = true
 script = ExtResource("1_irav1")
 stepSizeLineEdit = NodePath("Margin/Layout/TabContainer/Spectrogram/stepSize/LineEdit")
 fftSizeLineEdit = NodePath("Margin/Layout/TabContainer/Spectrogram/fftSize/LineEdit")
-maxFreqLineEdit = NodePath("Margin/Layout/TabContainer/Spectrogram/maxFreq/LineEdit")
+minFreqLineEdit = NodePath("Margin/Layout/TabContainer/Spectrogram/minFreq/LineEdit")
 intensityLineEdit = NodePath("Margin/Layout/TabContainer/Spectrogram/Intensity/LineEdit")
 dBCheckbox = NodePath("Margin/Layout/TabContainer/Spectrogram/dB/CheckBox")
 okButton = NodePath("Margin/Layout/BottomButtonsHBox/OkButton")
@@ -96,17 +96,17 @@ size_flags_horizontal = 3
 text = "Intensity (Default: 5)"
 vertical_alignment = 1
 
-[node name="maxFreq" type="HBoxContainer" parent="Margin/Layout/TabContainer/Spectrogram"]
+[node name="minFreq" type="HBoxContainer" parent="Margin/Layout/TabContainer/Spectrogram"]
 layout_mode = 2
 
-[node name="LineEdit" type="LineEdit" parent="Margin/Layout/TabContainer/Spectrogram/maxFreq"]
+[node name="LineEdit" type="LineEdit" parent="Margin/Layout/TabContainer/Spectrogram/minFreq"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Margin/Layout/TabContainer/Spectrogram/maxFreq"]
+[node name="Label" type="Label" parent="Margin/Layout/TabContainer/Spectrogram/minFreq"]
 layout_mode = 2
 autowrap_mode = 3
 size_flags_horizontal = 3
-text = "maxFreq (Default: 2200)"
+text = "minFreq (Default: 2200)"
 vertical_alignment = 1
 
 [node name="dB" type="HBoxContainer" parent="Margin/Layout/TabContainer/Spectrogram"]

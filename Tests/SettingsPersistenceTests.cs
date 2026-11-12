@@ -66,18 +66,21 @@ public class SettingsPersistenceTests
         try
         {
             CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("de-DE");
-            const string legacy = "HelpLanguage;ko\nNumberOfRows;17\nMusicVolumeNormalized;0,6\nSpectrogramIntensity;8\nRoundBPM;False\n";
+            const string legacy = "HelpLanguage;ko\nNumberOfRows;17\nMusicVolumeNormalized;0,6\nSpectrogramIntensity;8\nSpectrogramMaxFreq;8000\nRoundBPM;False\n";
             File.WriteAllText(legacyPath, legacy);
             var store = new SettingsStore(path, legacyPath);
             Settings settings = store.Load();
+            AssertThat(settings.SpectrogramMinFreq).IsEqual(2200);
             AssertThat(settings.Language).IsEqual("ko");
             AssertThat(settings.MusicVolumeNormalized).IsEqual(0.6d);
             AssertThat(File.ReadAllText(legacyPath)).IsEqual(legacy);
             settings.Language = "ja";
+            settings.SpectrogramMinFreq = 3300;
             settings.ProjectFilesDirectory = "C:/music/曲;demo";
             store.Save(settings);
             CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
             Settings restarted = store.Load();
+            AssertThat(restarted.SpectrogramMinFreq).IsEqual(3300);
             AssertThat(restarted.Language).IsEqual("ja");
             AssertThat(restarted.NumberOfRows).IsEqual(17);
             AssertThat(restarted.RoundBPM).IsFalse();
@@ -86,6 +89,8 @@ public class SettingsPersistenceTests
             AssertThat(restarted.MusicVolumeNormalized).IsEqual(0.6d);
             using var config = new ConfigFile();
             AssertThat(config.Load(path)).IsEqual(Error.Ok);
+            AssertThat(config.GetValue("settings", "SpectrogramMinFreq").AsInt32()).IsEqual(3300);
+            AssertThat(config.HasSectionKey("settings", "SpectrogramMaxFreq")).IsFalse();
             AssertThat(config.GetValue("settings", "HelpLanguage").AsString()).IsEqual("ja");
         }
         finally

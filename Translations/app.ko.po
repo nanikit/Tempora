@@ -276,8 +276,8 @@ msgstr "이동 간격 (기본값: 64)"
 msgid "fftSize (Default: 256)"
 msgstr "FFT 크기 (기본값: 256)"
 
-msgid "maxFreq (Default: 2200)"
-msgstr "최대 주파수 (기본값: 2200)"
+msgid "minFreq (Default: 2200)"
+msgstr "최소 주파수 (기본값: 2200)"
 
 msgid "Intensity (Default: 5)"
 msgstr "강도 (기본값: 5)"

@@ -89,10 +89,10 @@ public partial class Project : Node, ISettingsConsumer
     {
         int stepSize = Settings.SpectrogramStepSize;
         int fftSize = Settings.SpectrogramFftSize;
-        int maxFreq = Settings.SpectrogramMaxFreq;
+        int minFreq = Settings.SpectrogramMinFreq;
         bool dB = Settings.SpectrogramUseDb;
         int intensity = Settings.SpectrogramIntensity;
-        SpectrogramContext = new(SpectrogramHelper.GetSpectrogramGenerator(AudioFile, stepSize, fftSize, maxFreq, 16000));
+        SpectrogramContext = new(SpectrogramHelper.GetSpectrogramGenerator(AudioFile, stepSize, fftSize, minFreq, 16000));
         SpectrogramContext.DB = dB;
         SpectrogramContext.Intensity = intensity;
         SpectrogramContext.UpdateSpectrogram();

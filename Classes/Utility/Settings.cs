@@ -222,11 +222,11 @@ public sealed class Settings : INotifyPropertyChanged
         set => Set(ref spectrogramFftSize, Math.Abs(value));
     }
 
-    private int spectrogramMaxFreq = 2200;
-    public int SpectrogramMaxFreq
+    private int spectrogramMinFreq = 2200;
+    public int SpectrogramMinFreq
     {
-        get => spectrogramMaxFreq;
-        set => Set(ref spectrogramMaxFreq, Math.Abs(value));
+        get => spectrogramMinFreq;
+        set => Set(ref spectrogramMinFreq, Math.Abs(value));
     }
 
     private int spectrogramIntensity = 5;

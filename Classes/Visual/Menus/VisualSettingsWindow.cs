@@ -14,7 +14,7 @@ public partial class VisualSettingsWindow : Window, ISettingsConsumer
     LineEdit fftSizeLineEdit = null!;
 
     [Export]
-    LineEdit maxFreqLineEdit = null!;
+    LineEdit minFreqLineEdit = null!;
 
     [Export]
     LineEdit intensityLineEdit = null!;
@@ -47,7 +47,7 @@ public partial class VisualSettingsWindow : Window, ISettingsConsumer
     {
         stepSizeLineEdit.Text = settings.SpectrogramStepSize.ToString();
         fftSizeLineEdit.Text = settings.SpectrogramFftSize.ToString();
-        maxFreqLineEdit.Text = settings.SpectrogramMaxFreq.ToString();
+        minFreqLineEdit.Text = settings.SpectrogramMinFreq.ToString();
         intensityLineEdit.Text = settings.SpectrogramIntensity.ToString();
         dBCheckbox.ButtonPressed = settings.SpectrogramUseDb;
     }
@@ -88,9 +88,9 @@ public partial class VisualSettingsWindow : Window, ISettingsConsumer
         if (fftSizeParsed)
             settings.SpectrogramFftSize = fftSize;
 
-        bool maxFreqParsed = int.TryParse(maxFreqLineEdit.Text, out int maxFreq);
-        if (maxFreqParsed)
-            settings.SpectrogramMaxFreq = maxFreq;
+        bool minFreqParsed = int.TryParse(minFreqLineEdit.Text, out int minFreq);
+        if (minFreqParsed)
+            settings.SpectrogramMinFreq = minFreq;
 
         bool intensityParsed = int.TryParse(intensityLineEdit.Text, out int intensity);
         if (intensityParsed)

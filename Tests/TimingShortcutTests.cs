@@ -275,22 +275,25 @@ public partial class TimingShortcutTests
             volume.Value = originalVolume;
         }
         var window = (Window)runner.FindChild("VisualSettingsWindow")!;
-        var input = window.GetNode<LineEdit>("Margin/Layout/TabContainer/Spectrogram/Intensity/LineEdit");
-        int original = Project.Instance.Settings.SpectrogramIntensity;
+        var input = window.GetNode<LineEdit>("Margin/Layout/TabContainer/Spectrogram/minFreq/LineEdit");
+        int original = Project.Instance.Settings.SpectrogramMinFreq;
         try
         {
             window.Popup();
-            input.Text = (original + 1).ToString();
+            input.Text = (original + 1000).ToString();
             window.EmitSignal(Window.SignalName.CloseRequested);
             window.Popup();
             AssertThat(input.Text).IsEqual(original.ToString());
-            input.Text = (original + 1).ToString();
+            input.Text = (original + 1000).ToString();
             window.GetNode<Button>("Margin/Layout/BottomButtonsHBox/ApplyButton").EmitSignal(Button.SignalName.Pressed);
-            input.Text = (original + 2).ToString();
+            var spectrum = Project.Instance.SpectrogramContext.SpectrogramGenerator;
+            AssertThat(spectrum.FreqMin).IsBetween(original + 1000 - spectrum.HzPerPx, original + 1000d);
+            AssertThat(new SettingsStore().Load().SpectrogramMinFreq).IsEqual(original + 1000);
+            input.Text = (original + 2000).ToString();
             window.EmitSignal(Window.SignalName.CloseRequested);
             window.Popup();
             await runner.AwaitIdleFrame();
-            AssertThat(input.Text).IsEqual((original + 1).ToString());
+            AssertThat(input.Text).IsEqual((original + 1000).ToString());
         }
         finally
         {

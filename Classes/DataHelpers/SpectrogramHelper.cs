@@ -39,8 +39,7 @@ public static class SpectrogramHelper
 		Godot.Image sliceImage = Godot.Image.CreateEmpty(sliceWidth, sliceHeight, false, fullImage.GetFormat());
 		sliceImage.BlitRect(fullImage, new Rect2I(xStart, 0, sliceWidth, sliceHeight), new Vector2I(0, 0));
 
-		// Resize vertically if needed
-		if (sliceImage.GetHeight() != targetHeight)
+		if (sliceImage.GetSize() != new Vector2I(targetWidth, targetHeight))
 		{
 			sliceImage.Resize(targetWidth, targetHeight, Godot.Image.Interpolation.Nearest);
 		}
@@ -51,21 +50,21 @@ public static class SpectrogramHelper
 	/// <summary>
 	/// Generate SpectrogramGenerator from AudioFile based on target width in pixels.
 	/// </summary>
-	public static SpectrogramGenerator GetSpectrogramGenerator_ByWidth(PcmData pcmData, int targetWidthPixels = 3000, int fftSize = 16384, int maxFreq = 2200, double multiplier = 16_000)
+	public static SpectrogramGenerator GetSpectrogramGenerator_ByWidth(PcmData pcmData, int targetWidthPixels = 3000, int fftSize = 16384, int minFreq = 2200, double multiplier = 16_000)
 	{
 		int stepSize = pcmData.PcmFloats[0].Length / targetWidthPixels;
-		return GetSpectrogramGenerator(pcmData, stepSize, fftSize, maxFreq, multiplier);
+		return GetSpectrogramGenerator(pcmData, stepSize, fftSize, minFreq, multiplier);
 	}
 
 	/// <summary>
 	/// Generate SpectrogramGenerator from AudioFile with known stepSize.
 	/// </summary>
-	public static SpectrogramGenerator GetSpectrogramGenerator(PcmData pcmData, int stepSize = 100, int fftSize = 16384, int maxFreq = 20000, double multiplier = 16_000)
+	public static SpectrogramGenerator GetSpectrogramGenerator(PcmData pcmData, int stepSize = 100, int fftSize = 16384, int minFreq = 2200, double multiplier = 16_000)
 	{
 		if (stepSize < 1) throw new ArgumentOutOfRangeException(nameof(stepSize), "Must be at least 1.");
 		double[] audio = pcmData.GetPcmAsDoubles(multiplier);
 		int sampleRate = pcmData.SampleRate;
-		var spectrogramGenerator = new SpectrogramGenerator(sampleRate, fftSize, stepSize, maxFreq);
+		var spectrogramGenerator = new SpectrogramGenerator(sampleRate, fftSize, stepSize, minFreq: minFreq);
 
 		spectrogramGenerator.Add(audio);
 

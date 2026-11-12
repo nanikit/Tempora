@@ -276,8 +276,8 @@ msgstr "移動幅（初期値: 64）"
 msgid "fftSize (Default: 256)"
 msgstr "FFT サイズ（初期値: 256）"
 
-msgid "maxFreq (Default: 2200)"
-msgstr "最大周波数（初期値: 2200）"
+msgid "minFreq (Default: 2200)"
+msgstr "最小周波数（初期値: 2200）"
 
 msgid "Intensity (Default: 5)"
 msgstr "強度（初期値: 5）"
