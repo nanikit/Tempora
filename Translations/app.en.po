@@ -140,8 +140,8 @@ msgstr "Playback when adding points"
 msgid "Spectrogram View"
 msgstr "Spectrogram View"
 
-msgid "Spectrogram Settings..."
-msgstr "Spectrogram Settings..."
+msgid "Display Settings..."
+msgstr "Display Settings..."
 
 msgid "Double BPM"
 msgstr "Double BPM"
@@ -266,8 +266,8 @@ msgstr "Beat Saber Info.dat export format"
 msgid "Reset to Defaults"
 msgstr "Reset to Defaults"
 
-msgid "Visual Settings"
-msgstr "Visual Settings"
+msgid "Display Settings"
+msgstr "Display Settings"
 
 msgid "Spectrogram"
 msgstr "Spectrogram"
@@ -582,3 +582,12 @@ msgstr "Alert!"
 
 msgid "Please Confirm..."
 msgstr "Please Confirm..."
+
+msgid "Text"
+msgstr "Text"
+
+msgid "Text Size"
+msgstr "Text Size"
+
+msgid "Reset"
+msgstr "Reset"

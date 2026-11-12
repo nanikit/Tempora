@@ -1,11 +1,18 @@
 using Godot;
-using System;
-using System.Runtime.CompilerServices;
 using Tempora.Classes.Utility;
 
 public partial class VisualSettingsWindow : Window, ISettingsConsumer
 {
     public Settings Settings { get; set; } = null!;
+
+    [Export]
+    HSlider textScaleSlider = null!;
+
+    [Export]
+    SpinBox textScalePercentage = null!;
+
+    [Export]
+    Button textDefaultsButton = null!;
 
     [Export]
     LineEdit stepSizeLineEdit = null!;
@@ -31,10 +38,10 @@ public partial class VisualSettingsWindow : Window, ISettingsConsumer
     [Export]
     Button applyButton = null!;
 
-
-    // Called when the node enters the scene tree for the first time.
     public override void _Ready()
     {
+        textScaleSlider.Share(textScalePercentage);
+        textDefaultsButton.Pressed += () => textScaleSlider.Value = 100;
         okButton.Pressed += OnOkButtonPressed;
         defaultsButton.Pressed += OnResetButtonPressed;
         applyButton.Pressed += OnApplyButtonPressed;
@@ -43,7 +50,7 @@ public partial class VisualSettingsWindow : Window, ISettingsConsumer
         AboutToPopup += OnAboutToPopup;
     }
 
-    private void LoadValuesFromSettings(Settings settings)
+    private void LoadSpectrogramValues(Settings settings)
     {
         stepSizeLineEdit.Text = settings.SpectrogramStepSize.ToString();
         fftSizeLineEdit.Text = settings.SpectrogramFftSize.ToString();
@@ -54,32 +61,46 @@ public partial class VisualSettingsWindow : Window, ISettingsConsumer
 
     private void OnAboutToPopup()
     {
-        LoadValuesFromSettings(Settings);
+        textScaleSlider.Value = Settings.TextScaleFactor * 100;
+        LoadSpectrogramValues(Settings);
     }
 
     private void OnOkButtonPressed()
     {
-        SaveSettings(Settings);
+        ApplySettings();
         Hide();
 
-        Project.Instance.UpdateSpectrogramContextFromSettings();
         Project.Instance.NotificationMessage = "Saved visual options.";
     }
 
     private void OnResetButtonPressed()
     {
-        ResetToDefaults();
+        LoadSpectrogramValues(new Settings());
     }
 
     private void OnApplyButtonPressed()
     {
-        SaveSettings(Settings);
+        ApplySettings();
+    }
 
-        Project.Instance.UpdateSpectrogramContextFromSettings();
+    private void ApplySettings()
+    {
+        var previous = (Settings.SpectrogramStepSize, Settings.SpectrogramFftSize,
+            Settings.SpectrogramMinFreq, Settings.SpectrogramIntensity, Settings.SpectrogramUseDb);
+        SaveSettings(Settings);
+        var current = (Settings.SpectrogramStepSize, Settings.SpectrogramFftSize,
+            Settings.SpectrogramMinFreq, Settings.SpectrogramIntensity, Settings.SpectrogramUseDb);
+        if (previous != current)
+            Project.Instance.UpdateSpectrogramContextFromSettings();
     }
 
     private void SaveSettings(Settings settings)
     {
+        // A hidden SpinBox can retain stale text until its next draw.
+        if (textScalePercentage.IsVisibleInTree())
+            textScalePercentage.Apply();
+        settings.TextScaleFactor = textScalePercentage.Value / 100;
+
         bool stepSizeParsed = int.TryParse(stepSizeLineEdit.Text, out int stepSize);
         if (stepSizeParsed)
             settings.SpectrogramStepSize = stepSize;
@@ -98,8 +119,6 @@ public partial class VisualSettingsWindow : Window, ISettingsConsumer
 
         settings.SpectrogramUseDb = dBCheckbox.ButtonPressed;
     }
-
-    private void ResetToDefaults() => LoadValuesFromSettings(new Settings());
 
     private void CloseWithoutSaving()
     {

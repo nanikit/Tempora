@@ -138,8 +138,8 @@ msgstr "添加时间点时播放"
 msgid "Spectrogram View"
 msgstr "频谱图视图"
 
-msgid "Spectrogram Settings..."
-msgstr "频谱图设置..."
+msgid "Display Settings..."
+msgstr "显示设置..."
 
 msgid "Double BPM"
 msgstr "BPM 加倍"
@@ -264,8 +264,8 @@ msgstr "Beat Saber Info.dat 导出格式"
 msgid "Reset to Defaults"
 msgstr "恢复默认值"
 
-msgid "Visual Settings"
-msgstr "可视化设置"
+msgid "Display Settings"
+msgstr "显示设置"
 
 msgid "Spectrogram"
 msgstr "频谱图"
@@ -580,3 +580,12 @@ msgstr "提示"
 
 msgid "Please Confirm..."
 msgstr "请确认..."
+
+msgid "Text"
+msgstr "文字"
+
+msgid "Text Size"
+msgstr "文字大小"
+
+msgid "Reset"
+msgstr "重置"

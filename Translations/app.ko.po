@@ -138,8 +138,8 @@ msgstr "포인트 추가 시 재생"
 msgid "Spectrogram View"
 msgstr "스펙트로그램 보기"
 
-msgid "Spectrogram Settings..."
-msgstr "스펙트로그램 설정..."
+msgid "Display Settings..."
+msgstr "화면 설정..."
 
 msgid "Double BPM"
 msgstr "BPM 두 배로"
@@ -264,8 +264,8 @@ msgstr "Beat Saber Info.dat 내보내기 형식"
 msgid "Reset to Defaults"
 msgstr "기본값으로 복원"
 
-msgid "Visual Settings"
-msgstr "시각화 설정"
+msgid "Display Settings"
+msgstr "화면 설정"
 
 msgid "Spectrogram"
 msgstr "스펙트로그램"
@@ -580,3 +580,12 @@ msgstr "알림"
 
 msgid "Please Confirm..."
 msgstr "확인해 주세요..."
+
+msgid "Text"
+msgstr "글자"
+
+msgid "Text Size"
+msgstr "글자 크기"
+
+msgid "Reset"
+msgstr "초기화"

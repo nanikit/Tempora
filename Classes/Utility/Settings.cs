@@ -29,6 +29,13 @@ public sealed class Settings : INotifyPropertyChanged
         set => Set(ref language, value);
     }
 
+    private double textScaleFactor = 1;
+    public double TextScaleFactor
+    {
+        get => textScaleFactor;
+        set => Set(ref textScaleFactor, value);
+    }
+
     private string projectFilesDirectory = "";
     public string ProjectFilesDirectory
     {

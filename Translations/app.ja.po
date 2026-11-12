@@ -138,8 +138,8 @@ msgstr "ポイント追加時に再生"
 msgid "Spectrogram View"
 msgstr "スペクトログラム表示"
 
-msgid "Spectrogram Settings..."
-msgstr "スペクトログラム設定..."
+msgid "Display Settings..."
+msgstr "表示設定..."
 
 msgid "Double BPM"
 msgstr "BPM を2倍にする"
@@ -264,7 +264,7 @@ msgstr "Beat Saber Info.dat のエクスポート形式"
 msgid "Reset to Defaults"
 msgstr "初期値に戻す"
 
-msgid "Visual Settings"
+msgid "Display Settings"
 msgstr "表示設定"
 
 msgid "Spectrogram"
@@ -580,3 +580,12 @@ msgstr "通知"
 
 msgid "Please Confirm..."
 msgstr "確認してください..."
+
+msgid "Text"
+msgstr "文字"
+
+msgid "Text Size"
+msgstr "文字サイズ"
+
+msgid "Reset"
+msgstr "初期化"

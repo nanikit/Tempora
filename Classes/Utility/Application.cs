@@ -26,6 +26,7 @@ public partial class Application : Node
         ApplyVolume("Master", settings.MasterVolumeNormalized);
         settings.PropertyChanged += OnSettingChanged;
         InitializeTextScale();
+        ApplyTextScale();
         textSizing.Register(GetTree().Root);
         // NodeAdded runs before _Ready, including for autoloads and dynamically created rows.
         GetTree().NodeAdded += ConfigureNode;
@@ -51,8 +52,10 @@ public partial class Application : Node
     public void ApplySystemTextScale(double scale)
     {
         SystemTextScale = scale;
-        textSizing.ApplySystemScale(scale);
+        ApplyTextScale();
     }
+
+    private void ApplyTextScale() => textSizing.ApplyScale(SystemTextScale, settings.TextScaleFactor);
 
     private void LoadSettings()
     {
@@ -106,6 +109,7 @@ public partial class Application : Node
         switch (name)
         {
             case nameof(Settings.Language): ApplyLanguage(); break;
+            case nameof(Settings.TextScaleFactor): ApplyTextScale(); break;
             case nameof(Settings.MusicVolumeNormalized): ApplyVolume("Music", settings.MusicVolumeNormalized); break;
             case nameof(Settings.MetronomeVolumeNormalized): ApplyVolume("Metronome", settings.MetronomeVolumeNormalized); break;
             case nameof(Settings.MasterVolumeNormalized): ApplyVolume("Master", settings.MasterVolumeNormalized); break;

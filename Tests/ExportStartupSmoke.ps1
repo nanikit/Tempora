@@ -24,7 +24,7 @@ function Restore-ExampleProject([string] $directory) {
     $userData = Join-Path $directory 'profile/Godot/app_userdata/Tempora'
     $audio = Join-Path $directory 'Loop.mp3'
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot '../Audio/Loop.mp3') -Destination $audio
-    [IO.File]::WriteAllText((Join-Path $userData 'settings.cfg'), "[settings]`nNumberOfRows=3`n")
+    [IO.File]::WriteAllText((Join-Path $userData 'settings.cfg'), "[settings]`nNumberOfRows=3`nTextScaleFactor=2.0`n")
     [IO.File]::WriteAllText((Join-Path $userData 'autosave.tmpr'), "[AudioPath]`n$audio`n[TimeSignaturePoints]`n[TimingPoints]`n0;0;4;4;0.5`n")
 }
 

@@ -24,14 +24,14 @@ public class TextSizingTests
             sizing.Register(window);
             sizing.Register(label);
             AssertThat(label.GetThemeFontSize("font_size")).IsEqual(18);
-            sizing.ApplySystemScale(1.5);
-            AssertThat(label.GetThemeFontSize("font_size")).IsEqual(26);
+            sizing.ApplyScale(1.5, 1.2);
+            AssertThat(label.GetThemeFontSize("font_size")).IsEqual(32);
             var newLabel = new Label();
             newLabel.AddThemeFontSizeOverride("font_size", 14);
             window.AddChild(newLabel);
             sizing.Register(newLabel);
-            AssertThat(newLabel.GetThemeFontSize("font_size")).IsEqual(26);
-            sizing.ApplySystemScale(1);
+            AssertThat(newLabel.GetThemeFontSize("font_size")).IsEqual(32);
+            sizing.ApplyScale(1, 1);
             sizing.Register(label);
             AssertThat(label.GetThemeFontSize("font_size")).IsEqual(18);
             AssertThat(newLabel.GetThemeFontSize("font_size")).IsEqual(18);

@@ -2,13 +2,16 @@
 
 [ext_resource type="Script" uid="uid://bmawdtoq15vkb" path="res://Classes/Visual/Menus/VisualSettingsWindow.cs" id="1_irav1"]
 
-[node name="VisualSettingsWindow" type="Window" node_paths=PackedStringArray("stepSizeLineEdit", "fftSizeLineEdit", "minFreqLineEdit", "intensityLineEdit", "dBCheckbox", "okButton", "defaultsButton", "applyButton")]
-title = "Visual Settings"
+[node name="VisualSettingsWindow" type="Window" node_paths=PackedStringArray("textScaleSlider", "textScalePercentage", "textDefaultsButton", "stepSizeLineEdit", "fftSizeLineEdit", "minFreqLineEdit", "intensityLineEdit", "dBCheckbox", "okButton", "defaultsButton", "applyButton")]
+title = "Display Settings"
 position = Vector2i(0, 36)
 size = Vector2i(640, 360)
 min_size = Vector2i(520, 360)
 wrap_controls = true
 script = ExtResource("1_irav1")
+textScaleSlider = NodePath("Margin/Layout/TabContainer/Text/Scale/Slider")
+textScalePercentage = NodePath("Margin/Layout/TabContainer/Text/Scale/Percentage")
+textDefaultsButton = NodePath("Margin/Layout/TabContainer/Text/DefaultsButton")
 stepSizeLineEdit = NodePath("Margin/Layout/TabContainer/Spectrogram/stepSize/LineEdit")
 fftSizeLineEdit = NodePath("Margin/Layout/TabContainer/Spectrogram/fftSize/LineEdit")
 minFreqLineEdit = NodePath("Margin/Layout/TabContainer/Spectrogram/minFreq/LineEdit")
@@ -38,9 +41,46 @@ layout_mode = 2
 size_flags_vertical = 3
 current_tab = 0
 
-[node name="Spectrogram" type="VBoxContainer" parent="Margin/Layout/TabContainer"]
+[node name="Text" type="VBoxContainer" parent="Margin/Layout/TabContainer"]
 layout_mode = 2
 metadata/_tab_index = 0
+theme_override_constants/separation = 12
+
+[node name="Scale" type="HBoxContainer" parent="Margin/Layout/TabContainer/Text"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Label" type="Label" parent="Margin/Layout/TabContainer/Text/Scale"]
+layout_mode = 2
+text = "Text Size"
+
+[node name="Slider" type="HSlider" parent="Margin/Layout/TabContainer/Text/Scale"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+min_value = 75.0
+max_value = 200.0
+step = 5.0
+value = 100.0
+
+[node name="Percentage" type="SpinBox" parent="Margin/Layout/TabContainer/Text/Scale"]
+layout_mode = 2
+min_value = 75.0
+max_value = 200.0
+step = 5.0
+value = 100.0
+suffix = "%"
+
+[node name="DefaultsButton" type="Button" parent="Margin/Layout/TabContainer/Text"]
+layout_mode = 2
+size_flags_horizontal = 0
+text = "Reset"
+
+[node name="Spectrogram" type="VBoxContainer" parent="Margin/Layout/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 1
 
 [node name="DefaultsButton" type="Button" parent="Margin/Layout/TabContainer/Spectrogram"]
 layout_mode = 2

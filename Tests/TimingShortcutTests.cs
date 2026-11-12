@@ -198,6 +198,7 @@ public partial class TimingShortcutTests
             await VerifyPointerTimeLayout(runner, viewport, container);
             await VerifyTextScaleChanges(runner, viewport, container);
             await VerifySettingsApplyAndCancel(runner);
+            await VerifyFontScaleApplyAndCancel(runner, viewport, container);
             await VerifyAppLanguages(runner);
         }
         finally
@@ -302,6 +303,69 @@ public partial class TimingShortcutTests
         }
     }
 
+    private static async Task VerifyFontScaleApplyAndCancel(ISceneRunner runner, SubViewport viewport, AudioVisualsContainer container)
+    {
+        var window = (Window)runner.FindChild("VisualSettingsWindow")!;
+        var slider = window.GetNode<HSlider>("Margin/Layout/TabContainer/Text/Scale/Slider");
+        window.GetNode<TabContainer>("Margin/Layout/TabContainer").CurrentTab = 0;
+        var percentage = window.GetNode<SpinBox>("Margin/Layout/TabContainer/Text/Scale/Percentage");
+        var apply = window.GetNode<Button>("Margin/Layout/BottomButtonsHBox/ApplyButton");
+        var reset = window.GetNode<Button>("Margin/Layout/TabContainer/Text/DefaultsButton");
+        var message = (Control)runner.FindChild("MessageLabel")!;
+        int originalFontSize = message.GetThemeFontSize("font_size");
+        var spectrum = Project.Instance.SpectrogramContext.SpectrogramGenerator;
+        try
+        {
+            window.Popup();
+            slider.Value = 150;
+            AssertThat(percentage.Value).IsEqual(150d);
+            AssertThat(message.GetThemeFontSize("font_size")).IsEqual(originalFontSize);
+            window.EmitSignal(Window.SignalName.CloseRequested);
+            window.Popup();
+            AssertThat(slider.Value).IsEqual(100d);
+
+            percentage.GetLineEdit().Text = "200";
+            await runner.AwaitIdleFrame();
+            apply.EmitSignal(Button.SignalName.Pressed);
+            await runner.AwaitIdleFrame();
+            AssertThat(slider.Value).IsEqual(200d);
+            AssertThat(message.GetThemeFontSize("font_size")).IsEqual(originalFontSize * 2);
+            AssertThat(Project.Instance.SpectrogramContext.SpectrogramGenerator).IsSame(spectrum);
+            using var config = new ConfigFile();
+            AssertThat(config.Load("user://settings.cfg")).IsEqual(Error.Ok);
+            AssertThat(config.GetValue("settings", "TextScaleFactor").AsDouble()).IsEqual(2d);
+
+            await VerifySettingsDialogSizes(runner);
+            await VerifyPointerTimeLayout(runner, viewport, container);
+
+            window.Popup();
+            reset.EmitSignal(Button.SignalName.Pressed);
+            AssertThat(percentage.Value).IsEqual(100d);
+            window.EmitSignal(Window.SignalName.CloseRequested);
+            window.Popup();
+            AssertThat(percentage.Value).IsEqual(200d);
+            await runner.AwaitIdleFrame();
+            apply.EmitSignal(Button.SignalName.Pressed);
+            AssertThat(message.GetThemeFontSize("font_size")).IsEqual(originalFontSize * 2);
+
+            window.GetNode<TabContainer>("Margin/Layout/TabContainer").CurrentTab = 0;
+            await runner.AwaitIdleFrame();
+            percentage.GetLineEdit().GrabFocus();
+            percentage.GetLineEdit().Text = "120";
+            apply.GrabFocus();
+            apply.EmitSignal(Button.SignalName.Pressed);
+            AssertThat(new SettingsStore().Load().TextScaleFactor).IsEqual(1.2d);
+        }
+        finally
+        {
+            percentage.Value = 100;
+            percentage.GetLineEdit().Text = "100";
+            await runner.AwaitIdleFrame();
+            window.GetNode<Button>("Margin/Layout/BottomButtonsHBox/OkButton").EmitSignal(Button.SignalName.Pressed);
+        }
+        AssertThat(message.GetThemeFontSize("font_size")).IsEqual(originalFontSize);
+    }
+
     private static async Task VerifyAppLanguages(ISceneRunner runner)
     {
         string originalSettings = FileAccess.GetFileAsString("user://settings.cfg");
@@ -341,8 +405,10 @@ public partial class TimingShortcutTests
                 {
                     var exportLabel = export.FindChild("RemovePointsThatChangeNothing").GetNode<Label>("Label");
                     var visualLabel = visual.FindChild("stepSize").GetNode<Label>("Label");
+                    var textSizeLabel = visual.GetNode<Label>("Margin/Layout/TabContainer/Text/Scale/Label");
                     AssertThat(exportLabel.Tr(exportLabel.Text).ToString()).IsNotEqual(exportLabel.Text);
                     AssertThat(visualLabel.Tr(visualLabel.Text).ToString()).IsNotEqual(visualLabel.Text);
+                    AssertThat(textSizeLabel.Tr(textSizeLabel.Text).ToString()).IsNotEqual(textSizeLabel.Text);
                     AssertThat(message.Text).IsNotEqual("Saved visual options.");
                 }
                 for (int item = 0; item < language.ItemCount; item++)
@@ -366,7 +432,7 @@ public partial class TimingShortcutTests
                             {
                                 if (child is Label heading && heading.Visible)
                                     AssertThat(heading.Size.Y).IsLessEqual(heading.GetMinimumSize().Y + 1f);
-                                if (child is HBoxContainer row)
+                                if (child is HBoxContainer row && row.GetChild(0) is not Label)
                                 {
                                     var label = row.GetNode<Label>("Label");
                                     var input = (Control)row.GetChild(0);

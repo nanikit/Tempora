@@ -58,7 +58,7 @@ public partial class OptionsMenu : PopupMenu, ISettingsConsumer
     int index_MoreSettings = 4;
     int index_PlaybackOnNewPoints = 5;
     int index_Spectrogram = 6;
-    int index_SpectrogramSettings = 7;
+    int index_DisplaySettings = 7;
 
     private void OnIndexPressed(long index)
     {
@@ -92,7 +92,7 @@ public partial class OptionsMenu : PopupMenu, ISettingsConsumer
                 ToggleCheckBox(index_Spectrogram, out newStatus);
                 Settings.RenderAsSpectrogram = newStatus;
                 break;
-            case var expression when (index == index_SpectrogramSettings):
+            case var expression when (index == index_DisplaySettings):
                 visualSettingsWindow.Popup();
                 break;
         }

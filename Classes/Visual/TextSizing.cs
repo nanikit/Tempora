@@ -32,9 +32,9 @@ public sealed class TextSizing : IDisposable
 
     public void Unregister(Node node) => overrides.Remove(node);
 
-    public void ApplySystemScale(double systemScale)
+    public void ApplyScale(double systemScale, double userScale)
     {
-        scale = BaseScale * systemScale;
+        scale = BaseScale * systemScale * userScale;
         theme.DefaultFontSize = ScaleSize(16);
         foreach (var (node, sizes) in overrides.ToArray())
             ApplyOverrides(node, sizes);
