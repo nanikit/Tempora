@@ -134,6 +134,19 @@ public partial class AudioVisualsContainer : VBoxContainer, ISettingsConsumer
         {
             UpdatePlayHeads();
         }
+        PositionTimingText();
+    }
+
+    private void PositionTimingText()
+    {
+        AudioDisplayPanel? above = null;
+        foreach (AudioBlock block in AudioBlocks)
+        {
+            if (!block.Visible)
+                continue;
+            block.AudioDisplayPanel.PositionTimingText(above);
+            above = block.AudioDisplayPanel;
+        }
     }
 
     private void UpdatePlayHeads()

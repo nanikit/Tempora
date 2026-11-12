@@ -146,7 +146,7 @@ public partial class VisualTimingPoint : Control
             return;
         }
 
-        if (!GrabArea.GetRect().HasPoint(GetLocalMousePosition()) || @event is not InputEventMouseButton mouseEvent)
+        if (!IsMouseOverPoint() || @event is not InputEventMouseButton mouseEvent)
             return;
         else if (mouseEvent.ButtonIndex == MouseButton.Left && mouseEvent.DoubleClick && !Input.IsKeyPressed(Key.Alt))
         {
@@ -175,6 +175,10 @@ public partial class VisualTimingPoint : Control
         => inputEvent is InputEventMouseButton { ButtonIndex: MouseButton.Left, DoubleClick: true }
             && !Input.IsKeyPressed(Key.Alt)
             && BpmLabel.GetGlobalRect().HasPoint(GetGlobalMousePosition());
+
+    private bool IsMouseOverPoint()
+        => GrabArea.GetRect().HasPoint(GetLocalMousePosition())
+            || BpmLabel.GetGlobalRect().HasPoint(GetGlobalMousePosition());
 
     private void CenterBpmLabel()
         => BpmLabel.Position = new Vector2(-BpmLabel.Size.X * BpmLabel.Scale.X / 2, BpmLabel.Position.Y);
@@ -284,20 +288,24 @@ public partial class VisualTimingPoint : Control
     {
         if (!Visible) return;
         SetLineColor(isRed ? lineColorRed : isSelected ? lineColorSelection : isNearestCursor ? lineColorNearestCursor : lineColorDefault);
-        SetLineSize(isRed ? lineSizeRed : isNearestCursor ? lineSizeNearedCursor : lineSizeDefault);
+        UpdateLineGeometry(LineDefaultHeight);
         UpdateBpmColor();
+    }
+
+    public void UpdateLineGeometry(float height)
+    {
+        LineDefaultHeight = height;
+        SetLineSize(isRed ? lineSizeRed : isNearestCursor ? lineSizeNearedCursor : lineSizeDefault);
     }
 
     private void UpdateBpmColor()
     {
-        bool isHovered = GrabArea.GetRect().HasPoint(GetLocalMousePosition());
+        bool isHovered = IsMouseOverPoint();
         BpmLabel.AddThemeColorOverride("font_color", isRed ? lineColorRed : isHovered ? lineColorNearestCursor : Colors.White);
     }
 
     private void SetLineSize(float multiplier)
     {
-        if (OffsetLine.Points.Length == 0)
-            return;
         OffsetLine.Points = [
                 new(0, -LineDefaultHeight / 2 * multiplier),
                 new(0, LineDefaultHeight / 2 * multiplier)

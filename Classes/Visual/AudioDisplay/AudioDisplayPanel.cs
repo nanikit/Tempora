@@ -622,13 +622,7 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
             visualTimingPoint.Position = new Vector2(x, Size.Y / 2);
             visualTimingPoint.GrabArea.Size = new Vector2(visualTimingPoint.GrabWidth, Size.Y);
             visualTimingPoint.GrabArea.Position = new Vector2(-visualTimingPoint.GrabWidth / 2, -Size.Y / 2);
-            visualTimingPoint.BpmLabel.Position = new Vector2(visualTimingPoint.BpmLabel.Position.X, -Size.Y / 2);
-            visualTimingPoint.BpmEdit.Position = new Vector2(visualTimingPoint.BpmEdit.Position.X, -Size.Y / 2);
-            visualTimingPoint.OffsetLine.Points = [
-                new(0, -Size.Y * 1 / 4f),
-                new(0, Size.Y * 1 / 4f)
-            ];
-            visualTimingPoint.LineDefaultHeight = Size.Y * 1 / 2f;
+            visualTimingPoint.UpdateLineGeometry(Size.Y / 2);
             visualTimingPoint.UpdateLabels(timingPoint);
             visualTimingPoint.Visible = true;
             index++;
@@ -741,6 +735,10 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
     public float MinimumRowHeight { get; private set; } = 52;
     public event Action? TextLayoutChanged;
 
+    private (float Top, float Bottom) bpmDigitBounds;
+    private float defaultTimeY;
+    private float compactTimeY;
+
     private void OnTextThemeChanged() => CallDeferred(nameof(UpdateTextLayout));
 
     private void UpdateTextLayout()
@@ -750,10 +748,40 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
         bpm.ResetSize();
         time.ResetSize();
         float outlines = (bpm.GetThemeConstant("outline_size") * bpm.Scale.Y + time.GetThemeConstant("outline_size")) / 2f;
-        float timeY = Math.Max(26, bpm.Size.Y * bpm.Scale.Y + outlines);
-        time.Position = new Vector2(time.Position.X, timeY);
-        MinimumRowHeight = MathF.Ceiling(Math.Max(52, timeY + time.Size.Y + time.GetThemeConstant("outline_size") / 2f));
+        defaultTimeY = Math.Max(26, bpm.Size.Y * bpm.Scale.Y + outlines);
+        bpmDigitBounds = NumericTextMetrics.GetDigitBounds(bpm);
+        var timeDigits = NumericTextMetrics.GetDigitBounds(time);
+        float gap = defaultTimeY + timeDigits.Top - bpmDigitBounds.Bottom;
+        compactTimeY = defaultTimeY - gap / 2;
+        MinimumRowHeight = MathF.Ceiling(Math.Max(52, defaultTimeY + time.Size.Y + time.GetThemeConstant("outline_size") / 2f));
         TextLayoutChanged?.Invoke();
+    }
+
+    public void PositionTimingText(AudioDisplayPanel? above)
+    {
+        float y = GetBpmTop(above);
+        bool hasBpm = false;
+        foreach (VisualTimingPoint point in VisualTimingPointFolder.GetChildren().OfType<VisualTimingPoint>())
+        {
+            if (!point.Visible)
+                continue;
+            hasBpm = true;
+            point.BpmLabel.Position = new Vector2(point.BpmLabel.Position.X, y - point.Position.Y);
+            point.BpmEdit.Position = new Vector2(point.BpmEdit.Position.X, y - point.Position.Y);
+        }
+
+        float timeY = hasBpm ? y + compactTimeY : defaultTimeY;
+        PreviewLine.TimeLabel.Position = new Vector2(PreviewLine.TimeLabel.Position.X, timeY);
+    }
+
+    private float GetBpmTop(AudioDisplayPanel? above)
+    {
+        if (above == null)
+            return 0;
+        float middle = (above.GetGlobalRect().End.Y + GlobalPosition.Y) / 2;
+        Label bpm = VisualTimingPointFolder.GetChild<VisualTimingPoint>(0).BpmLabel;
+        float outline = bpm.GetThemeConstant("outline_size") * bpm.Scale.Y / 2;
+        return middle - GlobalPosition.Y - bpmDigitBounds.Top + outline;
     }
 
     //private void UpdatePreviewLinePosition(float measurePosition)

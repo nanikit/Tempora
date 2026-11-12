@@ -65,7 +65,7 @@ public partial class TimingShortcutTests
             ((BlockScrollBar)runner.FindChild("BlockScrollBar")!).UpdateLimits();
             await VerifyRestoredRows(runner, viewport, container);
 
-            foreach (int rows in new[] { 10, 30, 1 })
+            foreach (int rows in new[] { 10, 30, 3, 1 })
             {
                 Project.Instance.Settings.NumberOfRows = rows;
                 foreach (int height in new[] { 720, 480, 471, 1080 })
@@ -215,6 +215,11 @@ public partial class TimingShortcutTests
     {
         Vector2 position = point.BpmLabel.GetGlobalRect().GetCenter();
         SendInput(viewport, new InputEventMouseMotion { Position = position });
+        DoubleClickAt(viewport, position);
+    }
+
+    private static void DoubleClickAt(SubViewport viewport, Vector2 position)
+    {
         SendInput(viewport, new InputEventMouseButton { Position = position, ButtonIndex = MouseButton.Left, Pressed = true, DoubleClick = true });
         SendInput(viewport, new InputEventMouseButton { Position = position, ButtonIndex = MouseButton.Left });
     }
@@ -270,10 +275,15 @@ public partial class TimingShortcutTests
 
         if (height == 471 && Project.Instance.Settings.NumberOfRows == 30)
         {
+            AudioDisplayPanel below = container.AudioBlocks[1].AudioDisplayPanel;
+            var belowPoint = VisibleTimingPoints(below).First();
+            float belowBpmY = belowPoint.BpmLabel.GlobalPosition.Y;
             await VerifyRejectedDrag(runner, viewport, panel, cursor);
             AssertThat(point.OffsetLine.DefaultColor).IsEqual(Colors.Red);
             AssertThat(point.BpmLabel.GetThemeColor("font_color")).IsEqual(Colors.Red);
             AssertReadable(panel, point);
+            AssertThat(belowPoint.BpmLabel.GlobalPosition.Y).IsEqual(belowBpmY);
+            AssertBpmBetweenRows(panel, below, belowPoint);
 
             MusicPlayer.Instance.SeekPlay(0);
             await runner.AwaitMillis(100);
@@ -288,10 +298,48 @@ public partial class TimingShortcutTests
         if (visible.Length > 1)
         {
             var nextPoint = VisibleTimingPoints(visible[1].AudioDisplayPanel).First();
+            AssertBpmBetweenRows(panel, visible[1].AudioDisplayPanel, nextPoint);
             AssertThat(TextBounds(panel.GetNode<PreviewLine>("PreviewLine").TimeLabel).End.Y).IsLessEqual(TextBounds(nextPoint.BpmLabel).Position.Y);
+
+            float bpmY = nextPoint.BpmLabel.GlobalPosition.Y;
+            Label nextTime = visible[1].AudioDisplayPanel.GetNode<PreviewLine>("PreviewLine").TimeLabel;
+            float timeY = nextTime.GlobalPosition.Y;
+            Vector2 nextCursor = nextPoint.GlobalPosition;
+            SendInput(viewport, new InputEventMouseMotion { Position = nextCursor });
+            await runner.AwaitInputProcessed();
+            AssertThat(nextPoint.BpmLabel.GlobalPosition.Y).IsEqual(bpmY);
+            AssertThat(nextTime.GlobalPosition.Y).IsEqual(timeY);
+            AssertBpmBetweenRows(panel, visible[1].AudioDisplayPanel, nextPoint);
+            AssertReadable(visible[1].AudioDisplayPanel, nextPoint);
+            if (height == 1080 && Project.Instance.Settings.NumberOfRows == 3)
+                await VerifyRaisedBpmEditing(runner, viewport, container);
         }
         AssertThat(visible[^1].GetGlobalRect().End.Y).IsLessEqual(container.GetGlobalRect().End.Y + 1);
         await VerifySongEndScrolling(runner, viewport, visible[^1], cursor);
+    }
+
+    private static async Task VerifyRaisedBpmEditing(ISceneRunner runner, SubViewport viewport, AudioVisualsContainer container)
+    {
+        ((BlockScrollBar)runner.FindChild("BlockScrollBar")!).Value = 12;
+        await runner.AwaitIdleFrame();
+        var point = VisibleTimingPoints(container.AudioBlocks[1].AudioDisplayPanel).Last();
+        SendInput(viewport, new InputEventMouseMotion { Position = point.GlobalPosition });
+        await runner.AwaitInputProcessed();
+        Vector2 position = point.BpmLabel.GetGlobalRect().GetCenter();
+        SendInput(viewport, new InputEventMouseMotion { Position = position });
+        await runner.AwaitInputProcessed();
+        AssertThat(point.BpmLabel.GetThemeColor("font_color")).IsEqual(new Color("ff9900"));
+        SendInput(viewport, new InputEventMouseButton { Position = position, ButtonIndex = MouseButton.Left, Pressed = true });
+        SendInput(viewport, new InputEventMouseButton { Position = position, ButtonIndex = MouseButton.Left });
+        await runner.AwaitInputProcessed();
+        DoubleClickAt(viewport, position);
+        await runner.AwaitInputProcessed();
+        AssertThat(point.BpmEdit.HasFocus()).IsTrue();
+        TypeText(viewport, point.TimingPoint.Bpm.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        PressKey(viewport, Key.Enter, true);
+        PressKey(viewport, Key.Enter, false);
+        await runner.AwaitInputProcessed();
+        AssertThat(point.BpmEdit.Visible).IsFalse();
     }
 
     private static async Task VerifyRejectedDrag(ISceneRunner runner, SubViewport viewport, AudioDisplayPanel panel, Vector2 cursor)
@@ -335,10 +383,10 @@ public partial class TimingShortcutTests
         AssertThat(time.IsVisibleInTree()).IsTrue();
         AssertThat(point.BpmLabel.IsVisibleInTree()).IsTrue();
         AssertThat(point.BpmLabel.GetGlobalRect().GetCenter().X).IsEqualApprox(point.GlobalPosition.X, 0.01f);
-        AssertThat(point.BpmLabel.GetGlobalRect().Position.Y + 0.01f).IsGreaterEqual(panel.GlobalPosition.Y);
         AssertThat(time.MouseFilter).IsEqual(Control.MouseFilterEnum.Ignore);
         AssertThat(TextBounds(time).Position.Y + 0.01f).IsGreaterEqual(TextBounds(point.BpmLabel).End.Y);
         AssertThat(TextBounds(time).End.Y).IsLessEqual(panel.GetGlobalRect().End.Y);
+        AssertPointerGapIsHalved(point.BpmLabel, time);
         foreach (CanvasItem line in new CanvasItem[] { point.OffsetLine, panel.Playhead, panel.GetNode<PreviewLine>("PreviewLine"), panel.GetNode<Line2D>("SelectedPositionLine") })
         {
             AssertThat(DrawOrder(time)).IsGreater(DrawOrder(line));
@@ -346,8 +394,30 @@ public partial class TimingShortcutTests
         }
     }
 
+    private static void AssertPointerGapIsHalved(Label bpm, Label time)
+    {
+        var bpmDigits = NumericTextMetrics.GetDigitBounds(bpm);
+        var timeDigits = NumericTextMetrics.GetDigitBounds(time);
+        float outlines = (bpm.GetThemeConstant("outline_size") * bpm.Scale.Y + time.GetThemeConstant("outline_size")) / 2f;
+        float oldGap = System.Math.Max(26, bpm.Size.Y * bpm.Scale.Y + outlines) + timeDigits.Top - bpmDigits.Bottom;
+        float gap = time.GlobalPosition.Y + timeDigits.Top - bpm.GlobalPosition.Y - bpmDigits.Bottom;
+        AssertThat(gap).IsEqualApprox(oldGap / 2, 0.01f);
+    }
+
+    private static void AssertBpmBetweenRows(AudioDisplayPanel upper, AudioDisplayPanel lower, VisualTimingPoint point)
+    {
+        float middle = (upper.GetGlobalRect().End.Y + lower.GlobalPosition.Y) / 2;
+        AssertThat(TextBounds(point.BpmLabel).Position.Y).IsEqualApprox(middle, 0.01f);
+    }
+
     private static Rect2 TextBounds(Label label)
-        => label.GetGlobalRect().Grow(label.GetThemeConstant("outline_size") * label.Scale.Y / 2);
+    {
+        var digits = NumericTextMetrics.GetDigitBounds(label);
+        Rect2 rect = label.GetGlobalRect();
+        rect.Position += new Vector2(0, digits.Top);
+        rect.Size = new Vector2(rect.Size.X, digits.Bottom - digits.Top);
+        return rect.Grow(label.GetThemeConstant("outline_size") * label.Scale.Y / 2);
+    }
 
     private static int DrawOrder(CanvasItem item)
         => item.ZIndex + (item.ZAsRelative && item.GetParent() is CanvasItem parent ? DrawOrder(parent) : 0);
