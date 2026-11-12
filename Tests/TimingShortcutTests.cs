@@ -486,9 +486,9 @@ public partial class TimingShortcutTests
     private static void PressKey(SubViewport viewport, Key key, bool pressed)
         => SendInput(viewport, new InputEventKey { Keycode = key, PhysicalKeycode = key, Pressed = pressed });
 
-    private static void Wheel(SubViewport viewport, Vector2 cursor, MouseButton direction)
+    private static void Wheel(SubViewport viewport, Vector2 cursor, MouseButton direction, float factor = 1)
     {
-        SendInput(viewport, new InputEventMouseButton { Position = cursor, ButtonIndex = direction, Pressed = true });
+        SendInput(viewport, new InputEventMouseButton { Position = cursor, ButtonIndex = direction, Pressed = true, Factor = factor });
         SendInput(viewport, new InputEventMouseButton { Position = cursor, ButtonIndex = direction });
     }
 

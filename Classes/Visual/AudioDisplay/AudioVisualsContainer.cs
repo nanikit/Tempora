@@ -28,6 +28,7 @@ public partial class AudioVisualsContainer : VBoxContainer, ISettingsConsumer
 
     public int VisibleRowCount { get; private set; } = 1;
     public event Action? VisibleRowCountChanged;
+    public event Action<float>? PlaybackPositionChanged;
 
     /// Accumulated pan gesture delta for converting continuous gestures to discrete scroll steps
     private float panGestureAccumulator;
@@ -161,6 +162,7 @@ public partial class AudioVisualsContainer : VBoxContainer, ISettingsConsumer
             audioDisplayPanel.Playhead.Position = new Vector2(x, 0.0f);
             audioDisplayPanel.Playhead.Visible = x >= 0 && x <= audioDisplayPanel.Size.X && MusicPlayer.Playing;
         }
+        PlaybackPositionChanged?.Invoke(measurePosition);
     }
 
     private void OnMouseExited()

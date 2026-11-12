@@ -80,6 +80,7 @@ public partial class TimingShortcutTests
             await runner.AwaitIdleFrame();
             await runner.AwaitIdleFrame();
             await VerifyTimeSignatureOverlay(runner, viewport, container.AudioBlocks[1]);
+            await VerifyTimelineScrollbar(runner, viewport, container);
         }
         finally
         {
@@ -150,11 +151,16 @@ public partial class TimingShortcutTests
         Rect2 bounds = editor.GetGlobalRect();
         Vector2 start = bounds.Position + new Vector2(8, bounds.Size.Y / 2);
         Vector2 end = start + new Vector2(bounds.Size.X - 12, 0);
+        Drag(viewport, start, end);
+        await runner.AwaitInputProcessed();
+    }
+
+    private static void Drag(SubViewport viewport, Vector2 start, Vector2 end)
+    {
         SendInput(viewport, new InputEventMouseMotion { Position = start });
         SendInput(viewport, new InputEventMouseButton { Position = start, ButtonIndex = MouseButton.Left, Pressed = true });
         SendInput(viewport, new InputEventMouseMotion { Position = end, Relative = end - start, ButtonMask = MouseButtonMask.Left });
         SendInput(viewport, new InputEventMouseButton { Position = end, ButtonIndex = MouseButton.Left });
-        await runner.AwaitInputProcessed();
     }
 
     private static async Task ClickTimeSignatureButton(ISceneRunner runner, SubViewport viewport, Stepper stepper, string buttonName)
@@ -261,6 +267,10 @@ public partial class TimingShortcutTests
         await runner.AwaitIdleFrame();
         await runner.AwaitIdleFrame();
         AssertThat(container.NominalMeasurePositionStartForTopBlock).IsLessEqual(container.LastTopMeasure);
+        var scrollbar = (BlockScrollBar)runner.FindChild("BlockScrollBar")!;
+        int totalMeasures = Timing.Instance.GetLastMeasure() - container.FirstTopMeasure + 1;
+        AssertThat(scrollbar.Page).IsEqual((double)System.Math.Min(container.VisibleRowCount, totalMeasures));
+        AssertThat(scrollbar.MaxValue - scrollbar.Page).IsEqual((double)container.LastTopMeasure);
 
         AudioDisplayPanel panel = container.AudioBlocks[0].AudioDisplayPanel;
         panel.UpdateTimingPointsIndices();
@@ -359,6 +369,82 @@ public partial class TimingShortcutTests
         SendInput(viewport, new InputEventMouseMotion { Position = cursor });
         await runner.AwaitInputProcessed();
         AssertThat(movingPoint.MeasurePosition!.Value).IsEqual(0.5d);
+    }
+
+    private static async Task VerifyTimelineScrollbar(ISceneRunner runner, SubViewport viewport, AudioVisualsContainer container)
+    {
+        var scrollbar = (BlockScrollBar)runner.FindChild("BlockScrollBar")!;
+        await VerifyScrollbarWheel(runner, viewport, container, scrollbar);
+        Project.Instance.Settings.NumberOfRows = 1;
+        await runner.AwaitIdleFrame();
+        scrollbar.Value = scrollbar.MinValue;
+
+        Vector2 start = scrollbar.GlobalPosition + new Vector2(scrollbar.Size.X / 2, 23);
+        Vector2 end = start + new Vector2(0, scrollbar.Size.Y);
+        Drag(viewport, start, end);
+        await runner.AwaitInputProcessed();
+        AssertThat(container.AudioBlocks[0].NominalMeasurePosition).IsEqual(Timing.Instance.GetLastMeasure());
+
+        var marker = scrollbar.GetNode<ColorRect>("PlaybackMarker");
+        double midpoint = (scrollbar.MinValue + scrollbar.MaxValue) / 2;
+        MusicPlayer.Instance.SeekPlay((float)Timing.Instance.MeasurePositionToOffset(midpoint));
+        await runner.AwaitMillis(100);
+        AssertThat(marker.Visible).IsTrue();
+        AssertThat(marker.Color).IsEqual(container.AudioBlocks[0].AudioDisplayPanel.Playhead.DefaultColor);
+        AssertThat(marker.Position.Y).IsEqualApprox(scrollbar.Size.Y / 2, 5f);
+        AssertThat(marker.MouseFilter).IsEqual(Control.MouseFilterEnum.Ignore);
+
+        MusicPlayer.Instance.Pause();
+        await runner.AwaitIdleFrame();
+        AssertThat(marker.Visible).IsFalse();
+        MusicPlayer.Instance.SeekPlay(Project.Instance.AudioFile.GetAudioLength() - 0.05f);
+        await runner.AwaitMillis(250);
+        AssertThat(marker.Visible).IsFalse();
+
+        AudioFile originalAudio = Project.Instance.AudioFile;
+        try
+        {
+            Project.Instance.AudioFile = new AudioFile(ResourceLoader.Load<AudioStreamMP3>("res://Audio/clickedy.mp3"));
+            Project.Instance.Settings.NumberOfRows = 10;
+            await runner.AwaitIdleFrame();
+            AssertThat(scrollbar.Page).IsEqual(scrollbar.MaxValue - scrollbar.MinValue);
+            scrollbar.Value = scrollbar.MaxValue;
+            AssertThat(container.NominalMeasurePositionStartForTopBlock).IsEqual(container.FirstTopMeasure);
+        }
+        finally
+        {
+            Project.Instance.AudioFile = originalAudio;
+        }
+    }
+
+    private static async Task VerifyScrollbarWheel(ISceneRunner runner, SubViewport viewport, AudioVisualsContainer container, BlockScrollBar scrollbar)
+    {
+        var previous = new VScrollBar { Size = new Vector2(32, 100) };
+        viewport.AddChild(previous);
+        try
+        {
+            foreach (int rows in new[] { 1, 10 })
+            {
+                Project.Instance.Settings.NumberOfRows = rows;
+                await runner.AwaitIdleFrame();
+                previous.MinValue = container.FirstTopMeasure;
+                previous.MaxValue = container.LastTopMeasure;
+                previous.Value = scrollbar.Value = previous.MinValue;
+
+                foreach (var (direction, factor) in new[] { (MouseButton.WheelDown, 1f), (MouseButton.WheelDown, 0.5f), (MouseButton.WheelUp, 2f), (MouseButton.WheelDown, 100f) })
+                {
+                    Wheel(viewport, previous.GetGlobalRect().GetCenter(), direction, factor);
+                    Wheel(viewport, scrollbar.GetGlobalRect().GetCenter(), direction, factor);
+                    await runner.AwaitInputProcessed();
+                    AssertThat(scrollbar.Value).IsEqualApprox(previous.Value, 1e-8);
+                    AssertThat(container.NominalMeasurePositionStartForTopBlock).IsEqual((int)previous.Value);
+                }
+            }
+        }
+        finally
+        {
+            previous.Free();
+        }
     }
 
     private static async Task VerifySongEndScrolling(ISceneRunner runner, SubViewport viewport, AudioBlock lastRow, Vector2 cursor)
