@@ -1,4 +1,5 @@
 name: Test
+run-name: Test ${{ inputs.commit || github.sha }}
 
 on:
   push:
@@ -13,6 +14,12 @@ on:
       - "**/*.tres"
       - "**/*.gd"
       - ".github/workflows/test.yml"
+      - ".github/workflows/release.yml"
+      - ".github/scripts/**"
+      - "Tests/*.ts"
+      - "scripts/**"
+      - "deno.json"
+      - "deno.lock"
       - ".runsettings"
       - "export_presets.cfg"
       - "mise.toml"
@@ -29,6 +36,12 @@ on:
       - "**/*.tres"
       - "**/*.gd"
       - ".github/workflows/test.yml"
+      - ".github/workflows/release.yml"
+      - ".github/scripts/**"
+      - "Tests/*.ts"
+      - "scripts/**"
+      - "deno.json"
+      - "deno.lock"
       - ".runsettings"
       - "export_presets.cfg"
       - "mise.toml"
@@ -36,28 +49,59 @@ on:
   workflow_dispatch:
     inputs:
       commit:
-        description: Commit SHA to test for a release
+        description: Full commit SHA to test and prepare artifacts for
         required: true
         type: string
+
+concurrency:
+  group: test-${{ inputs.commit || github.sha }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: read
 
 jobs:
   test:
     name: gdUnit4
     runs-on: windows-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      commit: ${{ steps.version.outputs.commit }}
     env:
       GODOT_VERSION: 4.6.3-stable
+      SOURCE_COMMIT: ${{ inputs.commit || github.sha }}
     steps:
       - name: checkout
         uses: actions/checkout@v6
         with:
           ref: ${{ inputs.commit || github.sha }}
 
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: 2.9.8
+
+      - name: check for successful tests on this commit
+        id: reuse
+        if: github.event_name != 'pull_request'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: deno run --frozen -A .github/scripts/find-test-result.ts "$GITHUB_REPOSITORY" "$SOURCE_COMMIT" "$GITHUB_RUN_ID"
+
+      - name: resolve build version
+        id: version
+        shell: bash
+        run: deno run --frozen -A .github/scripts/prepare-artifacts.ts "$SOURCE_COMMIT"
+
       - name: setup dotnet
+        if: steps.reuse.outputs.test-passed != 'true'
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 8.0.x
 
       - name: install Godot Mono
+        if: steps.reuse.outputs.test-passed != 'true'
         id: godot
         shell: pwsh
         run: |
@@ -78,5 +122,86 @@ jobs:
           "godot_bin=$($godot.FullName)" >> $env:GITHUB_OUTPUT
 
       - name: test
+        if: steps.reuse.outputs.test-passed != 'true'
         shell: pwsh
         run: dotnet test Tempora.csproj --settings .runsettings -e "GODOT_BIN=${{ steps.godot.outputs.godot_bin }}"
+
+      - name: verify artifact preparation and reuse
+        if: steps.reuse.outputs.test-passed != 'true'
+        shell: bash
+        run: |
+          deno task check
+          deno task test
+
+  export_game:
+    name: Export Game
+    needs: test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      GODOT_VERSION: 4.6.3-stable
+      SOURCE_COMMIT: ${{ needs.test.outputs.commit }}
+      BUILD_VERSION: ${{ needs.test.outputs.version }}
+    steps:
+      - name: checkout tested source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.test.outputs.commit }}
+          fetch-depth: 0
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: 2.9.8
+
+      - name: apply the fixed build version
+        shell: bash
+        run: deno run --frozen -A .github/scripts/prepare-artifacts.ts "$SOURCE_COMMIT" "$BUILD_VERSION"
+
+      - name: export game
+        id: export
+        uses: firebelley/godot-export@v8.0.0
+        with:
+          godot_executable_download_url: https://github.com/godotengine/godot/releases/download/${{ env.GODOT_VERSION }}/Godot_v${{ env.GODOT_VERSION }}_mono_linux_x86_64.zip
+          godot_export_templates_download_url: https://github.com/godotengine/godot/releases/download/${{ env.GODOT_VERSION }}/Godot_v${{ env.GODOT_VERSION }}_mono_export_templates.tpz
+          relative_project_path: ./
+          presets_to_export: Linux/X11,Windows,macOS
+          archive_output: true
+
+      - name: upload raw export archives
+        uses: actions/upload-artifact@v4
+        with:
+          name: raw-export-archives
+          path: |
+            ${{ steps.export.outputs.archive_directory }}/*
+            build-info.json
+          if-no-files-found: error
+          overwrite: true
+
+  package_artifacts:
+    name: Package Artifacts
+    needs: [test, export_game]
+    runs-on: macos-latest
+    steps:
+      - name: checkout tested source
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.test.outputs.commit }}
+
+      - name: download raw export archives
+        uses: actions/download-artifact@v4
+        with:
+          name: raw-export-archives
+          path: raw-export-archives
+
+      - name: re-sign macOS app and name release archives
+        id: artifacts
+        shell: bash
+        run: bash .github/scripts/package-artifacts.sh
+
+      - name: upload ready-to-publish artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: ${{ steps.artifacts.outputs.directory }}/*
+          if-no-files-found: error
+          overwrite: true

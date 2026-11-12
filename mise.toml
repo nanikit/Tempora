@@ -1,4 +1,5 @@
 [tools]
+deno = "2.9.8"
 # Godot .NET(mono) build for running gdUnit4 C# tests.
 # aqua-registry's godot package has no mono variant, so pull the release zip directly.
 # Windows-only asset; adjust the URL for other platforms if needed.
@@ -18,42 +19,12 @@ usage = 'arg "<executable>"'
 run = 'pwsh -NoProfile -File Tests/ExportStartupSmoke.ps1 -Executable "{{ usage.executable }}"'
 
 [tasks.release]
-description = "Bump an already published version, commit, and push main and release"
-shell = "pwsh -NoProfile -Command"
-run = '''
-$ErrorActionPreference = 'Stop'
-$PSNativeCommandUseErrorActionPreference = $true
+description = "Push main and release to publish prepared artifacts"
+run = 'deno run --allow-run=git scripts/release.ts'
 
-if ((git branch --show-current) -ne 'main') {
-  throw 'Run mise release from the main branch.'
-}
-if (git status --porcelain) {
-  throw 'Commit or stash pending changes before releasing.'
-}
-
-$project = [IO.File]::ReadAllText((Join-Path $PWD 'project.godot'))
-if ($project -notmatch '(?m)^config/version="([^"]+)"\r?$') {
-  throw 'project.godot must define application config/version.'
-}
-$originalVersion = $Matches[1]
-$version = $originalVersion
-$parsedVersion = [System.Management.Automation.SemanticVersion]::Parse($version)
-$remoteTags = @(git ls-remote --tags --refs origin | ForEach-Object { ($_ -split '\s+')[1] })
-while ($remoteTags -contains "refs/tags/v$version") {
-  $version = '{0}.{1}.{2}' -f $parsedVersion.Major, $parsedVersion.Minor, ($parsedVersion.Patch + 1)
-  $parsedVersion = [System.Management.Automation.SemanticVersion]::Parse($version)
-}
-
-if ($version -ne $originalVersion) {
-  $project = $project.Replace("config/version=`"$originalVersion`"", "config/version=`"$version`"")
-  [IO.File]::WriteAllText((Join-Path $PWD 'project.godot'), $project)
-  git add -- project.godot
-  git commit -m "chore: release v$version"
-}
-
-# Keep both branches on the same commit if either update is rejected.
-git push --atomic origin HEAD:refs/heads/main HEAD:refs/heads/release
-'''
+[tasks."test:scripts"]
+description = "Check and test automation scripts"
+run = ["deno task check", "deno task test"]
 
 [tasks.export]
 # Export may finish while the Godot console wrapper keeps waiting for the .NET build server.
@@ -61,7 +32,6 @@ git push --atomic origin HEAD:refs/heads/main HEAD:refs/heads/release
 description = "Export Windows release with Godot Mono"
 # Godot serializes C# exported properties using the editor's Debug assembly.
 depends = ["build"]
-shell = "pwsh -NoProfile -Command"
 usage = '''
 arg "[preset]" default="Windows"
 arg "[mode]" default="release" {
@@ -69,15 +39,4 @@ arg "[mode]" default="release" {
 }
 arg "[output]" default="Tempora_Exports/Tempora.exe"
 '''
-run_windows = '''
-$OutputPath = "{{ usage.output }}"
-$ExportDir = Split-Path -Parent $OutputPath
-if ($ExportDir) {
-  New-Item -ItemType Directory -Force -Path $ExportDir | Out-Null
-}
-
-& "{{ tools["http:godot-mono"].path }}\Godot_v{{ tools["http:godot-mono"].version }}_mono_win64_console.exe" --headless --xr-mode off --path . --export-{{ usage.mode }} "{{ usage.preset }}" $OutputPath
-if ($LASTEXITCODE -ne 0) {
-  exit $LASTEXITCODE
-}
-'''
+run_windows = 'deno run --allow-run --allow-write scripts/export.ts "{{ tools["http:godot-mono"].path }}/Godot_v{{ tools["http:godot-mono"].version }}_mono_win64_console.exe" "{{ usage.preset }}" "{{ usage.mode }}" "{{ usage.output }}"'

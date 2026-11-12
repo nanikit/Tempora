@@ -1,0 +1,147 @@
+name: Release
+run-name: Release ${{ github.event.workflow_run.display_title || format('Test {0}', github.sha) }}
+
+on:
+  push:
+    branches:
+      - release
+  workflow_dispatch:
+  workflow_run:
+    workflows: [Test]
+    types: [completed]
+    branches: [main, master]
+
+concurrency:
+  group: release
+  queue: max
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    name: Resolve release request
+    if: github.event_name == 'workflow_run' || github.ref_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      action: ${{ steps.plan.outputs.action }}
+      plan: ${{ steps.plan.outputs.plan }}
+      commit: ${{ steps.plan.outputs.commit }}
+      preparation-name: ${{ steps.plan.outputs.preparation-name }}
+      run-id: ${{ steps.plan.outputs.run-id }}
+      artifact-id: ${{ steps.plan.outputs.artifact-id }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: 2.9.8
+      - name: decide whether to prepare or publish
+        id: plan
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: deno run --frozen -A .github/scripts/plan-release.ts
+
+  prepare_artifacts:
+    # This name records the request and retry baseline before the API call.
+    name: ${{ needs.plan.outputs.preparation-name }}
+    needs: plan
+    if: contains(fromJSON('["dispatch", "retry", "resume"]'), needs.plan.outputs.action)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: 2.9.8
+      - name: request preparation and release the runner
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_PLAN: ${{ needs.plan.outputs.plan }}
+        run: deno run --frozen -A .github/scripts/plan-release.ts prepare
+
+  publish_release:
+    name: Publish Release
+    needs: plan
+    if: needs.plan.outputs.action == 'publish' && github.event_name != 'workflow_run'
+    runs-on: ubuntu-latest
+    env:
+      SOURCE_COMMIT: ${{ needs.plan.outputs.commit }}
+    permissions:
+      actions: read
+      attestations: write
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: 2.9.8
+
+      - name: download the prepared artifacts
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ needs.plan.outputs.run-id }}
+          artifact-ids: ${{ needs.plan.outputs.artifact-id }}
+          path: release-artifacts
+
+      - name: verify source and release version
+        id: version
+        shell: bash
+        run: |
+          test "$SOURCE_COMMIT" = "$GITHUB_SHA"
+          deno run --frozen -A .github/scripts/read-release-info.ts "$SOURCE_COMMIT" release-artifacts
+
+      - name: attest release artifacts
+        uses: actions/attest-build-provenance@v4.1.0
+        with:
+          subject-path: release-artifacts/*.zip
+
+      - name: push release tag
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$RELEASE_TAG" "$SOURCE_COMMIT" -m "$RELEASE_TAG"
+          git push origin "$RELEASE_TAG"
+
+      - name: create release
+        id: release
+        continue-on-error: true
+        uses: ncipollo/release-action@v1.21.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          generateReleaseNotes: true
+          immutableCreate: true
+          tag: ${{ steps.version.outputs.tag }}
+          commit: ${{ needs.plan.outputs.commit }}
+          artifactErrorsFailBuild: true
+          artifacts: release-artifacts/*.zip
+
+      - name: rollback release tag after upload failure
+        if: steps.release.outcome == 'failure'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          if ! gh release delete "$RELEASE_TAG" --cleanup-tag --yes 2>/dev/null; then
+            git push --delete origin "$RELEASE_TAG"
+          fi
+          echo "Release upload failed; cleaned up release tag $RELEASE_TAG." >&2
+          exit 1

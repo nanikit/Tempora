@@ -1,0 +1,18 @@
+{
+  "tasks": {
+    "check": "deno fmt --check && deno lint && deno check --frozen .github/scripts/*.ts scripts/*.ts Tests/*.test.ts",
+    "test": "deno test --frozen --allow-read --allow-write --allow-env Tests/*.test.ts"
+  },
+  "fmt": {
+    "include": ["deno.json", ".github/scripts/", "scripts/", "Tests/*.ts"]
+  },
+  "lint": {
+    "include": [".github/scripts/", "scripts/", "Tests/*.ts"]
+  },
+  "imports": {
+    "@std/assert": "jsr:@std/assert@^1.0.19",
+    "@std/path": "jsr:@std/path@^1.1.6",
+    "@std/semver": "jsr:@std/semver@^1.0.8",
+    "@std/testing": "jsr:@std/testing@^1.0.21"
+  }
+}
