@@ -13,11 +13,12 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 size_flags_vertical = 3
+mouse_filter = 2
 script = ExtResource("1_4j3p3")
 AudioDisplayPanel = NodePath("BlockHBoxContainer/AudioDisplayMargins/AudioDisplayPanel")
-measureLabel = NodePath("BlockHBoxContainer/LabelHBoxContainer/MeasureLabel")
-timeSignatureLineEdit = NodePath("BlockHBoxContainer/LabelHBoxContainer/TimeSignatureLineEdit")
-timeSignatureStepper = NodePath("BlockHBoxContainer/LabelHBoxContainer/TimeSignatureStepper")
+measureLabel = NodePath("BlockHBoxContainer/LabelVBoxContainer/MeasureLabel")
+timeSignatureLineEdit = NodePath("BlockHBoxContainer/LabelVBoxContainer/TimeSignatureLineEdit")
+timeSignatureStepper = NodePath("BlockHBoxContainer/LabelVBoxContainer/TimeSignatureStepper")
 
 [node name="BlockHBoxContainer" type="HBoxContainer" parent="."]
 layout_mode = 1
@@ -27,14 +28,17 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 10
+mouse_filter = 2
 
-[node name="LabelHBoxContainer" type="HBoxContainer" parent="BlockHBoxContainer"]
+[node name="LabelVBoxContainer" type="VBoxContainer" parent="BlockHBoxContainer"]
 layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
 
-[node name="MeasureLabel" type="Label" parent="BlockHBoxContainer/LabelHBoxContainer"]
+[node name="MeasureLabel" type="Label" parent="BlockHBoxContainer/LabelVBoxContainer"]
 custom_minimum_size = Vector2(22, 0)
 layout_mode = 2
-size_flags_horizontal = 0
+size_flags_horizontal = 4
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 6
@@ -42,7 +46,7 @@ theme_override_font_sizes/font_size = 16
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="TimeSignatureLineEdit" type="LineEdit" parent="BlockHBoxContainer/LabelHBoxContainer"]
+[node name="TimeSignatureLineEdit" type="LineEdit" parent="BlockHBoxContainer/LabelVBoxContainer"]
 visible = false
 layout_mode = 2
 size_flags_horizontal = 8
@@ -54,8 +58,9 @@ theme_override_font_sizes/font_size = 16
 alignment = 2
 script = ExtResource("2_agy5w")
 
-[node name="TimeSignatureStepper" parent="BlockHBoxContainer/LabelHBoxContainer" instance=ExtResource("3_4xoi4")]
+[node name="TimeSignatureStepper" parent="BlockHBoxContainer/LabelVBoxContainer" instance=ExtResource("3_4xoi4")]
 layout_mode = 2
+size_flags_horizontal = 4
 
 [node name="AudioDisplayMargins" type="MarginContainer" parent="BlockHBoxContainer"]
 layout_mode = 2

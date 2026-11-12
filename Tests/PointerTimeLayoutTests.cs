@@ -73,6 +73,13 @@ public partial class TimingShortcutTests
                 AssertThat(Project.Instance.Settings.NumberOfRows).IsEqual(rows);
             }
             await VerifyBpmEditing(runner, viewport, container);
+            SendInput(viewport, new InputEventMouseMotion { Position = container.AudioBlocks[0].AudioDisplayPanel.GetGlobalRect().GetCenter() });
+            await runner.AwaitInputProcessed();
+            Project.Instance.Settings.NumberOfRows = 10;
+            viewport.Size = new Vector2I(1280, 720);
+            await runner.AwaitIdleFrame();
+            await runner.AwaitIdleFrame();
+            await VerifyTimeSignatureOverlay(runner, viewport, container.AudioBlocks[1]);
         }
         finally
         {
@@ -120,7 +127,7 @@ public partial class TimingShortcutTests
         DoubleClickBpm(viewport, point);
         await runner.AwaitInputProcessed();
         TypeText(viewport, "200");
-        await ClickTimeSignatureButton(runner, viewport, container.AudioBlocks[0]);
+        await ClickTimeSignatureButton(runner, viewport, (Stepper)container.AudioBlocks[0].FindChild("NumeratorStepper")!, "IncrementButton");
         await runner.AwaitInputProcessed();
         AssertThat(point.BpmEdit.Visible).IsFalse();
         AssertThat(point.BpmLabel.Visible).IsTrue();
@@ -150,16 +157,58 @@ public partial class TimingShortcutTests
         await runner.AwaitInputProcessed();
     }
 
-    private static async Task ClickTimeSignatureButton(ISceneRunner runner, SubViewport viewport, AudioBlock row)
+    private static async Task ClickTimeSignatureButton(ISceneRunner runner, SubViewport viewport, Stepper stepper, string buttonName)
     {
-        var stepper = row.GetNode<Stepper>("BlockHBoxContainer/LabelHBoxContainer/TimeSignatureStepper/NumeratorStepper");
         SendInput(viewport, new InputEventMouseMotion { Position = stepper.ValueLabel.GetGlobalRect().GetCenter() });
         await runner.AwaitInputProcessed();
-        var button = stepper.GetNode<Button>("VBoxContainer/IncrementButton");
+        var button = (Button)stepper.FindChild(buttonName)!;
         Vector2 position = button.GetGlobalRect().GetCenter();
         SendInput(viewport, new InputEventMouseMotion { Position = position });
+        await runner.AwaitInputProcessed();
+        AssertThat(button.Visible).IsTrue();
         SendInput(viewport, new InputEventMouseButton { Position = position, ButtonIndex = MouseButton.Left, Pressed = true });
         SendInput(viewport, new InputEventMouseButton { Position = position, ButtonIndex = MouseButton.Left });
+        await runner.AwaitInputProcessed();
+    }
+
+    private static void AssertTimeSignatureButtonPlacement(AudioBlock row, Stepper stepper)
+    {
+        var measure = (Label)row.FindChild("MeasureLabel")!;
+        var signature = (Control)row.FindChild("TimeSignatureStepper")!;
+        AssertThat(measure.GetGlobalRect().End.Y).IsLessEqual(signature.GlobalPosition.Y);
+        var button = (Button)stepper.FindChild("IncrementButton")!;
+        var decrease = (Button)stepper.FindChild("DecrementButton")!;
+        Rect2 numberBounds = stepper.ValueLabel.GetGlobalRect();
+        AssertThat(button.Visible).IsTrue();
+        AssertThat(button.GetGlobalRect().GetCenter().X).IsEqualApprox(numberBounds.GetCenter().X, 0.01f);
+        AssertThat(decrease.GetGlobalRect().GetCenter().X).IsEqualApprox(numberBounds.GetCenter().X, 0.01f);
+        AssertThat(button.GetGlobalRect().End.Y).IsEqualApprox(numberBounds.Position.Y, 0.01f);
+        AssertThat(decrease.GlobalPosition.Y).IsEqualApprox(numberBounds.End.Y, 0.01f);
+    }
+
+    private static async Task VerifyTimeSignatureOverlay(ISceneRunner runner, SubViewport viewport, AudioBlock row)
+    {
+        Rect2 audioBounds = row.AudioDisplayPanel.GetGlobalRect();
+        foreach (var (name, index) in new[] { ("NumeratorStepper", 0), ("DenominatorStepper", 1) })
+        {
+            var stepper = (Stepper)row.FindChild(name)!;
+            int original = stepper.DisplayedValue;
+            int increased = index == 0 ? original + 1 : original * 2;
+            foreach (var (buttonName, expected) in new[] { ("IncrementButton", increased), ("DecrementButton", original) })
+            {
+                await ClickTimeSignatureButton(runner, viewport, stepper, buttonName);
+                AssertTimeSignatureButtonPlacement(row, stepper);
+                AssertThat(row.AudioDisplayPanel.GetGlobalRect()).IsEqual(audioBounds);
+                AssertThat(stepper.DisplayedValue).IsEqual(expected);
+
+                SendInput(viewport, new InputEventMouseMotion { Position = audioBounds.GetCenter() });
+                await runner.AwaitInputProcessed();
+                AssertThat(Timing.Instance.GetTimeSignature(row.NominalMeasurePosition)[index]).IsEqual(expected);
+                AssertThat(stepper.HasMouseInside).IsFalse();
+                AssertThat(stepper.GetNode<Button>("ValueLabel/IncrementButton").Visible).IsFalse();
+                AssertThat(row.AudioDisplayPanel.GetGlobalRect()).IsEqual(audioBounds);
+            }
+        }
     }
 
     private static void DoubleClickBpm(SubViewport viewport, VisualTimingPoint point)

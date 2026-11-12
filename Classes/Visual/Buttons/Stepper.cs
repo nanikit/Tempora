@@ -14,9 +14,6 @@ public partial class Stepper : HBoxContainer
     Button decrementButton = null!;
 
     [Export]
-    Control mouseAreaControl = null!;
-
-    [Export]
     protected int increment = 1;
 
     [Export]
@@ -67,9 +64,11 @@ public partial class Stepper : HBoxContainer
     {
         base._Input(@event);
 
-        Vector2 localMousePosition = GetLocalMousePosition();
-        Rect2 rectangle = mouseAreaControl.GetRect();
-        HasMouseInside = rectangle.HasPoint(localMousePosition + Position);
+        Vector2 mouse = GetGlobalMousePosition();
+        bool overNumber = ValueLabel.GetGlobalRect().HasPoint(mouse);
+        bool overButtons = HasMouseInside &&
+            (incrementButton.GetGlobalRect().HasPoint(mouse) || decrementButton.GetGlobalRect().HasPoint(mouse));
+        HasMouseInside = IsVisibleInTree() && (overNumber || overButtons);
 
         decrementButton.Visible = HasMouseInside;
         incrementButton.Visible = HasMouseInside;
