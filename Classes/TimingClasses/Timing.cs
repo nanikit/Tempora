@@ -100,6 +100,10 @@ public partial class Timing : IMementoOriginator
 
     #region Calculators
 
+    public TimingAnchor[] GetAnchors()
+        => TimingPoints.Select(point => new TimingAnchor(point.Offset,
+            point.MeasurePosition ?? throw new NullReferenceException("Timing point has no measure position"), point.MeasuresPerSecond)).ToArray();
+
     // These methods can be moved to separate scripts if necessary.
 
     /// <summary>

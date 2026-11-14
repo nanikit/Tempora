@@ -47,6 +47,12 @@ public sealed class SpectrogramContext : IDisposable
 
     public ImageTexture GetSpectrogramSlice(int sampleStart, int sampleEnd, int targetHeight, int targetWidth)
     {
+        using Godot.Image image = GetSpectrogramImageSlice(sampleStart, sampleEnd, targetHeight, targetWidth);
+        return ImageTexture.CreateFromImage(image);
+    }
+
+    public Godot.Image GetSpectrogramImageSlice(int sampleStart, int sampleEnd, int targetHeight, int targetWidth)
+    {
         UpdateSpectrogram();
         return SpectrogramHelper.GetSpectrogramSlice(
             CachedSpectrogramImage!, SampleToX(sampleStart), SampleToX(sampleEnd), targetHeight, targetWidth);

@@ -271,7 +271,7 @@ public partial class TimingShortcutTests
         await runner.AwaitIdleFrame();
         AssertThat(container.NominalMeasurePositionStartForTopBlock).IsLessEqual(container.LastTopMeasure);
         var scrollbar = (BlockScrollBar)runner.FindChild("BlockScrollBar")!;
-        int totalMeasures = Project.Instance.Timing.GetLastMeasure(Project.Instance.AudioFile?.GetAudioLength() ?? 0) - container.FirstTopMeasure + 1;
+        int totalMeasures = container.LastRowMeasure - container.FirstTopMeasure + 1;
         AssertThat(scrollbar.Page).IsEqual((double)System.Math.Min(container.VisibleRowCount, totalMeasures));
         AssertThat(scrollbar.MaxValue - scrollbar.Page).IsEqual((double)container.LastTopMeasure);
 
@@ -378,6 +378,8 @@ public partial class TimingShortcutTests
     {
         var scrollbar = (BlockScrollBar)runner.FindChild("BlockScrollBar")!;
         await VerifyScrollbarWheel(runner, viewport, container, scrollbar);
+        await VerifyMinimapRendering(runner, container, scrollbar);
+        await VerifySongEdgesInMinimap(runner, container, scrollbar);
         Project.Instance.Settings.NumberOfRows = 1;
         await runner.AwaitIdleFrame();
         scrollbar.Value = scrollbar.MinValue;
@@ -386,7 +388,7 @@ public partial class TimingShortcutTests
         Vector2 end = start + new Vector2(0, scrollbar.Size.Y);
         Drag(viewport, start, end);
         await runner.AwaitInputProcessed();
-        AssertThat(container.AudioBlocks[0].NominalMeasurePosition).IsEqual(Project.Instance.Timing.GetLastMeasure(Project.Instance.AudioFile.GetAudioLength()));
+        AssertThat(container.AudioBlocks[0].NominalMeasurePosition).IsEqual(container.LastRowMeasure);
 
         var marker = scrollbar.GetNode<ColorRect>("PlaybackMarker");
         double midpoint = (scrollbar.MinValue + scrollbar.MaxValue) / 2;
@@ -396,6 +398,7 @@ public partial class TimingShortcutTests
         AssertThat(marker.Color).IsEqual(container.AudioBlocks[0].AudioDisplayPanel.Playhead.DefaultColor);
         AssertThat(marker.Position.Y).IsEqualApprox(scrollbar.Size.Y / 2, 5f);
         AssertThat(marker.MouseFilter).IsEqual(Control.MouseFilterEnum.Ignore);
+        await Capture(runner, viewport, "minimap-playback.png");
 
         MusicPlayer.Instance.Pause();
         await runner.AwaitIdleFrame();
@@ -418,6 +421,150 @@ public partial class TimingShortcutTests
         {
             Project.Instance.AudioFile = originalAudio;
         }
+    }
+
+    private static async Task VerifyMinimapRendering(ISceneRunner runner, AudioVisualsContainer container, BlockScrollBar scrollbar)
+    {
+        await Settle(runner);
+        AssertThat(scrollbar.GetThemeStylebox("scroll")).IsInstanceOf<StyleBoxTexture>();
+        var track = (StyleBoxTexture)scrollbar.GetThemeStylebox("scroll");
+        Texture2D texture = track.Texture;
+        using Image image = texture.GetImage();
+        AssertThat(image.GetWidth()).IsEqual((int)System.Math.Ceiling(scrollbar.Size.X));
+        AssertThat(image.GetData().Distinct().Count()).IsGreater(10);
+        foreach (string name in new[] { "grabber", "grabber_highlight", "grabber_pressed" })
+        {
+            var handle = (StyleBoxFlat)scrollbar.GetThemeStylebox(name);
+            AssertThat(handle.BgColor.A).IsBetween(0.05f, 0.5f);
+            AssertThat(handle.BorderWidthLeft).IsGreater(0);
+        }
+
+        scrollbar.Value = scrollbar.MinValue;
+        await Settle(runner);
+        AssertMinimapMatchesRow(container, scrollbar);
+        scrollbar.Value = scrollbar.MaxValue;
+        await Settle(runner);
+        AssertThat(track.Texture).IsSame(texture);
+        AssertMinimapMatchesRow(container, scrollbar);
+
+        TimingPoint lastPoint = Project.Instance.Timing.TimingPoints.Last();
+        double originalBpm = lastPoint.Bpm;
+        Settings settings = Project.Instance.Settings;
+        float originalOverlap = settings.MeasureOverlap;
+        float originalDownbeat = settings.DownbeatPositionOffset;
+        int originalRows = settings.NumberOfRows;
+        var margin = scrollbar.GetParent<Control>();
+        Vector2 originalMinimum = margin.CustomMinimumSize;
+        var context = Project.Instance.SpectrogramContext;
+        var source = context.CachedSpectrogramImage;
+        var fft = context.SpectrogramGenerator.GetFFTs()[0];
+        try
+        {
+            Project.Instance.Timing.TrySetBpm(lastPoint, originalBpm * 2);
+            await Settle(runner);
+            using Image edited = track.Texture.GetImage();
+            AssertThat(edited.GetData().SequenceEqual(image.GetData())).IsFalse();
+            AssertMinimapMatchesRow(container, scrollbar);
+            settings.MeasureOverlap = originalOverlap + 0.25f;
+            settings.DownbeatPositionOffset = originalDownbeat + 0.125f;
+            await Settle(runner);
+            AssertMinimapMatchesRow(container, scrollbar);
+            settings.NumberOfRows = 3;
+            margin.CustomMinimumSize = new Vector2(180, originalMinimum.Y);
+            scrollbar.Value = scrollbar.MinValue + 2;
+            await Settle(runner);
+            AssertMinimapMatchesRow(container, scrollbar);
+            await Capture(runner, scrollbar.GetViewport(), "scrollbar-minimap.png");
+            AssertThat(Project.Instance.SpectrogramContext.CachedSpectrogramImage).IsSame(source);
+            AssertThat(Project.Instance.SpectrogramContext.SpectrogramGenerator.GetFFTs()[0]).IsSame(fft);
+        }
+        finally
+        {
+            Project.Instance.Timing.TrySetBpm(lastPoint, originalBpm);
+            settings.MeasureOverlap = originalOverlap;
+            settings.DownbeatPositionOffset = originalDownbeat;
+            settings.NumberOfRows = originalRows;
+            margin.CustomMinimumSize = originalMinimum;
+            await Settle(runner);
+        }
+    }
+
+    private static async Task VerifySongEdgesInMinimap(ISceneRunner runner, AudioVisualsContainer container, BlockScrollBar scrollbar)
+    {
+        Timing original = Project.Instance.Timing;
+        Settings settings = Project.Instance.Settings;
+        int originalRows = settings.NumberOfRows;
+        float originalOverlap = settings.MeasureOverlap;
+        float originalDownbeat = settings.DownbeatPositionOffset;
+        var timing = new Timing(Project.Instance.Settings) { IsInstantiating = true };
+        timing.AddTimingPoint(0d, 1d, 0.5d);
+        timing.IsInstantiating = false;
+        try
+        {
+            Project.Instance.ReplaceDocument(timing, Project.Instance.AudioFile, Project.Instance.ProjectPath);
+            await Settle(runner);
+            scrollbar.Value = scrollbar.MinValue;
+            await Settle(runner);
+            AssertThat(container.AudioBlocks[0].NominalMeasurePosition).IsEqual(-1);
+            AssertMinimapMatchesRow(container, scrollbar);
+
+            settings.NumberOfRows = 1;
+            settings.MeasureOverlap = 0;
+            settings.DownbeatPositionOffset = 0.125f;
+            float audioLength = Project.Instance.AudioFile.GetAudioLength();
+            timing = new Timing(settings) { IsInstantiating = true };
+            timing.AddTimingPoint(0d, 0d, 10.95d / audioLength);
+            timing.IsInstantiating = false;
+            Project.Instance.ReplaceDocument(timing, Project.Instance.AudioFile, Project.Instance.ProjectPath);
+            scrollbar.Value = scrollbar.MaxValue;
+            await Settle(runner);
+            AssertThat(container.AudioBlocks[0].NominalMeasurePosition).IsEqual(11);
+            AssertMinimapMatchesRow(container, scrollbar);
+            var lastSegment = VisibleAudioSegments(container.AudioBlocks[0].AudioDisplayPanel).OfType<IAudioSegmentDisplay>().Last();
+            AssertThat(lastSegment.TimeRange[1]).IsEqual(audioLength);
+
+            settings.DownbeatPositionOffset = 0;
+            await Settle(runner);
+            AssertThat(scrollbar.MaxValue).IsEqual(11d);
+            AssertThat(container.AudioBlocks[0].NominalMeasurePosition).IsEqual(10);
+            AssertMinimapMatchesRow(container, scrollbar);
+        }
+        finally
+        {
+            settings.NumberOfRows = originalRows;
+            settings.MeasureOverlap = originalOverlap;
+            settings.DownbeatPositionOffset = originalDownbeat;
+            Project.Instance.ReplaceDocument(original, Project.Instance.AudioFile, Project.Instance.ProjectPath);
+            await Settle(runner);
+        }
+    }
+
+    private static void AssertMinimapMatchesRow(AudioVisualsContainer container, BlockScrollBar scrollbar)
+    {
+        AudioBlock row = container.AudioBlocks[0];
+        AudioDisplayPanel panel = row.AudioDisplayPanel;
+        var context = Project.Instance.SpectrogramContext;
+        using Image minimap = ((StyleBoxTexture)scrollbar.GetThemeStylebox("scroll")).Texture.GetImage();
+        double rowHeight = minimap.GetHeight() / (scrollbar.MaxValue - scrollbar.MinValue);
+        int top = (int)System.Math.Round((row.NominalMeasurePosition - scrollbar.MinValue) * rowHeight);
+        double contentFraction = row.Size.Y / (row.Size.Y + container.GetThemeConstant("separation"));
+        int bottom = (int)System.Math.Round((row.NominalMeasurePosition - scrollbar.MinValue + contentFraction) * rowHeight);
+        using var expectedRow = Image.CreateEmpty(minimap.GetWidth(), bottom - top, false, Image.Format.Rgba8);
+        foreach (var segment in VisibleAudioSegments(panel).OfType<IAudioSegmentDisplay>())
+        {
+            float startMeasure = (float)Project.Instance.Timing.OffsetToMeasurePosition(segment.TimeRange[0]);
+            float endMeasure = (float)Project.Instance.Timing.OffsetToMeasurePosition(segment.TimeRange[1]);
+            int left = (int)System.Math.Round(panel.MeasurePositionToXPosition(startMeasure) / panel.Size.X * minimap.GetWidth());
+            int right = (int)System.Math.Round(panel.MeasurePositionToXPosition(endMeasure) / panel.Size.X * minimap.GetWidth());
+            if (right <= left)
+                continue;
+            using Image pixels = context.GetSpectrogramImageSlice(
+                Project.Instance.AudioFile.SampleTimeToSampleIndex(segment.TimeRange[0]),
+                Project.Instance.AudioFile.SampleTimeToSampleIndex(segment.TimeRange[1]), bottom - top, right - left);
+            expectedRow.BlitRect(pixels, new Rect2I(Vector2I.Zero, pixels.GetSize()), new Vector2I(left, 0));
+        }
+        using Image actualRow = minimap.GetRegion(new Rect2I(0, top, minimap.GetWidth(), bottom - top));
+        AssertThat(actualRow.GetData()).IsEqual(expectedRow.GetData());
     }
 
     private static async Task VerifyScrollbarWheel(ISceneRunner runner, SubViewport viewport, AudioVisualsContainer container, BlockScrollBar scrollbar)
@@ -455,12 +602,12 @@ public partial class TimingShortcutTests
         var scrollbar = (BlockScrollBar)runner.FindChild("BlockScrollBar")!;
         scrollbar.Value = scrollbar.MaxValue;
         await runner.AwaitIdleFrame();
-        AssertThat(lastRow.NominalMeasurePosition).IsEqual(Project.Instance.Timing.GetLastMeasure(Project.Instance.AudioFile?.GetAudioLength() ?? 0));
+        AssertThat(lastRow.NominalMeasurePosition).IsEqual(lastRow.GetParent<AudioVisualsContainer>().LastRowMeasure);
 
         Wheel(viewport, cursor, MouseButton.WheelUp);
         Pan(viewport, cursor, 1);
         await runner.AwaitInputProcessed();
-        AssertThat(lastRow.NominalMeasurePosition).IsEqual(Project.Instance.Timing.GetLastMeasure(Project.Instance.AudioFile?.GetAudioLength() ?? 0));
+        AssertThat(lastRow.NominalMeasurePosition).IsEqual(lastRow.GetParent<AudioVisualsContainer>().LastRowMeasure);
     }
 
     private static IEnumerable<VisualTimingPoint> VisibleTimingPoints(AudioDisplayPanel panel)

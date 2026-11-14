@@ -218,13 +218,25 @@ public partial class TimingShortcutTests
         await runner.AwaitIdleFrame();
     }
 
-    private static async Task Capture(ISceneRunner runner, Window root, string name)
+    private static async Task Capture(ISceneRunner runner, Viewport root, string name)
     {
         if (DisplayServer.GetName() == "headless")
             return;
-        await Settle(runner);
-        await root.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
-        using Image image = root.GetTexture().GetImage();
-        AssertThat(image.SavePng("user://" + name)).IsEqual(Error.Ok);
+        var viewport = root as SubViewport;
+        var previousMode = viewport?.RenderTargetUpdateMode ?? default;
+        try
+        {
+            if (viewport != null)
+                viewport.RenderTargetUpdateMode = SubViewport.UpdateMode.Once;
+            await Settle(runner);
+            await root.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+            using Image image = root.GetTexture().GetImage();
+            AssertThat(image.SavePng("user://" + name)).IsEqual(Error.Ok);
+        }
+        finally
+        {
+            if (viewport != null)
+                viewport.RenderTargetUpdateMode = previousMode;
+        }
     }
 }

@@ -18,7 +18,7 @@ public static class SpectrogramHelper
 {
     public static Colormap TemporaColormap = new Colormap(new CustomColormap(new List<Godot.Color> { GlobalConstants.TemporaBlue, new("ffffff") }));
 
-    public static ImageTexture GetSpectrogramSlice(
+    public static Godot.Image GetSpectrogramSlice(
     Godot.Image fullImage,
     int xStart,
     int xEnd,
@@ -31,15 +31,14 @@ public static class SpectrogramHelper
 
         if (xStart >= xEnd)
         {
-            using var emptyImage = Godot.Image.CreateEmpty(targetWidth, targetHeight, false, fullImage.GetFormat());
-            return ImageTexture.CreateFromImage(emptyImage);
+            return Godot.Image.CreateEmpty(targetWidth, targetHeight, false, fullImage.GetFormat());
         }
 
         int sliceWidth = xEnd - xStart;
         int sliceHeight = fullImage.GetHeight();
 
         // Create image with the slice
-        using Godot.Image sliceImage = Godot.Image.CreateEmpty(sliceWidth, sliceHeight, false, fullImage.GetFormat());
+        Godot.Image sliceImage = Godot.Image.CreateEmpty(sliceWidth, sliceHeight, false, fullImage.GetFormat());
         sliceImage.BlitRect(fullImage, new Rect2I(xStart, 0, sliceWidth, sliceHeight), new Vector2I(0, 0));
 
         if (sliceImage.GetSize() != new Vector2I(targetWidth, targetHeight))
@@ -47,7 +46,7 @@ public static class SpectrogramHelper
             sliceImage.Resize(targetWidth, targetHeight, Godot.Image.Interpolation.Nearest);
         }
 
-        return ImageTexture.CreateFromImage(sliceImage);
+        return sliceImage;
     }
 
     /// <summary>

@@ -49,10 +49,29 @@ public partial class AudioVisualsContainer : VBoxContainer, ISettingsConsumer
 
     public List<AudioBlock> AudioBlocks = [];
 
-    public int FirstTopMeasure => Project.Instance.Timing.TimeSignaturePoints.Count > 0
-            ? Math.Min((int)Project.Instance.Timing.OffsetToMeasurePosition(0), Project.Instance.Timing.TimeSignaturePoints[0].Measure)
-            : (int)Project.Instance.Timing.OffsetToMeasurePosition(0);
-    public int LastTopMeasure => Math.Max(FirstTopMeasure, Project.Instance.Timing.GetLastMeasure(Project.Instance.AudioFile?.GetAudioLength() ?? 0) - (VisibleRowCount - 1));
+    public int FirstTopMeasure
+    {
+        get
+        {
+            Timing timing = Project.Instance.Timing;
+            int firstMeasure = (int)Math.Floor(timing.OffsetToMeasurePosition(0));
+            return timing.TimeSignaturePoints.Count > 0
+                ? Math.Min(firstMeasure, timing.TimeSignaturePoints[0].Measure)
+                : firstMeasure;
+        }
+    }
+
+    public int LastRowMeasure
+    {
+        get
+        {
+            double end = Project.Instance.Timing.OffsetToMeasurePosition(Project.Instance.AudioFile?.GetAudioLength() ?? 0);
+            var firstRow = new AudioPanelLayout(0, Settings.MeasureOverlap, Settings.DownbeatPositionOffset);
+            return Math.Max((int)Math.Floor(end), (int)Math.Ceiling(end - firstRow.EndMeasure));
+        }
+    }
+
+    public int LastTopMeasure => Math.Max(FirstTopMeasure, LastRowMeasure - (VisibleRowCount - 1));
 
     public int NominalMeasurePositionStartForTopBlock
     {

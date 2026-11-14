@@ -412,7 +412,7 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
     /// </summary>
     public void RenderAudio()
     {
-        var timing = GetTimingAnchors();
+        var timing = Project.Instance.Timing.GetAnchors();
         var panelSegments = Visible ? GetPanelSegments(timing) : [];
         var children = audioSegments.GetChildren();
         bool shouldRenderSpectrogram = Settings.RenderAsSpectrogram;
@@ -474,14 +474,10 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
     }
 
     public List<float[]> GetPanelSegments()
-        => GetPanelSegments(GetTimingAnchors());
+        => GetPanelSegments(Project.Instance.Timing.GetAnchors());
 
     private List<float[]> GetPanelSegments(IReadOnlyList<TimingAnchor> timing)
         => TimingMath.GetPanelSegments(Layout.StartMeasure, Layout.EndMeasure, Project.Instance.AudioFile.GetAudioLength(), timing);
-
-    private static TimingAnchor[] GetTimingAnchors()
-        => Project.Instance.Timing.TimingPoints.Select(point => new TimingAnchor(point.Offset,
-            point.MeasurePosition ?? throw new NullReferenceException("Timing point has no measure position"), point.MeasuresPerSecond)).ToArray();
 
     /// <summary>
     ///     Instantiate an amount of <see cref="VisualTimingPoint" /> nodes and adds as children.

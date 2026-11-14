@@ -12,6 +12,7 @@
 // Full license text is available at: https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode
 
 using System;
+using System.Collections.Generic;
 using Godot;
 using Tempora.Classes.Audio;
 using Tempora.Classes.TimingClasses;
@@ -28,6 +29,9 @@ public partial class BlockScrollBar : VScrollBar
     ColorRect playbackMarker = null!;
 
     private static readonly string[] GrabberStyles = ["grabber", "grabber_highlight", "grabber_pressed"];
+    private ImageTexture? minimapTexture;
+    private bool minimapUpdateQueued;
+    private float rowContentFraction = 1;
     bool isRangeChanging = false;
 
     public override void _GuiInput(InputEvent @event)
@@ -47,19 +51,19 @@ public partial class BlockScrollBar : VScrollBar
 
     public override void _Ready()
     {
-        foreach (string name in GrabberStyles)
-        {
-            using var style = (StyleBox)GetThemeStylebox(name).Duplicate();
-            AddThemeStyleboxOverride(name, style);
-        }
+        SetMinimapStyles();
 
         GlobalEvents.Instance.TimingChanged += OnTimingChanged;
         GlobalEvents.Instance.AudioFileChanged += OnAudioFileChanged;
+        GlobalEvents.Instance.SpectrogramUpdated += OnSpectrogramUpdated;
         GlobalEvents.Instance.AudioVisualsContainerScrolled += OnScrolled;
         ValueChanged += OnValueChanged;
         audioVisualsContainer.VisibleRowCountChanged += UpdateScrollBar;
         audioVisualsContainer.PlaybackPositionChanged += UpdatePlaybackMarker;
+        audioVisualsContainer.SortChildren += OnRowsSorted;
+        Project.Instance.Settings.DisplayChanged += OnDisplaySettingsChanged;
         Resized += UpdateGrabberMinimum;
+        Resized += QueueMinimapUpdate;
         UpdateScrollBar();
     }
 
@@ -67,9 +71,33 @@ public partial class BlockScrollBar : VScrollBar
     {
         GlobalEvents.Instance.TimingChanged -= OnTimingChanged;
         GlobalEvents.Instance.AudioFileChanged -= OnAudioFileChanged;
+        GlobalEvents.Instance.SpectrogramUpdated -= OnSpectrogramUpdated;
         GlobalEvents.Instance.AudioVisualsContainerScrolled -= OnScrolled;
         audioVisualsContainer.VisibleRowCountChanged -= UpdateScrollBar;
         audioVisualsContainer.PlaybackPositionChanged -= UpdatePlaybackMarker;
+        audioVisualsContainer.SortChildren -= OnRowsSorted;
+        Project.Instance.Settings.DisplayChanged -= OnDisplaySettingsChanged;
+        ((StyleBoxTexture)GetThemeStylebox("scroll")).Texture = null;
+        minimapTexture?.Dispose();
+        minimapTexture = null;
+    }
+
+    private void SetMinimapStyles()
+    {
+        using var track = new StyleBoxTexture();
+        track.SetContentMarginAll(0);
+        AddThemeStyleboxOverride("scroll", track);
+
+        var highlight = new Color("ffdf33");
+        for (int i = 0; i < GrabberStyles.Length; i++)
+        {
+            string name = GrabberStyles[i];
+            using var style = (StyleBoxFlat)GetThemeStylebox(name).Duplicate();
+            style.BgColor = new Color(highlight, 0.2f + i * 0.1f);
+            style.BorderColor = highlight;
+            style.SetBorderWidthAll(2);
+            AddThemeStyleboxOverride(name, style);
+        }
     }
 
     private void OnTimingChanged(object? sender, EventArgs e)
@@ -81,12 +109,31 @@ public partial class BlockScrollBar : VScrollBar
 
     private void OnAudioFileChanged(object? sender, EventArgs e) => UpdateScrollBar();
 
+    private void OnSpectrogramUpdated(object? sender, EventArgs e) => QueueMinimapUpdate();
+
+    private void OnDisplaySettingsChanged(object? sender, EventArgs e) => UpdateScrollBar();
+
+    private void OnRowsSorted()
+    {
+        if (audioVisualsContainer.AudioBlocks.Count == 0)
+            return;
+        float height = audioVisualsContainer.AudioBlocks[0].Size.Y;
+        if (height <= 0)
+            return;
+        float fraction = height / (height + audioVisualsContainer.GetThemeConstant("separation"));
+        if (rowContentFraction == fraction)
+            return;
+        rowContentFraction = fraction;
+        QueueMinimapUpdate();
+    }
+
     private void OnValueChanged(double value) => UpdateAudioVisualsContainer(value);
 
     private void UpdateScrollBar()
     {
         UpdateLimits();
         Value = audioVisualsContainer.NominalMeasurePositionStartForTopBlock;
+        UpdateAudioVisualsContainer(Value);
     }
 
     private void UpdateAudioVisualsContainer(double value)
@@ -100,13 +147,75 @@ public partial class BlockScrollBar : VScrollBar
     public void UpdateLimits()
     {
         int firstMeasure = audioVisualsContainer.FirstTopMeasure;
-        int endMeasure = Math.Max(firstMeasure + 1, Project.Instance.Timing.GetLastMeasure(Project.Instance.AudioFile?.GetAudioLength() ?? 0) + 1);
+        int endMeasure = Math.Max(firstMeasure + 1, audioVisualsContainer.LastRowMeasure + 1);
         isRangeChanging = true;
         MinValue = firstMeasure;
         MaxValue = endMeasure;
         Page = Math.Min(audioVisualsContainer.VisibleRowCount, endMeasure - firstMeasure);
         isRangeChanging = false;
         UpdateGrabberMinimum();
+        QueueMinimapUpdate();
+    }
+
+    private void QueueMinimapUpdate()
+    {
+        if (minimapUpdateQueued)
+            return;
+        minimapUpdateQueued = true;
+        Callable.From(UpdateMinimap).CallDeferred();
+    }
+
+    private void UpdateMinimap()
+    {
+        minimapUpdateQueued = false;
+        if (!IsInsideTree())
+            return;
+        Vector2 size = GetTrackRect().Size;
+        if (size.X <= 0 || size.Y <= 0 || Project.Instance.SpectrogramContext?.CachedSpectrogramImage == null)
+            return;
+
+        using Image image = CreateMinimapImage(new Vector2I((int)Math.Ceiling(size.X), (int)Math.Ceiling(size.Y)));
+        var texture = ImageTexture.CreateFromImage(image);
+        ((StyleBoxTexture)GetThemeStylebox("scroll")).Texture = texture;
+        minimapTexture?.Dispose();
+        minimapTexture = texture;
+    }
+
+    private Image CreateMinimapImage(Vector2I size)
+    {
+        Project project = Project.Instance;
+        var image = Image.CreateEmpty(size.X, size.Y, false, project.SpectrogramContext.CachedSpectrogramImage!.GetFormat());
+        TimingAnchor[] timing = project.Timing.GetAnchors();
+        double rowHeight = size.Y / (MaxValue - MinValue);
+        for (int measure = (int)MinValue; measure < MaxValue; measure++)
+        {
+            int top = (int)Math.Round((measure - MinValue) * rowHeight);
+            int bottom = (int)Math.Round((measure - MinValue + rowContentFraction) * rowHeight);
+            if (bottom <= top)
+                continue;
+            var layout = new AudioPanelLayout(measure, project.Settings.MeasureOverlap, project.Settings.DownbeatPositionOffset);
+            DrawMinimapRow(image, new Rect2I(0, top, size.X, bottom - top), layout, timing);
+        }
+        return image;
+    }
+
+    private static void DrawMinimapRow(Image image, Rect2I row, AudioPanelLayout layout, IReadOnlyList<TimingAnchor> timing)
+    {
+        Project project = Project.Instance;
+        AudioFile audio = project.AudioFile;
+        foreach (float[] segment in TimingMath.GetPanelSegments(layout.StartMeasure, layout.EndMeasure, audio.GetAudioLength(), timing))
+        {
+            float startMeasure = (float)TimingMath.OffsetToMeasurePosition(segment[0], timing);
+            float endMeasure = (float)TimingMath.OffsetToMeasurePosition(segment[1], timing);
+            int left = (int)Math.Round(layout.MeasurePositionToXPosition(startMeasure, row.Size.X));
+            int right = (int)Math.Round(layout.MeasurePositionToXPosition(endMeasure, row.Size.X));
+            if (right <= left)
+                continue;
+
+            using Image slice = project.SpectrogramContext.GetSpectrogramImageSlice(
+                audio.SampleTimeToSampleIndex(segment[0]), audio.SampleTimeToSampleIndex(segment[1]), row.Size.Y, right - left);
+            image.BlitRect(slice, new Rect2I(Vector2I.Zero, slice.GetSize()), new Vector2I(left, row.Position.Y));
+        }
     }
 
     private void UpdateGrabberMinimum()

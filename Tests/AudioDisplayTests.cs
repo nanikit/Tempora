@@ -97,8 +97,8 @@ public class AudioDisplayTests
     {
         using var source = Image.CreateEmpty(40, 12, false, Image.Format.Rgba8);
         source.Fill(Colors.White);
-        using var texture = SpectrogramHelper.GetSpectrogramSlice(source, 0, 40, 12, 100);
-        AssertThat(texture.GetSize()).IsEqual(new Vector2(100, 12));
+        using var image = SpectrogramHelper.GetSpectrogramSlice(source, 0, 40, 12, 100);
+        AssertThat(image.GetSize()).IsEqual(new Vector2I(100, 12));
     }
 
     [TestCase]
@@ -109,8 +109,7 @@ public class AudioDisplayTests
         double before = Performance.GetMonitor(Performance.Monitor.ObjectCount);
         foreach (var range in new[] { (0, 40), (40, 40), (-40, -1) })
         {
-            using var texture = SpectrogramHelper.GetSpectrogramSlice(source, range.Item1, range.Item2, 12, 100);
-            using var pixels = texture.GetImage();
+            using var pixels = SpectrogramHelper.GetSpectrogramSlice(source, range.Item1, range.Item2, 12, 100);
             AssertThat(pixels.GetPixel(0, 0)).IsEqual(range.Item1 == 0 ? Colors.White : new Color(0, 0, 0, 0));
         }
         AssertThat(Performance.GetMonitor(Performance.Monitor.ObjectCount)).IsEqual(before);
