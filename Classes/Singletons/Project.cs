@@ -137,7 +137,12 @@ public partial class Project : Node, ISettingsConsumer
             if (!values.IsValid(AudioFile.SampleRate, AudioFile.PcmFloats[0].Length))
                 throw new InvalidOperationException("The audio cannot be represented as a spectrogram with default settings.");
         }
-        SpectrogramContext = new(SpectrogramHelper.GetSpectrogramGenerator(AudioFile, values.StepSize, values.FftSize, values.MinFreq, 16000));
+        if (SpectrogramContext == null || !SpectrogramContext.CanReuse(AudioFile, values))
+        {
+            var previous = SpectrogramContext;
+            SpectrogramContext = new SpectrogramContext(AudioFile, values);
+            previous?.Dispose();
+        }
         SpectrogramContext.DB = values.UseDb;
         SpectrogramContext.Intensity = values.Intensity;
         SpectrogramContext.UpdateSpectrogram();

@@ -1,105 +1,63 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Tempora.Classes.DataHelpers;
+using System;
 using Godot;
-using Tempora.Classes.Audio;
-using Tempora.Classes.Utility;
 using Spectrogram;
+using Tempora.Classes.Audio;
+using Tempora.Classes.DataHelpers;
+using Tempora.Classes.Utility;
 
 namespace Tempora.Classes.Visual.AudioDisplay;
-/// <summary>
-/// Context for generating and managing spectrograms.
-/// </summary>
-public class SpectrogramContext
+
+public sealed class SpectrogramContext : IDisposable
 {
-    private Godot.Image? cachedSpectrogramImage;
+    private readonly PcmData pcmData;
+    private readonly (int StepSize, int FftSize, int MinFreq) calculation;
+    private (int Intensity, bool UseDb) imageSettings;
 
-    public Godot.Image? CachedSpectrogramImage
+    public Godot.Image? CachedSpectrogramImage { get; private set; }
+    public SpectrogramGenerator SpectrogramGenerator { get; }
+    public int Intensity { get; set; }
+    public bool DB { get; set; }
+
+    public SpectrogramContext(PcmData pcmData, VisualSettings settings)
     {
-        get => cachedSpectrogramImage;
-        set => cachedSpectrogramImage = value;
+        this.pcmData = pcmData;
+        calculation = (settings.StepSize, settings.FftSize, settings.MinFreq);
+        SpectrogramGenerator = SpectrogramHelper.GetSpectrogramGenerator(
+            pcmData, settings.StepSize, settings.FftSize, settings.MinFreq);
+        Intensity = settings.Intensity;
+        DB = settings.UseDb;
     }
 
-    private PcmData? pcmDataUsedForLastGeneration;
-
-    // Using a delegate instead of a direct reference to allow for flexibility in how PCM data is provided.
-    public delegate PcmData GetPcmDataDelegate();
-
-    private static PcmData GetPcmDataFromProject() => Project.Instance.AudioFile;
-
-    public GetPcmDataDelegate GetPcmData { get; set; }
-
-    public SpectrogramGenerator SpectrogramGenerator { get; set; }
-
-    public SpectrogramContext(SpectrogramGenerator spectrogramGenerator, GetPcmDataDelegate? pcmDataProvider = null)
-    {
-        GetPcmData = pcmDataProvider ?? GetPcmDataFromProject;
-        SpectrogramGenerator = spectrogramGenerator;
-    }
-
-    public int Intensity { get; set; } = 5;
-
-    public bool DB { get; set; } = true;
-
-    private bool NeedToUpdateSpectrogram()
-    {
-        if (cachedSpectrogramImage == null)
-            return true;
-        if (GetPcmData() != pcmDataUsedForLastGeneration)
-            return true;
-        return false;
-    }
+    public bool CanReuse(PcmData audio, VisualSettings settings)
+        => ReferenceEquals(pcmData, audio)
+            && calculation == (settings.StepSize, settings.FftSize, settings.MinFreq);
 
     public void UpdateSpectrogram()
     {
-        if (!NeedToUpdateSpectrogram())
+        if (CachedSpectrogramImage != null && imageSettings == (Intensity, DB))
             return;
-        PcmData pcmData = GetPcmData();
-        pcmDataUsedForLastGeneration = pcmData;
-        CachedSpectrogramImage = SpectrogramHelper.GenerateGodotImage(
-            SpectrogramGenerator,
-            SpectrogramHelper.TemporaColormap,
-            intensity: Intensity,
-            dB: DB
-        );
-        // Save the image to a file for debugging purposes
-        //CachedSpectrogramImage.SavePng("user://spectrogram.png");
+
+        Godot.Image image = SpectrogramHelper.GenerateGodotImage(
+            SpectrogramGenerator, SpectrogramHelper.TemporaColormap, Intensity, DB);
+        CachedSpectrogramImage?.Dispose();
+        CachedSpectrogramImage = image;
+        imageSettings = (Intensity, DB);
         GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.Instance.SpectrogramUpdated));
     }
 
-    public ImageTexture GetSpectrogramSlice(
-        int sampleStart,
-        int sampleEnd,
-        int targetHeight,
-        int targetWidth
-        )
+    public ImageTexture GetSpectrogramSlice(int sampleStart, int sampleEnd, int targetHeight, int targetWidth)
     {
         UpdateSpectrogram();
-        if (cachedSpectrogramImage == null)
-            throw new InvalidOperationException("Cached spectrogram image is null.");
-
         return SpectrogramHelper.GetSpectrogramSlice(
-            cachedSpectrogramImage, 
-            SampleToX(sampleStart), 
-            SampleToX(sampleEnd), 
-            targetHeight,
-            targetWidth
-            );
+            CachedSpectrogramImage!, SampleToX(sampleStart), SampleToX(sampleEnd), targetHeight, targetWidth);
+    }
+
+    public void Dispose()
+    {
+        CachedSpectrogramImage?.Dispose();
+        CachedSpectrogramImage = null;
     }
 
     private int SampleToX(int sample)
-    {
-        int numSamples = GetPcmData().PcmFloats[0].Length;
-        
-        // out of range samples are allowed
-        //if (sample < 0 || sample >= numSamples)
-        //    throw new ArgumentOutOfRangeException(nameof(sample), "Sample index out of range.");
-
-        int cachedWidth = cachedSpectrogramImage?.GetWidth() ?? 0;
-
-        return (int)((float)sample / numSamples * cachedWidth);
-    }
+        => (int)((float)sample / pcmData.PcmFloats[0].Length * CachedSpectrogramImage!.GetWidth());
 }

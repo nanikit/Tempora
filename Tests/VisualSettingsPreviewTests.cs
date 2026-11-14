@@ -17,6 +17,7 @@ public partial class TimingShortcutTests
         if (application.RejectedVisualSettings.HasValue)
             await VerifyRejectedStartupSettings(runner, application);
         await VerifyScaleDragKeepsWindowInPlace(runner);
+        await VerifySpectrumPreviewReusesCalculations(runner);
         var window = (Window)runner.FindChild("VisualSettingsWindow")!;
         var tabs = window.GetNode<TabContainer>("Margin/Scroll/Layout/TabContainer");
         var slider = window.GetNode<HSlider>("Margin/Scroll/Layout/TabContainer/Interface/Scale/Slider");

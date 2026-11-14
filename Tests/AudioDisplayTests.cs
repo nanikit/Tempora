@@ -60,7 +60,7 @@ public class AudioDisplayTests
     public void Very_short_audio_segments_fit_without_empty_textures()
     {
         var audio = new AudioFile(ProjectSettings.GlobalizePath("res://Audio/clickedy.mp3"));
-        var context = new SpectrogramContext(SpectrogramHelper.GetSpectrogramGenerator(audio), () => audio);
+        using var context = new SpectrogramContext(audio, VisualSettings.From(new Settings()));
         var segment = new SpectrogramSegment(audio, context, 100, 20, [0, 0.1f]);
         try
         {
