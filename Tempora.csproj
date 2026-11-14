@@ -37,6 +37,7 @@
     <Compile Remove="gdunit4_testadapter_v5\**\*.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Remove="tools\**\*.cs" />
     <EditorConfigFiles Remove="D:\DOCUMENTS\CODE\REPOS\TEMPORA\.editorconfig" />
   </ItemGroup>
   <ItemGroup>

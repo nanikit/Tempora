@@ -18,6 +18,7 @@ on:
       - ".github/scripts/**"
       - "Tests/*.ts"
       - "scripts/**"
+      - "tools/**"
       - "deno.json"
       - "deno.lock"
       - ".runsettings"
@@ -40,6 +41,7 @@ on:
       - ".github/scripts/**"
       - "Tests/*.ts"
       - "scripts/**"
+      - "tools/**"
       - "deno.json"
       - "deno.lock"
       - ".runsettings"
@@ -128,7 +130,7 @@ jobs:
       - name: test
         if: steps.reuse.outputs.test-passed != 'true'
         shell: pwsh
-        run: dotnet test Tempora.csproj --settings .runsettings -e "GODOT_BIN=${{ steps.godot.outputs.godot_bin }}"
+        run: dotnet run --project tools/StartupSmoke/StartupSmoke.csproj -- test "${{ steps.godot.outputs.godot_bin }}"
 
       - name: verify artifact preparation and reuse
         if: steps.reuse.outputs.test-passed != 'true'
@@ -136,6 +138,10 @@ jobs:
         run: |
           deno task check
           deno task test
+
+      - name: verify startup capture isolation
+        if: steps.reuse.outputs.test-passed != 'true'
+        run: dotnet test tools/StartupSmoke.Tests/StartupSmoke.Tests.csproj
 
   export_game:
     name: Export Game

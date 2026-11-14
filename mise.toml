@@ -11,12 +11,23 @@ run = "dotnet build Tempora.csproj -c Debug"
 
 [tasks.test]
 description = "Run gdUnit4 C# tests"
-run = 'dotnet test Tempora.csproj --settings .runsettings -e GODOT_BIN={{ tools["http:godot-mono"].path }}/Godot_v{{ tools["http:godot-mono"].version }}_mono_win64_console.exe'
+run = 'dotnet run --project tools/StartupSmoke/StartupSmoke.csproj -- test "{{ tools["http:godot-mono"].path }}/Godot_v{{ tools["http:godot-mono"].version }}_mono_win64_console.exe"'
+
+[tasks."test:ui"]
+description = "Run real-window UI tests on a private desktop"
+run = 'dotnet run --project tools/StartupSmoke/StartupSmoke.csproj -- test "{{ tools["http:godot-mono"].path }}/Godot_v{{ tools["http:godot-mono"].version }}_mono_win64_console.exe" --native -- --filter FullyQualifiedName~TimingShortcutTests'
 
 [tasks."test:export-startup"]
 description = "Capture Windows export startup screens and check runtime errors"
-usage = 'arg "<executable>"'
-run = 'pwsh -NoProfile -File Tests/ExportStartupSmoke.ps1 -Executable "{{ usage.executable }}"'
+usage = '''
+arg "<executable>"
+flag "--show-window" help="Show the capture window on the current desktop"
+'''
+run = 'dotnet run --project tools/StartupSmoke/StartupSmoke.csproj -- "{{ usage.executable }}" {% if usage.show_window %}--show-window{% endif %}'
+
+[tasks."test:startup-tool"]
+description = "Verify Windows startup capture isolation"
+run = "dotnet test tools/StartupSmoke.Tests/StartupSmoke.Tests.csproj"
 
 [tasks.release]
 description = "Push main and release to publish prepared artifacts"

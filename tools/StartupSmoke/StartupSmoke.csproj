@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Tempora.Tools.StartupSmoke</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="StartupSmoke.Tests" />
+    <Content Include="../../Audio/Loop.mp3" Link="Loop.mp3" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
