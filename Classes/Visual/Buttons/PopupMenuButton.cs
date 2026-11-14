@@ -24,6 +24,7 @@ public partial class PopupMenuButton : Button
 	{
 		ActionMode = ActionModeEnum.Press;
 		Pressed += PopupOrHide;
+		ItemRectChanged += RepositionPopup;
 	}
 
 	private void PopupOrHide()
@@ -32,8 +33,17 @@ public partial class PopupMenuButton : Button
 			popupMenu.Hide();
 		else
 		{
-			popupMenu.Show();
-			popupMenu.Position = (Vector2I)(GlobalPosition + new Vector2(0, Size.Y));
+			popupMenu.Popup();
+			RepositionPopup();
 		}
 	}
+
+    private void RepositionPopup()
+    {
+        if (!popupMenu.Visible)
+            return;
+        var bounds = (Rect2I)GetViewport().GetVisibleRect();
+        Vector2I position = (Vector2I)(GlobalPosition + new Vector2(0, Size.Y));
+        popupMenu.Position = position.Clamp(bounds.Position, (bounds.End - popupMenu.Size).Max(bounds.Position));
+    }
 }

@@ -581,11 +581,11 @@ msgstr "알림"
 msgid "Please Confirm..."
 msgstr "확인해 주세요..."
 
-msgid "Text"
-msgstr "글자"
+msgid "Interface"
+msgstr "인터페이스"
 
-msgid "Text Size"
-msgstr "글자 크기"
+msgid "Interface Size"
+msgstr "인터페이스 크기"
 
 msgid "Reset"
 msgstr "초기화"

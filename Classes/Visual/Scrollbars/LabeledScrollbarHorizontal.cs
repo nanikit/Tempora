@@ -37,9 +37,9 @@ public partial class LabeledScrollbarHorizontal : HBoxContainer
     public override void _Ready()
     {
         outsideTitleLabel = GetNode<Label>("OutsideTitleLabel");
-        hScrollBar = GetNode<HScrollBar>("HScrollBar");
-        valueLabel = hScrollBar.GetNode<Label>("HBoxContainer/ValueLabel");
-        insideTitleLabel = hScrollBar.GetNode<Label>("HBoxContainer/InsideTitleLabel");
+        hScrollBar = GetNode<HScrollBar>("Slider/HScrollBar");
+        valueLabel = GetNode<Label>("Slider/Content/ValueLabel");
+        insideTitleLabel = GetNode<Label>("Slider/Content/InsideTitleLabel");
 
         hScrollBar.ValueChanged += OnValueChanged;
 

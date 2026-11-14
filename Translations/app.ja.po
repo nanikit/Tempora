@@ -581,11 +581,11 @@ msgstr "通知"
 msgid "Please Confirm..."
 msgstr "確認してください..."
 
-msgid "Text"
-msgstr "文字"
+msgid "Interface"
+msgstr "インターフェース"
 
-msgid "Text Size"
-msgstr "文字サイズ"
+msgid "Interface Size"
+msgstr "インターフェースのサイズ"
 
 msgid "Reset"
 msgstr "初期化"

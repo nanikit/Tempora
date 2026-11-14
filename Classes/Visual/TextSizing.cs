@@ -10,9 +10,14 @@ public sealed class TextSizing : IDisposable
     public const double BaseScale = 1.25;
     private readonly Theme theme = new();
     private readonly Dictionary<Node, (StringName Name, int Size)[]> overrides = new();
+    private readonly InterfaceSizing interfaceSizing = new();
     private double scale = BaseScale;
 
-    public TextSizing() => theme.DefaultFontSize = ScaleSize(16);
+    public TextSizing()
+    {
+        theme.DefaultFontSize = ScaleSize(16);
+        UpdateWindowTitle();
+    }
 
     public void Register(Node node)
     {
@@ -26,21 +31,51 @@ public sealed class TextSizing : IDisposable
                 .Select(name => ((StringName)name, node.Get(name).AsInt32())).ToArray();
         }
         if (node is Window window)
+        {
             window.Theme = theme;
+            interfaceSizing.Register(window);
+        }
         ApplyOverrides(node, overrides[node]);
     }
 
-    public void Unregister(Node node) => overrides.Remove(node);
+    public void Unregister(Node node)
+    {
+        overrides.Remove(node);
+        if (node is Window window)
+            interfaceSizing.Unregister(window);
+    }
 
     public void ApplyScale(double systemScale, double userScale)
     {
-        scale = BaseScale * systemScale * userScale;
-        theme.DefaultFontSize = ScaleSize(16);
-        foreach (var (node, sizes) in overrides.ToArray())
-            ApplyOverrides(node, sizes);
+        if (scale != BaseScale * systemScale)
+        {
+            scale = BaseScale * systemScale;
+            theme.DefaultFontSize = ScaleSize(16);
+            UpdateWindowTitle();
+            foreach (var (node, sizes) in overrides.ToArray())
+                ApplyOverrides(node, sizes);
+        }
+        interfaceSizing.ApplyScale((float)userScale);
     }
 
-    public void Dispose() => theme.Dispose();
+    public void Dispose()
+    {
+        interfaceSizing.Dispose();
+        theme.Dispose();
+    }
+
+    private void UpdateWindowTitle()
+    {
+        int height = Math.Max(36, (int)Math.Ceiling(ThemeDB.FallbackFont.GetHeight(theme.DefaultFontSize)) + 12);
+        theme.SetConstant("title_height", "Window", height);
+        theme.SetConstant("close_v_offset", "Window", (height + 12) / 2);
+        foreach (string name in new[] { "embedded_border", "embedded_unfocused_border" })
+        {
+            using var border = (StyleBoxFlat)ThemeDB.GetDefaultTheme().GetStylebox(name, "Window").Duplicate();
+            border.ExpandMarginTop = height;
+            theme.SetStylebox(name, "Window", border);
+        }
+    }
 
     private void ApplyOverrides(Node node, (StringName Name, int Size)[] sizes)
     {

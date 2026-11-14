@@ -35,7 +35,7 @@ public partial class TimingShortcutTests
     }
 
     [TestCase]
-    public async Task Users_can_edit_timing_with_shortcuts_see_why_BPM_cannot_change_and_use_a_remembered_language_across_the_app()
+    public async Task Users_can_edit_timing_and_adjust_display_settings()
     {
         // A sized viewport supplies cursor positions even when Godot runs headlessly.
         var viewport = new SubViewport { Size = new Vector2I(1280, 720) };
@@ -200,6 +200,7 @@ public partial class TimingShortcutTests
             await VerifySettingsApplyAndCancel(runner);
             await VerifyFontScaleApplyAndCancel(runner, viewport, container);
             await VerifyAppLanguages(runner);
+            await VerifyInterfaceScaling(runner, viewport);
         }
         finally
         {
@@ -276,7 +277,7 @@ public partial class TimingShortcutTests
             volume.Value = originalVolume;
         }
         var window = (Window)runner.FindChild("VisualSettingsWindow")!;
-        var input = window.GetNode<LineEdit>("Margin/Layout/TabContainer/Spectrogram/minFreq/LineEdit");
+        var input = window.GetNode<LineEdit>("Margin/Scroll/Layout/TabContainer/Spectrogram/minFreq/LineEdit");
         int original = Project.Instance.Settings.SpectrogramMinFreq;
         try
         {
@@ -286,7 +287,7 @@ public partial class TimingShortcutTests
             window.Popup();
             AssertThat(input.Text).IsEqual(original.ToString());
             input.Text = (original + 1000).ToString();
-            window.GetNode<Button>("Margin/Layout/BottomButtonsHBox/ApplyButton").EmitSignal(Button.SignalName.Pressed);
+            window.GetNode<Button>("Margin/Scroll/Layout/BottomButtonsHBox/ApplyButton").EmitSignal(Button.SignalName.Pressed);
             var spectrum = Project.Instance.SpectrogramContext.SpectrogramGenerator;
             AssertThat(spectrum.FreqMin).IsBetween(original + 1000 - spectrum.HzPerPx, original + 1000d);
             AssertThat(new SettingsStore().Load().SpectrogramMinFreq).IsEqual(original + 1000);
@@ -299,18 +300,18 @@ public partial class TimingShortcutTests
         finally
         {
             input.Text = original.ToString();
-            window.GetNode<Button>("Margin/Layout/BottomButtonsHBox/OkButton").EmitSignal(Button.SignalName.Pressed);
+            window.GetNode<Button>("Margin/Scroll/Layout/BottomButtonsHBox/OkButton").EmitSignal(Button.SignalName.Pressed);
         }
     }
 
     private static async Task VerifyFontScaleApplyAndCancel(ISceneRunner runner, SubViewport viewport, AudioVisualsContainer container)
     {
         var window = (Window)runner.FindChild("VisualSettingsWindow")!;
-        var slider = window.GetNode<HSlider>("Margin/Layout/TabContainer/Text/Scale/Slider");
-        window.GetNode<TabContainer>("Margin/Layout/TabContainer").CurrentTab = 0;
-        var percentage = window.GetNode<SpinBox>("Margin/Layout/TabContainer/Text/Scale/Percentage");
-        var apply = window.GetNode<Button>("Margin/Layout/BottomButtonsHBox/ApplyButton");
-        var reset = window.GetNode<Button>("Margin/Layout/TabContainer/Text/DefaultsButton");
+        var slider = window.GetNode<HSlider>("Margin/Scroll/Layout/TabContainer/Interface/Scale/Slider");
+        window.GetNode<TabContainer>("Margin/Scroll/Layout/TabContainer").CurrentTab = 0;
+        var percentage = window.GetNode<SpinBox>("Margin/Scroll/Layout/TabContainer/Interface/Scale/Percentage");
+        var apply = window.GetNode<Button>("Margin/Scroll/Layout/BottomButtonsHBox/ApplyButton");
+        var reset = window.GetNode<Button>("Margin/Scroll/Layout/TabContainer/Interface/DefaultsButton");
         var message = (Control)runner.FindChild("MessageLabel")!;
         int originalFontSize = message.GetThemeFontSize("font_size");
         var spectrum = Project.Instance.SpectrogramContext.SpectrogramGenerator;
@@ -329,7 +330,8 @@ public partial class TimingShortcutTests
             apply.EmitSignal(Button.SignalName.Pressed);
             await runner.AwaitIdleFrame();
             AssertThat(slider.Value).IsEqual(200d);
-            AssertThat(message.GetThemeFontSize("font_size")).IsEqual(originalFontSize * 2);
+            AssertThat(message.GetThemeFontSize("font_size")).IsEqual(originalFontSize);
+            AssertThat(((SceneTree)Engine.GetMainLoop()).Root.ContentScaleFactor).IsEqual(2f);
             AssertThat(Project.Instance.SpectrogramContext.SpectrogramGenerator).IsSame(spectrum);
             using var config = new ConfigFile();
             AssertThat(config.Load("user://settings.cfg")).IsEqual(Error.Ok);
@@ -346,9 +348,9 @@ public partial class TimingShortcutTests
             AssertThat(percentage.Value).IsEqual(200d);
             await runner.AwaitIdleFrame();
             apply.EmitSignal(Button.SignalName.Pressed);
-            AssertThat(message.GetThemeFontSize("font_size")).IsEqual(originalFontSize * 2);
+            AssertThat(message.GetThemeFontSize("font_size")).IsEqual(originalFontSize);
 
-            window.GetNode<TabContainer>("Margin/Layout/TabContainer").CurrentTab = 0;
+            window.GetNode<TabContainer>("Margin/Scroll/Layout/TabContainer").CurrentTab = 0;
             await runner.AwaitIdleFrame();
             percentage.GetLineEdit().GrabFocus();
             percentage.GetLineEdit().Text = "120";
@@ -361,7 +363,7 @@ public partial class TimingShortcutTests
             percentage.Value = 100;
             percentage.GetLineEdit().Text = "100";
             await runner.AwaitIdleFrame();
-            window.GetNode<Button>("Margin/Layout/BottomButtonsHBox/OkButton").EmitSignal(Button.SignalName.Pressed);
+            window.GetNode<Button>("Margin/Scroll/Layout/BottomButtonsHBox/OkButton").EmitSignal(Button.SignalName.Pressed);
         }
         AssertThat(message.GetThemeFontSize("font_size")).IsEqual(originalFontSize);
     }
@@ -381,7 +383,7 @@ public partial class TimingShortcutTests
             var export = (Window)runner.FindChild("ExportWindow")!;
             var visual = (Window)runner.FindChild("VisualSettingsWindow")!;
             var grid = (Control)runner.FindChild("GridScrollBar")!;
-            var gridTitle = grid.GetNode<Label>("HScrollBar/HBoxContainer/InsideTitleLabel");
+            var gridTitle = grid.GetNode<Label>("Slider/Content/InsideTitleLabel");
             var message = (Label)runner.FindChild("MessageLabel")!;
             Project.Instance.NotificationMessage = "Saved visual options.";
             var saveDialog = ProjectFileManager.Instance.SaveFileDialog;
@@ -405,7 +407,7 @@ public partial class TimingShortcutTests
                 {
                     var exportLabel = export.FindChild("RemovePointsThatChangeNothing").GetNode<Label>("Label");
                     var visualLabel = visual.FindChild("stepSize").GetNode<Label>("Label");
-                    var textSizeLabel = visual.GetNode<Label>("Margin/Layout/TabContainer/Text/Scale/Label");
+                    var textSizeLabel = visual.GetNode<Label>("Margin/Scroll/Layout/TabContainer/Interface/Scale/Label");
                     AssertThat(exportLabel.Tr(exportLabel.Text).ToString()).IsNotEqual(exportLabel.Text);
                     AssertThat(visualLabel.Tr(visualLabel.Text).ToString()).IsNotEqual(visualLabel.Text);
                     AssertThat(textSizeLabel.Tr(textSizeLabel.Text).ToString()).IsNotEqual(textSizeLabel.Text);

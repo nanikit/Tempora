@@ -9,17 +9,17 @@ size = Vector2i(640, 360)
 min_size = Vector2i(520, 360)
 wrap_controls = true
 script = ExtResource("1_irav1")
-textScaleSlider = NodePath("Margin/Layout/TabContainer/Text/Scale/Slider")
-textScalePercentage = NodePath("Margin/Layout/TabContainer/Text/Scale/Percentage")
-textDefaultsButton = NodePath("Margin/Layout/TabContainer/Text/DefaultsButton")
-stepSizeLineEdit = NodePath("Margin/Layout/TabContainer/Spectrogram/stepSize/LineEdit")
-fftSizeLineEdit = NodePath("Margin/Layout/TabContainer/Spectrogram/fftSize/LineEdit")
-minFreqLineEdit = NodePath("Margin/Layout/TabContainer/Spectrogram/minFreq/LineEdit")
-intensityLineEdit = NodePath("Margin/Layout/TabContainer/Spectrogram/Intensity/LineEdit")
-dBCheckbox = NodePath("Margin/Layout/TabContainer/Spectrogram/dB/CheckBox")
-okButton = NodePath("Margin/Layout/BottomButtonsHBox/OkButton")
-defaultsButton = NodePath("Margin/Layout/TabContainer/Spectrogram/DefaultsButton")
-applyButton = NodePath("Margin/Layout/BottomButtonsHBox/ApplyButton")
+textScaleSlider = NodePath("Margin/Scroll/Layout/TabContainer/Interface/Scale/Slider")
+textScalePercentage = NodePath("Margin/Scroll/Layout/TabContainer/Interface/Scale/Percentage")
+textDefaultsButton = NodePath("Margin/Scroll/Layout/TabContainer/Interface/DefaultsButton")
+stepSizeLineEdit = NodePath("Margin/Scroll/Layout/TabContainer/Spectrogram/stepSize/LineEdit")
+fftSizeLineEdit = NodePath("Margin/Scroll/Layout/TabContainer/Spectrogram/fftSize/LineEdit")
+minFreqLineEdit = NodePath("Margin/Scroll/Layout/TabContainer/Spectrogram/minFreq/LineEdit")
+intensityLineEdit = NodePath("Margin/Scroll/Layout/TabContainer/Spectrogram/Intensity/LineEdit")
+dBCheckbox = NodePath("Margin/Scroll/Layout/TabContainer/Spectrogram/dB/CheckBox")
+okButton = NodePath("Margin/Scroll/Layout/BottomButtonsHBox/OkButton")
+defaultsButton = NodePath("Margin/Scroll/Layout/TabContainer/Spectrogram/DefaultsButton")
+applyButton = NodePath("Margin/Scroll/Layout/BottomButtonsHBox/ApplyButton")
 
 [node name="Margin" type="MarginContainer" parent="."]
 anchors_preset = 15
@@ -32,29 +32,34 @@ theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 12
 
-[node name="Layout" type="VBoxContainer" parent="Margin"]
+[node name="Scroll" type="ScrollContainer" parent="Margin"]
+layout_mode = 2
+
+[node name="Layout" type="VBoxContainer" parent="Margin/Scroll"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="TabContainer" type="TabContainer" parent="Margin/Layout"]
+[node name="TabContainer" type="TabContainer" parent="Margin/Scroll/Layout"]
 layout_mode = 2
 size_flags_vertical = 3
 current_tab = 0
 
-[node name="Text" type="VBoxContainer" parent="Margin/Layout/TabContainer"]
+[node name="Interface" type="VBoxContainer" parent="Margin/Scroll/Layout/TabContainer"]
 layout_mode = 2
 metadata/_tab_index = 0
 theme_override_constants/separation = 12
 
-[node name="Scale" type="HBoxContainer" parent="Margin/Layout/TabContainer/Text"]
+[node name="Scale" type="HBoxContainer" parent="Margin/Scroll/Layout/TabContainer/Interface"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="Label" type="Label" parent="Margin/Layout/TabContainer/Text/Scale"]
+[node name="Label" type="Label" parent="Margin/Scroll/Layout/TabContainer/Interface/Scale"]
 layout_mode = 2
-text = "Text Size"
+text = "Interface Size"
 
-[node name="Slider" type="HSlider" parent="Margin/Layout/TabContainer/Text/Scale"]
+[node name="Slider" type="HSlider" parent="Margin/Scroll/Layout/TabContainer/Interface/Scale"]
 custom_minimum_size = Vector2(120, 0)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -64,7 +69,7 @@ max_value = 200.0
 step = 5.0
 value = 100.0
 
-[node name="Percentage" type="SpinBox" parent="Margin/Layout/TabContainer/Text/Scale"]
+[node name="Percentage" type="SpinBox" parent="Margin/Scroll/Layout/TabContainer/Interface/Scale"]
 layout_mode = 2
 min_value = 75.0
 max_value = 200.0
@@ -72,23 +77,23 @@ step = 5.0
 value = 100.0
 suffix = "%"
 
-[node name="DefaultsButton" type="Button" parent="Margin/Layout/TabContainer/Text"]
+[node name="DefaultsButton" type="Button" parent="Margin/Scroll/Layout/TabContainer/Interface"]
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Reset"
 
-[node name="Spectrogram" type="VBoxContainer" parent="Margin/Layout/TabContainer"]
+[node name="Spectrogram" type="VBoxContainer" parent="Margin/Scroll/Layout/TabContainer"]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 1
 
-[node name="DefaultsButton" type="Button" parent="Margin/Layout/TabContainer/Spectrogram"]
+[node name="DefaultsButton" type="Button" parent="Margin/Scroll/Layout/TabContainer/Spectrogram"]
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 0
 text = "Reset to Defaults"
 
-[node name="SectionOverall" type="Label" parent="Margin/Layout/TabContainer/Spectrogram"]
+[node name="SectionOverall" type="Label" parent="Margin/Scroll/Layout/TabContainer/Spectrogram"]
 visible = false
 layout_mode = 2
 autowrap_mode = 3
@@ -97,82 +102,82 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 20
 text = "Main"
 
-[node name="stepSize" type="HBoxContainer" parent="Margin/Layout/TabContainer/Spectrogram"]
+[node name="stepSize" type="HBoxContainer" parent="Margin/Scroll/Layout/TabContainer/Spectrogram"]
 layout_mode = 2
 
-[node name="LineEdit" type="LineEdit" parent="Margin/Layout/TabContainer/Spectrogram/stepSize"]
+[node name="LineEdit" type="LineEdit" parent="Margin/Scroll/Layout/TabContainer/Spectrogram/stepSize"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Margin/Layout/TabContainer/Spectrogram/stepSize"]
+[node name="Label" type="Label" parent="Margin/Scroll/Layout/TabContainer/Spectrogram/stepSize"]
 layout_mode = 2
 autowrap_mode = 3
 size_flags_horizontal = 3
 text = "stepSize (Default: 64)"
 vertical_alignment = 1
 
-[node name="fftSize" type="HBoxContainer" parent="Margin/Layout/TabContainer/Spectrogram"]
+[node name="fftSize" type="HBoxContainer" parent="Margin/Scroll/Layout/TabContainer/Spectrogram"]
 layout_mode = 2
 
-[node name="LineEdit" type="LineEdit" parent="Margin/Layout/TabContainer/Spectrogram/fftSize"]
+[node name="LineEdit" type="LineEdit" parent="Margin/Scroll/Layout/TabContainer/Spectrogram/fftSize"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Margin/Layout/TabContainer/Spectrogram/fftSize"]
+[node name="Label" type="Label" parent="Margin/Scroll/Layout/TabContainer/Spectrogram/fftSize"]
 layout_mode = 2
 autowrap_mode = 3
 size_flags_horizontal = 3
 text = "fftSize (Default: 256)"
 vertical_alignment = 1
 
-[node name="Intensity" type="HBoxContainer" parent="Margin/Layout/TabContainer/Spectrogram"]
+[node name="Intensity" type="HBoxContainer" parent="Margin/Scroll/Layout/TabContainer/Spectrogram"]
 layout_mode = 2
 
-[node name="LineEdit" type="LineEdit" parent="Margin/Layout/TabContainer/Spectrogram/Intensity"]
+[node name="LineEdit" type="LineEdit" parent="Margin/Scroll/Layout/TabContainer/Spectrogram/Intensity"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Margin/Layout/TabContainer/Spectrogram/Intensity"]
+[node name="Label" type="Label" parent="Margin/Scroll/Layout/TabContainer/Spectrogram/Intensity"]
 layout_mode = 2
 autowrap_mode = 3
 size_flags_horizontal = 3
 text = "Intensity (Default: 5)"
 vertical_alignment = 1
 
-[node name="minFreq" type="HBoxContainer" parent="Margin/Layout/TabContainer/Spectrogram"]
+[node name="minFreq" type="HBoxContainer" parent="Margin/Scroll/Layout/TabContainer/Spectrogram"]
 layout_mode = 2
 
-[node name="LineEdit" type="LineEdit" parent="Margin/Layout/TabContainer/Spectrogram/minFreq"]
+[node name="LineEdit" type="LineEdit" parent="Margin/Scroll/Layout/TabContainer/Spectrogram/minFreq"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Margin/Layout/TabContainer/Spectrogram/minFreq"]
+[node name="Label" type="Label" parent="Margin/Scroll/Layout/TabContainer/Spectrogram/minFreq"]
 layout_mode = 2
 autowrap_mode = 3
 size_flags_horizontal = 3
 text = "minFreq (Default: 2200)"
 vertical_alignment = 1
 
-[node name="dB" type="HBoxContainer" parent="Margin/Layout/TabContainer/Spectrogram"]
+[node name="dB" type="HBoxContainer" parent="Margin/Scroll/Layout/TabContainer/Spectrogram"]
 layout_mode = 2
 
-[node name="CheckBox" type="CheckBox" parent="Margin/Layout/TabContainer/Spectrogram/dB"]
+[node name="CheckBox" type="CheckBox" parent="Margin/Scroll/Layout/TabContainer/Spectrogram/dB"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Margin/Layout/TabContainer/Spectrogram/dB"]
+[node name="Label" type="Label" parent="Margin/Scroll/Layout/TabContainer/Spectrogram/dB"]
 layout_mode = 2
 autowrap_mode = 3
 size_flags_horizontal = 3
 text = "dB"
 vertical_alignment = 1
 
-[node name="BottomButtonsHBox" type="HBoxContainer" parent="Margin/Layout"]
+[node name="BottomButtonsHBox" type="HBoxContainer" parent="Margin/Scroll/Layout"]
 layout_mode = 2
 mouse_filter = 2
 
-[node name="OkButton" type="Button" parent="Margin/Layout/BottomButtonsHBox"]
+[node name="OkButton" type="Button" parent="Margin/Scroll/Layout/BottomButtonsHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 8
 text = "Ok"
 
-[node name="ApplyButton" type="Button" parent="Margin/Layout/BottomButtonsHBox"]
+[node name="ApplyButton" type="Button" parent="Margin/Scroll/Layout/BottomButtonsHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 8

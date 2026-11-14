@@ -581,11 +581,11 @@ msgstr "提示"
 msgid "Please Confirm..."
 msgstr "请确认..."
 
-msgid "Text"
-msgstr "文字"
+msgid "Interface"
+msgstr "界面"
 
-msgid "Text Size"
-msgstr "文字大小"
+msgid "Interface Size"
+msgstr "界面大小"
 
 msgid "Reset"
 msgstr "重置"

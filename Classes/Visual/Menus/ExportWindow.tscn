@@ -9,16 +9,16 @@ size = Vector2i(640, 420)
 min_size = Vector2i(520, 420)
 wrap_controls = true
 script = ExtResource("1_ad7ek")
-exportOffsetEdit = NodePath("Margin/Layout/TabContainer/Osu/ExportOffset/LineEdit")
-unsupportedTimeSignatures = NodePath("Margin/Layout/TabContainer/Osu/UnsupportedTimeSignatures/CheckBox")
-removePointsThatChangeNothing = NodePath("Margin/Layout/TabContainer/General/RemovePointsThatChangeNothing/CheckBox")
-addExtraPointsOnDownbeats = NodePath("Margin/Layout/TabContainer/Osu/AddExtraPointsOnDownbeats/CheckBox")
-addExtraPointsOnQuarterNotes = NodePath("Margin/Layout/TabContainer/Osu/AddExtraPointsOnQuarterNotes/CheckBox")
-omitBarlines = NodePath("Margin/Layout/TabContainer/Osu/OmitBarlines/CheckBox")
-preventDoubleBarlines = NodePath("Margin/Layout/TabContainer/Osu/PreventDoubleBarlines/CheckBox")
-beatSaberExportFormat = NodePath("Margin/Layout/TabContainer/Beat Saber/BeatSaberExportFormat/OptionButton")
-okButton = NodePath("Margin/Layout/BottomButtonsHBox/OkButton")
-defaultsButton = NodePath("Margin/Layout/BottomButtonsHBox/DefaultsButton")
+exportOffsetEdit = NodePath("Margin/Scroll/Layout/TabContainer/Osu/ExportOffset/LineEdit")
+unsupportedTimeSignatures = NodePath("Margin/Scroll/Layout/TabContainer/Osu/UnsupportedTimeSignatures/CheckBox")
+removePointsThatChangeNothing = NodePath("Margin/Scroll/Layout/TabContainer/General/RemovePointsThatChangeNothing/CheckBox")
+addExtraPointsOnDownbeats = NodePath("Margin/Scroll/Layout/TabContainer/Osu/AddExtraPointsOnDownbeats/CheckBox")
+addExtraPointsOnQuarterNotes = NodePath("Margin/Scroll/Layout/TabContainer/Osu/AddExtraPointsOnQuarterNotes/CheckBox")
+omitBarlines = NodePath("Margin/Scroll/Layout/TabContainer/Osu/OmitBarlines/CheckBox")
+preventDoubleBarlines = NodePath("Margin/Scroll/Layout/TabContainer/Osu/PreventDoubleBarlines/CheckBox")
+beatSaberExportFormat = NodePath("Margin/Scroll/Layout/TabContainer/Beat Saber/BeatSaberExportFormat/OptionButton")
+okButton = NodePath("Margin/Scroll/Layout/BottomButtonsHBox/OkButton")
+defaultsButton = NodePath("Margin/Scroll/Layout/BottomButtonsHBox/DefaultsButton")
 
 [node name="Margin" type="MarginContainer" parent="."]
 anchors_preset = 15
@@ -31,20 +31,25 @@ theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 12
 
-[node name="Layout" type="VBoxContainer" parent="Margin"]
+[node name="Scroll" type="ScrollContainer" parent="Margin"]
+layout_mode = 2
+
+[node name="Layout" type="VBoxContainer" parent="Margin/Scroll"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="TabContainer" type="TabContainer" parent="Margin/Layout"]
+[node name="TabContainer" type="TabContainer" parent="Margin/Scroll/Layout"]
 layout_mode = 2
 size_flags_vertical = 3
 current_tab = 0
 
-[node name="General" type="VBoxContainer" parent="Margin/Layout/TabContainer"]
+[node name="General" type="VBoxContainer" parent="Margin/Scroll/Layout/TabContainer"]
 layout_mode = 2
 metadata/_tab_index = 0
 
-[node name="SectionEfficiency" type="Label" parent="Margin/Layout/TabContainer/General"]
+[node name="SectionEfficiency" type="Label" parent="Margin/Scroll/Layout/TabContainer/General"]
 layout_mode = 2
 autowrap_mode = 3
 size_flags_horizontal = 3
@@ -52,25 +57,25 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 20
 text = "Timing Point Efficiency"
 
-[node name="RemovePointsThatChangeNothing" type="HBoxContainer" parent="Margin/Layout/TabContainer/General"]
+[node name="RemovePointsThatChangeNothing" type="HBoxContainer" parent="Margin/Scroll/Layout/TabContainer/General"]
 layout_mode = 2
 
-[node name="CheckBox" type="CheckBox" parent="Margin/Layout/TabContainer/General/RemovePointsThatChangeNothing"]
+[node name="CheckBox" type="CheckBox" parent="Margin/Scroll/Layout/TabContainer/General/RemovePointsThatChangeNothing"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Margin/Layout/TabContainer/General/RemovePointsThatChangeNothing"]
+[node name="Label" type="Label" parent="Margin/Scroll/Layout/TabContainer/General/RemovePointsThatChangeNothing"]
 layout_mode = 2
 autowrap_mode = 3
 size_flags_horizontal = 3
 text = "Remove points that change nothing"
 vertical_alignment = 1
 
-[node name="Osu" type="VBoxContainer" parent="Margin/Layout/TabContainer"]
+[node name="Osu" type="VBoxContainer" parent="Margin/Scroll/Layout/TabContainer"]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 1
 
-[node name="SectionOverall" type="Label" parent="Margin/Layout/TabContainer/Osu"]
+[node name="SectionOverall" type="Label" parent="Margin/Scroll/Layout/TabContainer/Osu"]
 layout_mode = 2
 autowrap_mode = 3
 size_flags_horizontal = 3
@@ -78,33 +83,33 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 20
 text = "Main"
 
-[node name="ExportOffset" type="HBoxContainer" parent="Margin/Layout/TabContainer/Osu"]
+[node name="ExportOffset" type="HBoxContainer" parent="Margin/Scroll/Layout/TabContainer/Osu"]
 layout_mode = 2
 
-[node name="LineEdit" type="LineEdit" parent="Margin/Layout/TabContainer/Osu/ExportOffset"]
+[node name="LineEdit" type="LineEdit" parent="Margin/Scroll/Layout/TabContainer/Osu/ExportOffset"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Margin/Layout/TabContainer/Osu/ExportOffset"]
+[node name="Label" type="Label" parent="Margin/Scroll/Layout/TabContainer/Osu/ExportOffset"]
 layout_mode = 2
 autowrap_mode = 3
 size_flags_horizontal = 3
 text = "Export offset [ms] (Default: -14)"
 vertical_alignment = 1
 
-[node name="UnsupportedTimeSignatures" type="HBoxContainer" parent="Margin/Layout/TabContainer/Osu"]
+[node name="UnsupportedTimeSignatures" type="HBoxContainer" parent="Margin/Scroll/Layout/TabContainer/Osu"]
 layout_mode = 2
 
-[node name="CheckBox" type="CheckBox" parent="Margin/Layout/TabContainer/Osu/UnsupportedTimeSignatures"]
+[node name="CheckBox" type="CheckBox" parent="Margin/Scroll/Layout/TabContainer/Osu/UnsupportedTimeSignatures"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Margin/Layout/TabContainer/Osu/UnsupportedTimeSignatures"]
+[node name="Label" type="Label" parent="Margin/Scroll/Layout/TabContainer/Osu/UnsupportedTimeSignatures"]
 layout_mode = 2
 autowrap_mode = 3
 size_flags_horizontal = 3
 text = "Add metronome resets on unsupported time signatures"
 vertical_alignment = 1
 
-[node name="SectionNightcoreMainMenu" type="Label" parent="Margin/Layout/TabContainer/Osu"]
+[node name="SectionNightcoreMainMenu" type="Label" parent="Margin/Scroll/Layout/TabContainer/Osu"]
 layout_mode = 2
 autowrap_mode = 3
 size_flags_horizontal = 3
@@ -112,46 +117,46 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 20
 text = "Nightcore & main menu compatibility"
 
-[node name="AddExtraPointsOnDownbeats" type="HBoxContainer" parent="Margin/Layout/TabContainer/Osu"]
+[node name="AddExtraPointsOnDownbeats" type="HBoxContainer" parent="Margin/Scroll/Layout/TabContainer/Osu"]
 layout_mode = 2
 
-[node name="CheckBox" type="CheckBox" parent="Margin/Layout/TabContainer/Osu/AddExtraPointsOnDownbeats"]
+[node name="CheckBox" type="CheckBox" parent="Margin/Scroll/Layout/TabContainer/Osu/AddExtraPointsOnDownbeats"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Margin/Layout/TabContainer/Osu/AddExtraPointsOnDownbeats"]
+[node name="Label" type="Label" parent="Margin/Scroll/Layout/TabContainer/Osu/AddExtraPointsOnDownbeats"]
 layout_mode = 2
 autowrap_mode = 3
 size_flags_horizontal = 3
 text = "Add extra points on downbeats"
 vertical_alignment = 1
 
-[node name="AddExtraPointsOnQuarterNotes" type="HBoxContainer" parent="Margin/Layout/TabContainer/Osu"]
+[node name="AddExtraPointsOnQuarterNotes" type="HBoxContainer" parent="Margin/Scroll/Layout/TabContainer/Osu"]
 layout_mode = 2
 
-[node name="CheckBox" type="CheckBox" parent="Margin/Layout/TabContainer/Osu/AddExtraPointsOnQuarterNotes"]
+[node name="CheckBox" type="CheckBox" parent="Margin/Scroll/Layout/TabContainer/Osu/AddExtraPointsOnQuarterNotes"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Margin/Layout/TabContainer/Osu/AddExtraPointsOnQuarterNotes"]
+[node name="Label" type="Label" parent="Margin/Scroll/Layout/TabContainer/Osu/AddExtraPointsOnQuarterNotes"]
 layout_mode = 2
 autowrap_mode = 3
 size_flags_horizontal = 3
 text = "Add extra points on quarter notes"
 vertical_alignment = 1
 
-[node name="OmitBarlines" type="HBoxContainer" parent="Margin/Layout/TabContainer/Osu"]
+[node name="OmitBarlines" type="HBoxContainer" parent="Margin/Scroll/Layout/TabContainer/Osu"]
 layout_mode = 2
 
-[node name="CheckBox" type="CheckBox" parent="Margin/Layout/TabContainer/Osu/OmitBarlines"]
+[node name="CheckBox" type="CheckBox" parent="Margin/Scroll/Layout/TabContainer/Osu/OmitBarlines"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Margin/Layout/TabContainer/Osu/OmitBarlines"]
+[node name="Label" type="Label" parent="Margin/Scroll/Layout/TabContainer/Osu/OmitBarlines"]
 layout_mode = 2
 autowrap_mode = 3
 size_flags_horizontal = 3
 text = "Omit barlines on non-downbeats"
 vertical_alignment = 1
 
-[node name="SectionEfficiency2" type="Label" parent="Margin/Layout/TabContainer/Osu"]
+[node name="SectionEfficiency2" type="Label" parent="Margin/Scroll/Layout/TabContainer/Osu"]
 layout_mode = 2
 autowrap_mode = 3
 size_flags_horizontal = 3
@@ -159,25 +164,25 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 20
 text = "Taiko & Mania Compatibility"
 
-[node name="PreventDoubleBarlines" type="HBoxContainer" parent="Margin/Layout/TabContainer/Osu"]
+[node name="PreventDoubleBarlines" type="HBoxContainer" parent="Margin/Scroll/Layout/TabContainer/Osu"]
 layout_mode = 2
 
-[node name="CheckBox" type="CheckBox" parent="Margin/Layout/TabContainer/Osu/PreventDoubleBarlines"]
+[node name="CheckBox" type="CheckBox" parent="Margin/Scroll/Layout/TabContainer/Osu/PreventDoubleBarlines"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Margin/Layout/TabContainer/Osu/PreventDoubleBarlines"]
+[node name="Label" type="Label" parent="Margin/Scroll/Layout/TabContainer/Osu/PreventDoubleBarlines"]
 layout_mode = 2
 autowrap_mode = 3
 size_flags_horizontal = 3
 text = "Prevent double barlines"
 vertical_alignment = 1
 
-[node name="Beat Saber" type="VBoxContainer" parent="Margin/Layout/TabContainer"]
+[node name="Beat Saber" type="VBoxContainer" parent="Margin/Scroll/Layout/TabContainer"]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 2
 
-[node name="SectionBeatSaber" type="Label" parent="Margin/Layout/TabContainer/Beat Saber"]
+[node name="SectionBeatSaber" type="Label" parent="Margin/Scroll/Layout/TabContainer/Beat Saber"]
 layout_mode = 2
 autowrap_mode = 3
 size_flags_horizontal = 3
@@ -185,10 +190,10 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
 theme_override_font_sizes/font_size = 20
 text = "Beat Saber Settings"
 
-[node name="BeatSaberExportFormat" type="HBoxContainer" parent="Margin/Layout/TabContainer/Beat Saber"]
+[node name="BeatSaberExportFormat" type="HBoxContainer" parent="Margin/Scroll/Layout/TabContainer/Beat Saber"]
 layout_mode = 2
 
-[node name="OptionButton" type="OptionButton" parent="Margin/Layout/TabContainer/Beat Saber/BeatSaberExportFormat"]
+[node name="OptionButton" type="OptionButton" parent="Margin/Scroll/Layout/TabContainer/Beat Saber/BeatSaberExportFormat"]
 layout_mode = 2
 selected = 0
 item_count = 2
@@ -197,24 +202,24 @@ popup/item_0/id = 4
 popup/item_1/text = "2.1.0"
 popup/item_1/id = 2
 
-[node name="Label" type="Label" parent="Margin/Layout/TabContainer/Beat Saber/BeatSaberExportFormat"]
+[node name="Label" type="Label" parent="Margin/Scroll/Layout/TabContainer/Beat Saber/BeatSaberExportFormat"]
 layout_mode = 2
 autowrap_mode = 3
 size_flags_horizontal = 3
 text = "Beat Saber Info.dat export format"
 vertical_alignment = 1
 
-[node name="BottomButtonsHBox" type="HBoxContainer" parent="Margin/Layout"]
+[node name="BottomButtonsHBox" type="HBoxContainer" parent="Margin/Scroll/Layout"]
 layout_mode = 2
 mouse_filter = 2
 
-[node name="OkButton" type="Button" parent="Margin/Layout/BottomButtonsHBox"]
+[node name="OkButton" type="Button" parent="Margin/Scroll/Layout/BottomButtonsHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 8
 text = "Ok"
 
-[node name="DefaultsButton" type="Button" parent="Margin/Layout/BottomButtonsHBox"]
+[node name="DefaultsButton" type="Button" parent="Margin/Scroll/Layout/BottomButtonsHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 8

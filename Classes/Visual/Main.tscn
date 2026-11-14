@@ -57,16 +57,21 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="TopMenuHBox" type="HBoxContainer" parent="VSplitContainer"]
+[node name="ToolbarScroll" type="ScrollContainer" parent="VSplitContainer"]
+layout_mode = 2
+vertical_scroll_mode = 0
+
+[node name="TopMenuHBox" type="HBoxContainer" parent="VSplitContainer/ToolbarScroll"]
+size_flags_horizontal = 3
 layout_mode = 2
 
-[node name="FileButton" parent="VSplitContainer/TopMenuHBox" node_paths=PackedStringArray("popupMenu") instance=ExtResource("3_mrr0o")]
+[node name="FileButton" parent="VSplitContainer/ToolbarScroll/TopMenuHBox" node_paths=PackedStringArray("popupMenu") instance=ExtResource("3_mrr0o")]
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "File"
 popupMenu = NodePath("File")
 
-[node name="File" type="PopupMenu" parent="VSplitContainer/TopMenuHBox/FileButton" node_paths=PackedStringArray("exportWindow", "clearAllConfirmationDialog")]
+[node name="File" type="PopupMenu" parent="VSplitContainer/ToolbarScroll/TopMenuHBox/FileButton" node_paths=PackedStringArray("exportWindow", "clearAllConfirmationDialog")]
 title = "File"
 size = Vector2i(138, 155)
 theme_override_font_sizes/font_size = 16
@@ -89,16 +94,16 @@ item_6/id = 7
 item_7/text = "Export Settings"
 item_7/id = 8
 script = ExtResource("5_kcxfp")
-exportWindow = NodePath("../../../../ExportWindow")
-clearAllConfirmationDialog = NodePath("../../../../ClearAllConfirmationDialog")
+exportWindow = NodePath("../../../../../ExportWindow")
+clearAllConfirmationDialog = NodePath("../../../../../ClearAllConfirmationDialog")
 
-[node name="OptionsButton" parent="VSplitContainer/TopMenuHBox" node_paths=PackedStringArray("popupMenu") instance=ExtResource("3_mrr0o")]
+[node name="OptionsButton" parent="VSplitContainer/ToolbarScroll/TopMenuHBox" node_paths=PackedStringArray("popupMenu") instance=ExtResource("3_mrr0o")]
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "Options"
 popupMenu = NodePath("Options")
 
-[node name="Options" type="PopupMenu" parent="VSplitContainer/TopMenuHBox/OptionsButton" node_paths=PackedStringArray("blockAmountScrollBar", "offsetScrollBar", "overlapScrollBar", "visualSettingsWindow", "languageMenu")]
+[node name="Options" type="PopupMenu" parent="VSplitContainer/ToolbarScroll/TopMenuHBox/OptionsButton" node_paths=PackedStringArray("blockAmountScrollBar", "offsetScrollBar", "overlapScrollBar", "visualSettingsWindow", "languageMenu")]
 title = "Options"
 size = Vector2i(268, 100)
 theme_override_constants/v_separation = 0
@@ -134,10 +139,10 @@ script = ExtResource("7_1c6ke")
 blockAmountScrollBar = NodePath("../../SettingsHBox/BlockAmountScrollBar")
 offsetScrollBar = NodePath("../../SettingsHBox/OffsetScrollBar")
 overlapScrollBar = NodePath("../../SettingsHBox/OverlapScrollBar")
-visualSettingsWindow = NodePath("../../../../VisualSettingsWindow")
+visualSettingsWindow = NodePath("../../../../../VisualSettingsWindow")
 languageMenu = NodePath("LanguageMenu")
 
-[node name="LanguageMenu" type="PopupMenu" parent="VSplitContainer/TopMenuHBox/OptionsButton/Options"]
+[node name="LanguageMenu" type="PopupMenu" parent="VSplitContainer/ToolbarScroll/TopMenuHBox/OptionsButton/Options"]
 item_count = 6
 item_0/text = "HELP_AUTOMATIC"
 item_0/checkable = 2
@@ -158,16 +163,16 @@ item_5/text = "繁體中文"
 item_5/checkable = 2
 item_5/id = 5
 
-[node name="MenuBar" type="MenuBar" parent="VSplitContainer/TopMenuHBox"]
+[node name="MenuBar" type="MenuBar" parent="VSplitContainer/ToolbarScroll/TopMenuHBox"]
 layout_mode = 2
 theme_override_constants/outline_size = 0
 theme_override_font_sizes/font_size = 16
 
-[node name="SettingsHBox" type="HBoxContainer" parent="VSplitContainer/TopMenuHBox"]
+[node name="SettingsHBox" type="HBoxContainer" parent="VSplitContainer/ToolbarScroll/TopMenuHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="GridScrollBar" parent="VSplitContainer/TopMenuHBox/SettingsHBox" instance=ExtResource("8_6ej7c")]
+[node name="GridScrollBar" parent="VSplitContainer/ToolbarScroll/TopMenuHBox/SettingsHBox" instance=ExtResource("8_6ej7c")]
 layout_mode = 2
 size_flags_horizontal = 3
 script = ExtResource("7_i2h88")
@@ -177,10 +182,10 @@ minValue = 1.0
 maxValue = 8.0
 step = 1.0
 
-[node name="HScrollBar" parent="VSplitContainer/TopMenuHBox/SettingsHBox/GridScrollBar" index="1"]
+[node name="HScrollBar" parent="VSplitContainer/ToolbarScroll/TopMenuHBox/SettingsHBox/GridScrollBar/Slider" index="0"]
 tooltip_text = "Distance between grid lines"
 
-[node name="PlaybackRateScrollBar" parent="VSplitContainer/TopMenuHBox/SettingsHBox" instance=ExtResource("8_6ej7c")]
+[node name="PlaybackRateScrollBar" parent="VSplitContainer/ToolbarScroll/TopMenuHBox/SettingsHBox" instance=ExtResource("8_6ej7c")]
 layout_mode = 2
 size_flags_horizontal = 3
 script = ExtResource("8_6jrsb")
@@ -188,10 +193,10 @@ showTitleInside = true
 title = "Playback"
 minValue = 0.1
 
-[node name="HBoxContainer" parent="VSplitContainer/TopMenuHBox/SettingsHBox/PlaybackRateScrollBar/HScrollBar" index="0"]
+[node name="Content" parent="VSplitContainer/ToolbarScroll/TopMenuHBox/SettingsHBox/PlaybackRateScrollBar/Slider" index="1"]
 tooltip_text = "Playback rate. Press X to toggle between two states."
 
-[node name="BlockAmountScrollBar" parent="VSplitContainer/TopMenuHBox/SettingsHBox" instance=ExtResource("8_6ej7c")]
+[node name="BlockAmountScrollBar" parent="VSplitContainer/ToolbarScroll/TopMenuHBox/SettingsHBox" instance=ExtResource("8_6ej7c")]
 visible = false
 layout_mode = 2
 size_flags_horizontal = 3
@@ -202,10 +207,10 @@ minValue = 1.0
 maxValue = 25.0
 step = 1.0
 
-[node name="HScrollBar" parent="VSplitContainer/TopMenuHBox/SettingsHBox/BlockAmountScrollBar" index="1"]
+[node name="HScrollBar" parent="VSplitContainer/ToolbarScroll/TopMenuHBox/SettingsHBox/BlockAmountScrollBar/Slider" index="0"]
 tooltip_text = "Number of audio rows to display"
 
-[node name="OffsetScrollBar" parent="VSplitContainer/TopMenuHBox/SettingsHBox" instance=ExtResource("8_6ej7c")]
+[node name="OffsetScrollBar" parent="VSplitContainer/ToolbarScroll/TopMenuHBox/SettingsHBox" instance=ExtResource("8_6ej7c")]
 visible = false
 layout_mode = 2
 size_flags_horizontal = 3
@@ -215,10 +220,10 @@ title = "Offset"
 maxValue = 0.5
 step = 0.025
 
-[node name="HScrollBar" parent="VSplitContainer/TopMenuHBox/SettingsHBox/OffsetScrollBar" index="1"]
+[node name="HScrollBar" parent="VSplitContainer/ToolbarScroll/TopMenuHBox/SettingsHBox/OffsetScrollBar/Slider" index="0"]
 tooltip_text = "Offsets the start of each row by X% into the previous measure."
 
-[node name="OverlapScrollBar" parent="VSplitContainer/TopMenuHBox/SettingsHBox" instance=ExtResource("8_6ej7c")]
+[node name="OverlapScrollBar" parent="VSplitContainer/ToolbarScroll/TopMenuHBox/SettingsHBox" instance=ExtResource("8_6ej7c")]
 visible = false
 layout_mode = 2
 size_flags_horizontal = 3
@@ -227,14 +232,18 @@ showTitleInside = true
 title = "Overlap"
 maxValue = 0.25
 
-[node name="HScrollBar" parent="VSplitContainer/TopMenuHBox/SettingsHBox/OverlapScrollBar" index="1"]
+[node name="HScrollBar" parent="VSplitContainer/ToolbarScroll/TopMenuHBox/SettingsHBox/OverlapScrollBar/Slider" index="0"]
 tooltip_text = "How much of the previous and next measure to show at the beginning and end of each row."
 
-[node name="VolumeSlidersHBox" type="HBoxContainer" parent="VSplitContainer/TopMenuHBox"]
+[node name="VolumeSlidersHBox" type="HBoxContainer" parent="VSplitContainer/ToolbarScroll/TopMenuHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="VolumeSliderMusic" type="HScrollBar" parent="VSplitContainer/TopMenuHBox/VolumeSlidersHBox"]
+[node name="Music" type="MarginContainer" parent="VSplitContainer/ToolbarScroll/TopMenuHBox/VolumeSlidersHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VolumeSliderMusic" type="HScrollBar" parent="VSplitContainer/ToolbarScroll/TopMenuHBox/VolumeSlidersHBox/Music"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 1
@@ -243,24 +252,18 @@ max_value = 1.0
 script = ExtResource("6_w0n8n")
 BusName = "Music"
 
-[node name="Label" type="Label" parent="VSplitContainer/TopMenuHBox/VolumeSlidersHBox/VolumeSliderMusic"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -20.5
-offset_top = -8.5
-offset_right = 20.5
-offset_bottom = 8.5
-grow_horizontal = 2
-grow_vertical = 2
+[node name="Label" type="Label" parent="VSplitContainer/ToolbarScroll/TopMenuHBox/VolumeSlidersHBox/Music"]
+layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "Music"
 horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="VolumeSliderMetronome" type="HScrollBar" parent="VSplitContainer/TopMenuHBox/VolumeSlidersHBox"]
+[node name="Metronome" type="MarginContainer" parent="VSplitContainer/ToolbarScroll/TopMenuHBox/VolumeSlidersHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VolumeSliderMetronome" type="HScrollBar" parent="VSplitContainer/ToolbarScroll/TopMenuHBox/VolumeSlidersHBox/Metronome"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 1
@@ -269,25 +272,18 @@ max_value = 1.0
 script = ExtResource("6_w0n8n")
 BusName = "Metronome"
 
-[node name="Label" type="Label" parent="VSplitContainer/TopMenuHBox/VolumeSlidersHBox/VolumeSliderMetronome"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -45.5
-offset_top = -24.5
-offset_right = 46.5
-offset_bottom = 24.5
-grow_horizontal = 2
-grow_vertical = 2
+[node name="Label" type="Label" parent="VSplitContainer/ToolbarScroll/TopMenuHBox/VolumeSlidersHBox/Metronome"]
+layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "Metronome"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="VolumeSliderMaster" type="HScrollBar" parent="VSplitContainer/TopMenuHBox/VolumeSlidersHBox"]
+[node name="Master" type="MarginContainer" parent="VSplitContainer/ToolbarScroll/TopMenuHBox/VolumeSlidersHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VolumeSliderMaster" type="HScrollBar" parent="VSplitContainer/ToolbarScroll/TopMenuHBox/VolumeSlidersHBox/Master"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 1
@@ -296,32 +292,21 @@ max_value = 1.0
 script = ExtResource("6_w0n8n")
 BusName = "Master"
 
-[node name="Label" type="Label" parent="VSplitContainer/TopMenuHBox/VolumeSlidersHBox/VolumeSliderMaster"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -20.5
-offset_top = -8.5
-offset_right = 20.5
-offset_bottom = 8.5
-grow_horizontal = 2
-grow_vertical = 2
+[node name="Label" type="Label" parent="VSplitContainer/ToolbarScroll/TopMenuHBox/VolumeSlidersHBox/Master"]
+layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "Master"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="HelpButton" type="Button" parent="VSplitContainer/TopMenuHBox" node_paths=PackedStringArray("helpWindow")]
+[node name="HelpButton" type="Button" parent="VSplitContainer/ToolbarScroll/TopMenuHBox" node_paths=PackedStringArray("helpWindow")]
 custom_minimum_size = Vector2(30, 0)
 layout_mode = 2
 tooltip_text = "Help"
 focus_mode = 0
 text = "?"
 script = ExtResource("13_v1cca")
-helpWindow = NodePath("../../../HelpWindow")
+helpWindow = NodePath("../../../../HelpWindow")
 
 [node name="AudioMainHSplitContainer" type="HSplitContainer" parent="VSplitContainer"]
 layout_mode = 2
@@ -471,8 +456,8 @@ visible = false
 initial_position = 1
 visible = false
 
-[editable path="VSplitContainer/TopMenuHBox/SettingsHBox/GridScrollBar"]
-[editable path="VSplitContainer/TopMenuHBox/SettingsHBox/PlaybackRateScrollBar"]
-[editable path="VSplitContainer/TopMenuHBox/SettingsHBox/BlockAmountScrollBar"]
-[editable path="VSplitContainer/TopMenuHBox/SettingsHBox/OffsetScrollBar"]
-[editable path="VSplitContainer/TopMenuHBox/SettingsHBox/OverlapScrollBar"]
+[editable path="VSplitContainer/ToolbarScroll/TopMenuHBox/SettingsHBox/GridScrollBar"]
+[editable path="VSplitContainer/ToolbarScroll/TopMenuHBox/SettingsHBox/PlaybackRateScrollBar"]
+[editable path="VSplitContainer/ToolbarScroll/TopMenuHBox/SettingsHBox/BlockAmountScrollBar"]
+[editable path="VSplitContainer/ToolbarScroll/TopMenuHBox/SettingsHBox/OffsetScrollBar"]
+[editable path="VSplitContainer/ToolbarScroll/TopMenuHBox/SettingsHBox/OverlapScrollBar"]

@@ -583,11 +583,11 @@ msgstr "Alert!"
 msgid "Please Confirm..."
 msgstr "Please Confirm..."
 
-msgid "Text"
-msgstr "Text"
+msgid "Interface"
+msgstr "Interface"
 
-msgid "Text Size"
-msgstr "Text Size"
+msgid "Interface Size"
+msgstr "Interface Size"
 
 msgid "Reset"
 msgstr "Reset"

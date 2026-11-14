@@ -60,14 +60,7 @@ public partial class ContextMenu : PopupMenu
             return;
         }
 
-        var root = GetTree().Root;
-        Vector2 mousePosition = root.GetMousePosition();
-        bool hasEnoughXSpace = (mousePosition.X + Size.X < root.Size.X);
-        bool hasEnoughYSpace = (mousePosition.Y + Size.Y < root.Size.Y);
-        Position = new Vector2I(
-            hasEnoughXSpace ? (int)mousePosition.X : (int)mousePosition.X - Size.X,
-            hasEnoughYSpace ? (int)mousePosition.Y : (int)mousePosition.Y - Size.Y);
-        Visible = true;
+        Popup(new Rect2I((Vector2I)GetParent().GetViewport().GetMousePosition(), Vector2I.Zero));
     }
 
     /// <summary>
