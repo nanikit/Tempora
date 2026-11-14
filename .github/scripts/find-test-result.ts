@@ -1,6 +1,10 @@
 import { required } from "../../scripts/process.ts";
 import { validateCommit, writeOutputs } from "./actions.ts";
-import { getArtifactJobs, getArtifactRuns } from "./artifact-runs.ts";
+import {
+  getArtifactJobs,
+  getArtifactRuns,
+  isSuccessfulTest,
+} from "./artifact-runs.ts";
 
 if (import.meta.main) {
   await findTestResult(
@@ -21,9 +25,7 @@ export async function findTestResult(
     const jobs = await getArtifactJobs(repository, run.id, {
       allAttempts: true,
     });
-    if (
-      jobs.some((job) => job.name === "gdUnit4" && job.conclusion === "success")
-    ) {
+    if (jobs.some(isSuccessfulTest)) {
       await writeOutputs({ "test-passed": "true", "run-id": run.id });
       console.log(`Reusing successful tests from run ${run.id} for ${commit}.`);
       return;

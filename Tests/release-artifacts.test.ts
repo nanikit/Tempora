@@ -67,8 +67,13 @@ scenario(
 scenario(
   "Repeated preparation reuses successful tests from a previous run",
   async (boundary) => {
-    boundary.runs([run(10, { conclusion: "failure" })]);
-    boundary.jobs(10);
+    boundary.runs([], [run(10, {
+      event: "workflow_dispatch",
+      conclusion: "failure",
+      head_sha: otherSha,
+      display_title: `Test ${sourceSha}`,
+    })]);
+    boundary.jobs(10, [{ id: 101, name: "gdUnit4", conclusion: "success" }]);
     await findTestResult(repository, sourceSha, { currentRunId: 20 });
     assertEquals(await outputs(), "test-passed=true\nrun-id=10\n");
   },
@@ -79,7 +84,7 @@ scenario(
   async (boundary) => {
     boundary.runs([run(10, { conclusion: "failure", run_attempt: 2 })]);
     boundary.jobs(10, [
-      { id: 101, name: "gdUnit4", conclusion: "success" },
+      { id: 101, name: "Test", conclusion: "success" },
       { id: 102, name: "Export Game", conclusion: "failure" },
       { id: 103, name: "Export Game", conclusion: "cancelled" },
     ]);
@@ -95,8 +100,8 @@ scenario(
       run(10, { status: "in_progress", conclusion: null, run_attempt: 2 }),
     ]);
     boundary.jobs(10, [
-      { id: 101, name: "gdUnit4", conclusion: "success" },
-      { id: 104, name: "gdUnit4", conclusion: null },
+      { id: 101, name: "Test", conclusion: "success" },
+      { id: 104, name: "Test", conclusion: null },
     ]);
     await findTestResult(repository, sourceSha, { currentRunId: 10 });
     assertEquals(await outputs(), "test-passed=true\nrun-id=10\n");
@@ -153,9 +158,14 @@ scenario(
     ], [
       run(13, {
         event: "workflow_dispatch",
-        display_title: `Test ${otherSha}`,
       }),
     ]);
+    boundary.jobs(13, [{
+      id: 101,
+      name: "Test",
+      conclusion: "success",
+      steps: [{ name: `Checkout source ${otherSha}` }],
+    }]);
     await findTestResult(repository, sourceSha, { currentRunId: 10 });
     await assertRejects(outputs, Deno.errors.NotFound);
   },

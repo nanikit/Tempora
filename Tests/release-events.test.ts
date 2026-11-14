@@ -84,7 +84,7 @@ scenario(
       otherRequests: [run(70, {
         head_branch: "release",
         path: ".github/workflows/release.yml",
-        display_title: `Release Test ${sourceSha}`,
+        display_title: "feat: improve playback",
       })],
     });
     boundary.runs([run(10)]);
@@ -103,14 +103,27 @@ scenario(
     });
     const event = releaseEvent(boundary, {
       completed,
-      otherRequests: [run(90, {
-        head_branch: "release",
-        head_sha: otherSha,
-        path: ".github/workflows/release.yml",
-        display_title: `Release Test ${otherSha}`,
-      })],
+      otherRequests: [
+        run(90, {
+          head_branch: "release",
+          head_sha: otherSha,
+          path: ".github/workflows/release.yml",
+          display_title: "feat: improve playback",
+        }),
+        run(91, {
+          event: "workflow_run",
+          path: ".github/workflows/release.yml",
+          display_title: "Release",
+        }),
+      ],
     });
     boundary.runs([], [completed]);
+    boundary.jobs(20, [{
+      id: 101,
+      name: "Test",
+      conclusion: "success",
+      steps: [{ name: `Checkout source ${sourceSha}` }],
+    }]);
     boundary.artifacts(20);
     assertEquals(await planRelease(repository, event), {
       action: "resume",
@@ -135,9 +148,16 @@ scenario(
       commit: sourceSha,
       requestId: 50,
     });
+    boundary.api(`commits/${sourceSha}`, {
+      commit: { message: "feat: improve playback\n\nCommit body" },
+    });
     boundary.api("actions/workflows/test.yml/dispatches", null, {
       method: "POST",
-      fields: ["ref=main", `inputs[commit]=${sourceSha}`],
+      fields: [
+        "ref=main",
+        `inputs[commit]=${sourceSha}`,
+        "inputs[title]=feat: improve playback",
+      ],
     });
     await prepareRelease(repository, plan);
 
@@ -160,7 +180,7 @@ scenario(
     const completion = releaseEvent(boundary, { completed: failed });
     boundary.runs([failed]);
     boundary.jobs(10, [
-      { id: 101, name: "gdUnit4", conclusion: "success" },
+      { id: 101, name: "Test", conclusion: "success" },
       { id: 102, name: "Export Game", conclusion: "success" },
       { id: 103, name: "Package Artifacts", conclusion: "success" },
       { id: 104, name: "Package Artifacts", conclusion: "failure" },
@@ -280,15 +300,16 @@ scenario(
     const request = run(70, {
       head_branch: "release",
       path: ".github/workflows/release.yml",
-      display_title: `Release Test ${sourceSha}`,
+      display_title: "feat: improve playback",
     });
     const oldHandler = {
       ...request,
       id: 60,
       event: "workflow_run",
       head_branch: "main",
+      display_title: `Release Test ${sourceSha}`,
     };
-    const current = { ...oldHandler, id: 80 };
+    const current = { ...oldHandler, id: 80, display_title: "Release" };
     boundary.api("actions/runs/80", current);
     boundary.api(
       "actions/runs/10",
@@ -324,7 +345,7 @@ scenario(
   async (boundary) => {
     const event = releaseEvent(boundary);
     boundary.runs([run(10, { conclusion: "failure" })]);
-    boundary.jobs(10, [{ id: 101, name: "gdUnit4", conclusion: "failure" }]);
+    boundary.jobs(10, [{ id: 101, name: "Test", conclusion: "failure" }]);
     await assertRejects(
       () => planRelease(repository, event),
       Error,
@@ -395,10 +416,11 @@ scenario(
         run(10, { head_repository: { full_name: "untrusted/Tempora" } }),
         run(10, { path: ".github/workflows/other.yml" }),
         run(10, { head_branch: "feature" }),
-        run(10, { event: "workflow_dispatch", display_title: "Test invalid" }),
+        run(10, { event: "workflow_dispatch" }),
       ]
     ) {
       const event = releaseEvent(boundary, { completed });
+      if (completed.event === "workflow_dispatch") boundary.jobs(10, []);
       assertEquals(await planRelease(repository, event), { action: "none" });
     }
   },
@@ -452,7 +474,7 @@ function releaseEvent(boundary: Boundary, options: {
   const request = run(requestId, {
     head_branch: "release",
     path: ".github/workflows/release.yml",
-    display_title: `Release Test ${sourceSha}`,
+    display_title: "feat: improve playback",
     created_at: options.createdAt ?? new Date().toISOString(),
     status: options.requestStatus ?? "completed",
   });
@@ -463,6 +485,7 @@ function releaseEvent(boundary: Boundary, options: {
       event: "workflow_run",
       head_branch: "main",
       head_sha: otherSha,
+      display_title: "Release",
     }
     : { ...request, id: currentId };
   boundary.api(`actions/runs/${currentId}`, current);

@@ -8,6 +8,7 @@ import {
   getArtifactJobs,
   getArtifactRuns,
   getReleaseArtifact,
+  isSuccessfulTest,
 } from "./artifact-runs.ts";
 
 if (import.meta.main) {
@@ -119,11 +120,18 @@ export async function prepareRelease(
     );
   } else if (plan.action === "dispatch") {
     validateCommit(plan.commit);
+    const source = await artifactApi<{ commit: { message: string } }>(
+      `repos/${repository}/commits/${plan.commit}`,
+    );
     await artifactApi(
       `repos/${repository}/actions/workflows/test.yml/dispatches`,
       {
         method: "POST",
-        fields: ["ref=main", `inputs[commit]=${plan.commit}`],
+        fields: [
+          "ref=main",
+          `inputs[commit]=${plan.commit}`,
+          `inputs[title]=${source.commit.message.split(/\r?\n/, 1)[0]}`,
+        ],
       },
     );
   } else if (plan.action === "retry") {
@@ -213,11 +221,12 @@ async function releaseHistory(
       run.id !== current.id
     ),
   ]
+    .filter((run) => isReleaseRun(repository, run))
+    // New completion handlers only resume requests; legacy handlers may hold retry records.
     .filter((run) =>
-      isReleaseRun(repository, run) &&
-      run.display_title === `Release Test ${commit}`
+      isReleaseRequest(run) ? run.head_sha === commit : run.id === current.id ||
+        run.display_title === `Release Test ${commit}`
     )
-    .filter((run) => !isReleaseRequest(run) || run.head_sha === commit)
     .sort((a, b) => b.id - a.id);
 }
 
@@ -278,11 +287,7 @@ async function retryPlan(
 ): Promise<ReleasePlan> {
   for (const run of runs) {
     const jobs = await getArtifactJobs(repository, run.id);
-    if (
-      !jobs.some((job) =>
-        job.name === "gdUnit4" && job.conclusion === "success"
-      )
-    ) continue;
+    if (!jobs.some(isSuccessfulTest)) continue;
     const job = preparationJob(run, jobs);
     return {
       action: "retry",

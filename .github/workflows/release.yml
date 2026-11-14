@@ -1,5 +1,4 @@
 name: Release
-run-name: Release ${{ github.event.workflow_run.display_title || format('Test {0}', github.sha) }}
 
 on:
   push:
@@ -120,7 +119,7 @@ jobs:
           git tag -a "$RELEASE_TAG" "$SOURCE_COMMIT" -m "$RELEASE_TAG"
           git push origin "$RELEASE_TAG"
 
-      - name: create release
+      - name: Publish ${{ steps.version.outputs.tag }}
         id: release
         continue-on-error: true
         uses: ncipollo/release-action@v1.21.0

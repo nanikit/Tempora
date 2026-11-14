@@ -18,6 +18,7 @@ export interface ArtifactJob {
   id: number;
   name: string;
   conclusion: string | null;
+  steps?: { name: string }[];
 }
 
 interface ReleaseArtifact {
@@ -65,15 +66,18 @@ export async function getArtifactRuns(
     `${path}?event=workflow_dispatch&per_page=100`,
     { paged: true },
   );
-  return [...push, ...manual].flatMap((page) => page.workflow_runs)
-    .filter((run) => artifactCommit(repository, run) === commit)
+  const runs = [...push, ...manual].flatMap((page) => page.workflow_runs);
+  const commits = await Promise.all(
+    runs.map((run) => artifactCommit(repository, run)),
+  );
+  return runs.filter((_, index) => commits[index] === commit)
     .sort((a, b) => b.id - a.id);
 }
 
-export function artifactCommit(
+export async function artifactCommit(
   repository: string,
   run: ArtifactRun,
-): string | undefined {
+): Promise<string | undefined> {
   if (
     run.head_repository?.full_name !== repository ||
     run.path.split("@")[0] !== ".github/workflows/test.yml"
@@ -82,8 +86,15 @@ export function artifactCommit(
     return run.head_sha;
   }
   if (run.event === "workflow_dispatch" && run.head_branch === "main") {
-    return run.display_title.match(/^Test ([0-9a-f]{40})$/)?.[1];
+    return dispatchedCommit(
+      run,
+      await getArtifactJobs(repository, run.id, { allAttempts: true }),
+    );
   }
+}
+
+export function isSuccessfulTest(job: ArtifactJob): boolean {
+  return ["Test", "gdUnit4"].includes(job.name) && job.conclusion === "success";
 }
 
 export async function getArtifactJobs(
@@ -113,4 +124,18 @@ export async function getReleaseArtifact(
     .find((artifact) =>
       artifact.name === "release-artifacts" && !artifact.expired
     );
+}
+
+function dispatchedCommit(
+  run: ArtifactRun,
+  jobs: ArtifactJob[],
+): string | undefined {
+  const source = jobs.flatMap((job) => job.steps ?? [])
+    .map((step) => step.name.match(/^Checkout source ([0-9a-f]{40})$/)?.[1])
+    .find((commit) => commit !== undefined);
+  if (source) return source;
+  // Runs created before source steps were named stored the input in their title.
+  if (jobs.some((job) => job.name === "gdUnit4")) {
+    return run.display_title.match(/^Test ([0-9a-f]{40})$/)?.[1];
+  }
 }

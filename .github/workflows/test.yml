@@ -1,5 +1,5 @@
 name: Test
-run-name: Test ${{ inputs.commit || github.sha }}
+run-name: ${{ inputs.title }}
 
 on:
   push:
@@ -52,6 +52,10 @@ on:
         description: Full commit SHA to test and prepare artifacts for
         required: true
         type: string
+      title:
+        description: Commit title for the workflow run
+        required: false
+        type: string
 
 concurrency:
   group: test-${{ inputs.commit || github.sha }}
@@ -63,7 +67,7 @@ permissions:
 
 jobs:
   test:
-    name: gdUnit4
+    name: Test
     runs-on: windows-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -72,7 +76,7 @@ jobs:
       GODOT_VERSION: 4.6.3-stable
       SOURCE_COMMIT: ${{ inputs.commit || github.sha }}
     steps:
-      - name: checkout
+      - name: Checkout source ${{ inputs.commit || github.sha }}
         uses: actions/checkout@v6
         with:
           ref: ${{ inputs.commit || github.sha }}

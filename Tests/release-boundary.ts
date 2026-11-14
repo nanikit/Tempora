@@ -102,7 +102,7 @@ export class Boundary {
   }
 
   jobs(runId: number, jobs: ArtifactJob[] = [
-    { id: 101, name: "gdUnit4", conclusion: "success" },
+    { id: 101, name: "Test", conclusion: "success" },
     { id: 102, name: "Export Game", conclusion: "success" },
   ]): void {
     this.api(`actions/runs/${runId}/jobs?filter=all&per_page=100`, [{
@@ -191,7 +191,7 @@ export function run(
     head_sha: sourceSha,
     head_branch: "main",
     event: "push",
-    display_title: `Test ${sourceSha}`,
+    display_title: "feat: improve playback",
     status: "completed",
     conclusion: "success",
     run_attempt: 1,
