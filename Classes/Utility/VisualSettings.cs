@@ -7,21 +7,23 @@ public readonly record struct VisualSettings(double TextScaleFactor, int StepSiz
         => (StepSize, FftSize, MinFreq, Intensity, UseDb);
 
     public bool IsInRange => double.IsFinite(TextScaleFactor) && TextScaleFactor is >= 0.75 and <= 2
-        && StepSize is >= 16 and <= 65536 && FftSize is >= 32 and <= 16384 && (FftSize & (FftSize - 1)) == 0
+        && StepSize is >= 16 and <= 65536 && IsFftSizeInRange(FftSize)
         && MinFreq is >= 0 and <= 96000 && Intensity >= 0;
 
     public static VisualSettings From(Settings settings) => new(settings.TextScaleFactor,
         settings.SpectrogramStepSize, settings.SpectrogramFftSize, settings.SpectrogramMinFreq,
         settings.SpectrogramIntensity, settings.SpectrogramUseDb);
 
-    public static bool TryParse(double scale, (string Step, string Fft, string Frequency, string Intensity) input,
+    public static bool IsFftSizeInRange(int size) => size is >= 32 and <= 16384 && (size & (size - 1)) == 0;
+
+    public static bool TryParse(double scale, (string Step, int Fft, string Frequency, string Intensity) input,
         bool useDb, int sampleRate, int sampleCount, out VisualSettings values)
     {
         values = default;
-        if (!int.TryParse(input.Step, out int step) || !int.TryParse(input.Fft, out int fft)
+        if (!int.TryParse(input.Step, out int step)
             || !int.TryParse(input.Frequency, out int frequency) || !int.TryParse(input.Intensity, out int intensity))
             return false;
-        values = new VisualSettings(scale, step, fft, frequency, intensity, useDb);
+        values = new VisualSettings(scale, step, input.Fft, frequency, intensity, useDb);
         return values.IsValid(sampleRate, sampleCount);
     }
 

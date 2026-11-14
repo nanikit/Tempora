@@ -17,6 +17,7 @@ public sealed class TextSizing : IDisposable
     {
         theme.DefaultFontSize = ScaleSize(16);
         UpdateWindowTitle();
+        WidenSliderHandles();
     }
 
     public void Register(Node node)
@@ -62,6 +63,32 @@ public sealed class TextSizing : IDisposable
     {
         interfaceSizing.Dispose();
         theme.Dispose();
+    }
+
+    private void WidenSliderHandles()
+    {
+        const int width = 24;
+        Theme defaults = ThemeDB.GetDefaultTheme();
+        foreach (string type in new[] { "HSlider", "VSlider" })
+        {
+            foreach (string name in new[] { "grabber", "grabber_highlight", "grabber_disabled" })
+            {
+                using Image image = defaults.GetIcon(name, type).GetImage();
+                using ImageTexture texture = ImageTexture.CreateFromImage(image);
+                texture.SetSizeOverride(new Vector2I(width, image.GetHeight()));
+                theme.SetIcon(name, type, texture);
+            }
+        }
+        foreach (string type in new[] { "HScrollBar", "VScrollBar" })
+        {
+            foreach (string name in new[] { "grabber", "grabber_highlight", "grabber_pressed" })
+            {
+                using var style = (StyleBox)defaults.GetStylebox(name, type).Duplicate();
+                style.ContentMarginLeft = width / 2;
+                style.ContentMarginRight = width / 2;
+                theme.SetStylebox(name, type, style);
+            }
+        }
     }
 
     private void UpdateWindowTitle()

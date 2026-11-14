@@ -16,6 +16,7 @@ public partial class TimingShortcutTests
         var application = root.GetNode<Application>("Application");
         if (application.RejectedVisualSettings.HasValue)
             await VerifyRejectedStartupSettings(runner, application);
+        await VerifyFftSliderChoices(runner);
         await VerifyScaleDragKeepsWindowInPlace(runner);
         await VerifySpectrumPreviewReusesCalculations(runner);
         var window = (Window)runner.FindChild("VisualSettingsWindow")!;
@@ -26,7 +27,7 @@ public partial class TimingShortcutTests
         var cancel = window.GetNode<Button>("Margin/Scroll/Layout/BottomButtonsHBox/CancelButton");
         var reset = window.GetNode<Button>("Margin/Scroll/Layout/TabContainer/Interface/DefaultsButton");
         var frequency = window.GetNode<LineEdit>("Margin/Scroll/Layout/TabContainer/Spectrogram/minFreq/LineEdit");
-        var fft = window.GetNode<LineEdit>("Margin/Scroll/Layout/TabContainer/Spectrogram/fftSize/LineEdit");
+        var fft = window.GetNode<HSlider>("Margin/Scroll/Layout/TabContainer/Spectrogram/fftSize/Slider");
         var step = window.GetNode<LineEdit>("Margin/Scroll/Layout/TabContainer/Spectrogram/stepSize/LineEdit");
         var intensity = window.GetNode<LineEdit>("Margin/Scroll/Layout/TabContainer/Spectrogram/Intensity/LineEdit");
         var decibels = window.GetNode<CheckBox>("Margin/Scroll/Layout/TabContainer/Spectrogram/dB/CheckBox");
@@ -91,7 +92,7 @@ public partial class TimingShortcutTests
             AssertThat(window.Visible).IsTrue();
             AssertThat(new SettingsStore().Load().SpectrogramStepSize).IsEqual(original.StepSize);
 
-            Edit(fft, "512");
+            fft.Value = 9;
             Edit(step, "128");
             Edit(intensity, "6");
             decibels.ButtonPressed = !original.UseDb;
@@ -107,11 +108,11 @@ public partial class TimingShortcutTests
             AssertThat(spectrum.FreqMin).IsBetween(original.MinFreq + 1000 - spectrum.HzPerPx, original.MinFreq + 1000d);
             AssertThat(new SettingsStore().Load().SpectrogramMinFreq).IsEqual(original.MinFreq);
 
-            Edit(fft, "300");
+            Edit(step, "");
             await runner.AwaitMillis(250);
             AssertThat(save.Disabled).IsTrue();
             AssertThat(Project.Instance.SpectrogramContext.SpectrogramGenerator).IsSame(spectrum);
-            Edit(fft, original.FftSize.ToString());
+            Edit(step, "128");
             Edit(frequency, (original.MinFreq + 2000).ToString());
             cancel.EmitSignal(Button.SignalName.Pressed);
             await runner.AwaitMillis(350);
@@ -122,12 +123,14 @@ public partial class TimingShortcutTests
 
             window.Popup();
             AssertThat(frequency.Text).IsEqual(original.MinFreq.ToString());
+            fft.Value = 9;
             Edit(frequency, (original.MinFreq + 1000).ToString());
             save.EmitSignal(Button.SignalName.Pressed);
             spectrum = Project.Instance.SpectrogramContext.SpectrogramGenerator;
             await runner.AwaitMillis(350);
             AssertThat(Project.Instance.SpectrogramContext.SpectrogramGenerator).IsSame(spectrum);
             AssertThat(new SettingsStore().Load().SpectrogramMinFreq).IsEqual(original.MinFreq + 1000);
+            AssertThat(new SettingsStore().Load().SpectrogramFftSize).IsEqual(512);
             AssertThat(spectrum.FreqMin).IsBetween(original.MinFreq + 1000 - spectrum.HzPerPx, original.MinFreq + 1000d);
 
             window.Popup();
@@ -151,6 +154,43 @@ public partial class TimingShortcutTests
             application.ApplySystemTextScale(originalSystemScale);
             await Settle(runner);
         }
+    }
+
+    private static async Task VerifyFftSliderChoices(ISceneRunner runner)
+    {
+        var window = (Window)runner.FindChild("VisualSettingsWindow")!;
+        window.Popup();
+        window.GetNode<TabContainer>("Margin/Scroll/Layout/TabContainer").CurrentTab = 1;
+        var slider = window.GetNode<HSlider>("Margin/Scroll/Layout/TabContainer/Spectrogram/fftSize/Slider");
+        var value = window.GetNode<Label>("Margin/Scroll/Layout/TabContainer/Spectrogram/fftSize/Value");
+        slider.GrabFocus();
+        window.PushInput(new InputEventKey { Keycode = Key.Home, Pressed = true });
+        window.PushInput(new InputEventKey { Keycode = Key.Home });
+        for (int size = 32; size <= 16384; size *= 2)
+        {
+            AssertThat(value.Text).IsEqual(size.ToString());
+            window.PushInput(new InputEventKey { Keycode = Key.Right, Pressed = true });
+            window.PushInput(new InputEventKey { Keycode = Key.Right });
+        }
+        AssertThat(value.Text).IsEqual("16384");
+        await Settle(runner);
+        window.GetNode<ScrollContainer>("Margin/Scroll").EnsureControlVisible(slider);
+        await Settle(runner);
+        SelectFftSize(window, slider, 512);
+        AssertThat(value.Text).IsEqual("512");
+        await Capture(runner, ((SceneTree)Engine.GetMainLoop()).Root, "fft-settings.png");
+        window.Hide();
+        await Settle(runner);
+    }
+
+    private static void SelectFftSize(Window window, HSlider slider, int size)
+    {
+        float handleWidth = slider.GetThemeIcon("grabber").GetWidth();
+        float ratio = (float)((System.Numerics.BitOperations.Log2((uint)size) - slider.MinValue) / (slider.MaxValue - slider.MinValue));
+        Vector2 position = slider.GlobalPosition + new Vector2(handleWidth / 2 + (slider.Size.X - handleWidth) * ratio, slider.Size.Y / 2);
+        window.PushInput(new InputEventMouseMotion { Position = position }, true);
+        window.PushInput(new InputEventMouseButton { Position = position, ButtonIndex = MouseButton.Left, Pressed = true }, true);
+        window.PushInput(new InputEventMouseButton { Position = position, ButtonIndex = MouseButton.Left }, true);
     }
 
     private static async Task VerifySpectrogramLimits(ISceneRunner runner, Application application)
@@ -215,6 +255,12 @@ public partial class TimingShortcutTests
         window.Popup();
         slider.Value = 125;
         await Settle(runner);
+        foreach (string state in new[] { "grabber", "grabber_highlight", "grabber_disabled" })
+            AssertThat(slider.GetThemeIcon(state).GetWidth()).IsEqual(24);
+        var volume = (HScrollBar)runner.FindChild("VolumeSliderMusic")!;
+        foreach (string state in new[] { "grabber", "grabber_highlight", "grabber_pressed" })
+            AssertThat(volume.GetThemeStylebox(state).GetMinimumSize().X).IsEqual(24f);
+        AssertThat(slider.GetThemeIcon("grabber").GetWidth() * root.GetStretchTransform().Scale.X).IsEqualApprox(30f, 0.01f);
         window.Position = new Vector2I(80, 80);
         await Settle(runner);
         Vector2 titleOrigin = new(0, -window.GetThemeConstant("title_height"));
@@ -243,6 +289,8 @@ public partial class TimingShortcutTests
             window.PushInput(new InputEventMouseButton { Position = end, ButtonIndex = MouseButton.Left }, true);
             await Settle(runner);
             AssertThat(root.ContentScaleFactor).IsEqual((float)(selected / 100));
+            AssertThat(slider.GetThemeIcon("grabber").GetWidth() * root.GetStretchTransform().Scale.X)
+                .IsEqualApprox((float)(24 * selected / 100), 0.01f);
             AssertThat((window.GetScreenTransform() * titleOrigin).DistanceTo(screenPosition)).IsLessEqual(2f);
             AssertThat(percentage.Value).IsEqual(selected);
             AssertThat(displayedScales.All(scale => scale == 1.25f || scale == (float)(selected / 100))).IsTrue();
@@ -262,8 +310,8 @@ public partial class TimingShortcutTests
         var spectrum = Project.Instance.SpectrogramContext.SpectrogramGenerator;
         AssertThat(spectrum.FftSize).IsEqual(new Settings().SpectrogramFftSize);
         window.Popup();
-        AssertThat(window.GetNode<LineEdit>("Margin/Scroll/Layout/TabContainer/Spectrogram/fftSize/LineEdit").Text)
-            .IsEqual(application.RejectedVisualSettings!.Value.FftSize.ToString());
+        AssertThat(window.GetNode<Label>("Margin/Scroll/Layout/TabContainer/Spectrogram/fftSize/Value").Text)
+            .IsEqual(new Settings().SpectrogramFftSize.ToString());
         AssertThat(window.GetNode<Label>("Margin/Scroll/Layout/PreviewStatus").Visible).IsTrue();
         var save = window.GetNode<Button>("Margin/Scroll/Layout/BottomButtonsHBox/SaveButton");
         AssertThat(save.Disabled).IsTrue();

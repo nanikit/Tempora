@@ -330,7 +330,7 @@ public partial class TimingShortcutTests
                                 if (child is HBoxContainer row && row.GetChild(0) is not Label)
                                 {
                                     var label = row.GetNode<Label>("Label");
-                                    var input = (Control)row.GetChild(0);
+                                    var input = (Control)row.GetChild(label.GetIndex() - 1);
                                     float textStart = label.Position.X + label.GetCharacterBounds(0).Position.X;
                                     AssertThat(textStart - input.GetRect().End.X).IsBetween(0f, 16f);
                                 }

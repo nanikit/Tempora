@@ -22,7 +22,10 @@ public partial class TimingShortcutTests
         try
         {
             System.IO.File.WriteAllText(path, $"[AudioPath]\n{audioPath}\n[TimeSignaturePoints]\n[TimingPoints]\n0;0;4;4;0.5832166666666667\n");
-            viewport.AddChild(ResourceLoader.Load<PackedScene>("res://Classes/Visual/Main.tscn").Instantiate());
+            var main = ResourceLoader.Load<PackedScene>("res://Classes/Visual/Main.tscn").Instantiate<Control>();
+            // The test viewport interrupts the Window theme inheritance used by the real scene.
+            main.Theme = ((SceneTree)Engine.GetMainLoop()).Root.Theme;
+            viewport.AddChild(main);
             return ISceneRunner.Load(viewport, autoFree: true);
         }
         finally

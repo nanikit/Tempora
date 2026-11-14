@@ -34,17 +34,18 @@ public class VisualSettingsTests
     [TestCase(65537, 256, false)]
     [TestCase(64, 16, false)]
     [TestCase(64, 32768, false)]
+    [TestCase(64, 300, false)]
     public void Persisted_spectral_sizes_stay_inside_the_supported_range(int step, int fft, bool valid)
         => AssertThat(new VisualSettings(1, step, fft, 2200, 5, true).IsInRange).IsEqual(valid);
 
     [TestCase("", false)]
     [TestCase("0", false)]
-    [TestCase("300", false)]
+    [TestCase("1", false)]
     [TestCase("2147483648", false)]
     [TestCase("512", true)]
-    public void Incomplete_or_invalid_fft_input_keeps_the_last_preview(string fft, bool valid)
+    public void Step_text_must_parse_to_a_supported_size(string step, bool valid)
     {
-        AssertThat(VisualSettings.TryParse(1.5, ("64", fft, "2200", "5"), true, 44100, 44100 * 30, out _))
+        AssertThat(VisualSettings.TryParse(1.5, (step, 256, "2200", "5"), true, 44100, 44100 * 30, out _))
             .IsEqual(valid);
     }
 

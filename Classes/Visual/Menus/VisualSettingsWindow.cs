@@ -9,7 +9,8 @@ public partial class VisualSettingsWindow : Window, ISettingsConsumer
     [Export] SpinBox textScalePercentage = null!;
     [Export] Button textDefaultsButton = null!;
     [Export] LineEdit stepSizeLineEdit = null!;
-    [Export] LineEdit fftSizeLineEdit = null!;
+    [Export] HSlider fftSizeSlider = null!;
+    [Export] Label fftSizeValue = null!;
     [Export] LineEdit minFreqLineEdit = null!;
     [Export] LineEdit intensityLineEdit = null!;
     [Export] CheckBox dBCheckbox = null!;
@@ -24,6 +25,7 @@ public partial class VisualSettingsWindow : Window, ISettingsConsumer
     private bool previewing;
     private bool scaleQueued;
     private bool draggingScale;
+    private int FftSize => 1 << (int)fftSizeSlider.Value;
 
     public override void _Ready()
     {
@@ -34,7 +36,7 @@ public partial class VisualSettingsWindow : Window, ISettingsConsumer
         textScaleSlider.Share(textScalePercentage);
         textScalePercentage.UpdateOnTextChanged = true;
         stepSizeLineEdit.TooltipText = "16–65536";
-        fftSizeLineEdit.TooltipText = "32–16384 (powers of 2)";
+        fftSizeSlider.TooltipText = "32–16384 (powers of 2)";
         minFreqLineEdit.TooltipText = "0–96000 Hz; below half the sample rate";
         intensityLineEdit.TooltipText = "≥ 0";
         textScaleSlider.ValueChanged += _ => QueueScalePreview();
@@ -45,7 +47,12 @@ public partial class VisualSettingsWindow : Window, ISettingsConsumer
             QueueScalePreview();
         };
         textDefaultsButton.Pressed += () => textScaleSlider.Value = 100;
-        foreach (LineEdit input in new[] { stepSizeLineEdit, fftSizeLineEdit, minFreqLineEdit, intensityLineEdit })
+        fftSizeSlider.ValueChanged += _ =>
+        {
+            fftSizeValue.Text = FftSize.ToString();
+            QueueSpectrogramPreview();
+        };
+        foreach (LineEdit input in new[] { stepSizeLineEdit, minFreqLineEdit, intensityLineEdit })
             input.TextChanged += _ => QueueSpectrogramPreview();
         dBCheckbox.Toggled += _ => QueueSpectrogramPreview();
         defaultsButton.Pressed += ResetSpectrogram;
@@ -93,7 +100,9 @@ public partial class VisualSettingsWindow : Window, ISettingsConsumer
     private void LoadSpectrogramValues(VisualSettings values)
     {
         stepSizeLineEdit.Text = values.StepSize.ToString();
-        fftSizeLineEdit.Text = values.FftSize.ToString();
+        int fftSize = VisualSettings.IsFftSizeInRange(values.FftSize) ? values.FftSize : Settings.SpectrogramFftSize;
+        fftSizeSlider.SetValueNoSignal(System.Numerics.BitOperations.Log2((uint)fftSize));
+        fftSizeValue.Text = FftSize.ToString();
         minFreqLineEdit.Text = values.MinFreq.ToString();
         intensityLineEdit.Text = values.Intensity.ToString();
         dBCheckbox.SetPressedNoSignal(values.UseDb);
@@ -118,10 +127,10 @@ public partial class VisualSettingsWindow : Window, ISettingsConsumer
     {
         if (!previewing)
             return;
-        bool valid = TryReadValues(out VisualSettings values);
+        bool valid = TryReadValues(out _);
         saveButton.Disabled = !valid;
         previewStatus.Text = !valid ? "Check the spectrogram values. For long audio, increase step size or reduce FFT size."
-            : application.RejectedVisualSettings != null && values == VisualSettings.From(Settings)
+            : application.RejectedVisualSettings != null
                 ? "Saved display values were invalid. Review and save your settings." : "";
         previewStatus.Visible = previewStatus.Text.Length > 0;
         spectrogramDelay.Start();
@@ -151,7 +160,7 @@ public partial class VisualSettingsWindow : Window, ISettingsConsumer
     {
         var audio = Project.Instance.AudioFile;
         return VisualSettings.TryParse(textScalePercentage.Value / 100,
-            (stepSizeLineEdit.Text, fftSizeLineEdit.Text, minFreqLineEdit.Text, intensityLineEdit.Text),
+            (stepSizeLineEdit.Text, FftSize, minFreqLineEdit.Text, intensityLineEdit.Text),
             dBCheckbox.ButtonPressed, audio.SampleRate, audio.PcmFloats[0].Length, out values);
     }
 

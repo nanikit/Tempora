@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bmawdtoq15vkb" path="res://Classes/Visual/Menus/VisualSettingsWindow.cs" id="1_irav1"]
 
-[node name="VisualSettingsWindow" type="Window" node_paths=PackedStringArray("textScaleSlider", "textScalePercentage", "textDefaultsButton", "stepSizeLineEdit", "fftSizeLineEdit", "minFreqLineEdit", "intensityLineEdit", "dBCheckbox", "saveButton", "defaultsButton", "cancelButton", "previewStatus")]
+[node name="VisualSettingsWindow" type="Window" node_paths=PackedStringArray("textScaleSlider", "textScalePercentage", "textDefaultsButton", "stepSizeLineEdit", "fftSizeSlider", "fftSizeValue", "minFreqLineEdit", "intensityLineEdit", "dBCheckbox", "saveButton", "defaultsButton", "cancelButton", "previewStatus")]
 title = "Display Settings"
 position = Vector2i(0, 36)
 size = Vector2i(640, 360)
@@ -13,7 +13,8 @@ textScaleSlider = NodePath("Margin/Scroll/Layout/TabContainer/Interface/Scale/Sl
 textScalePercentage = NodePath("Margin/Scroll/Layout/TabContainer/Interface/Scale/Percentage")
 textDefaultsButton = NodePath("Margin/Scroll/Layout/TabContainer/Interface/DefaultsButton")
 stepSizeLineEdit = NodePath("Margin/Scroll/Layout/TabContainer/Spectrogram/stepSize/LineEdit")
-fftSizeLineEdit = NodePath("Margin/Scroll/Layout/TabContainer/Spectrogram/fftSize/LineEdit")
+fftSizeSlider = NodePath("Margin/Scroll/Layout/TabContainer/Spectrogram/fftSize/Slider")
+fftSizeValue = NodePath("Margin/Scroll/Layout/TabContainer/Spectrogram/fftSize/Value")
 minFreqLineEdit = NodePath("Margin/Scroll/Layout/TabContainer/Spectrogram/minFreq/LineEdit")
 intensityLineEdit = NodePath("Margin/Scroll/Layout/TabContainer/Spectrogram/Intensity/LineEdit")
 dBCheckbox = NodePath("Margin/Scroll/Layout/TabContainer/Spectrogram/dB/CheckBox")
@@ -119,8 +120,23 @@ vertical_alignment = 1
 [node name="fftSize" type="HBoxContainer" parent="Margin/Scroll/Layout/TabContainer/Spectrogram"]
 layout_mode = 2
 
-[node name="LineEdit" type="LineEdit" parent="Margin/Scroll/Layout/TabContainer/Spectrogram/fftSize"]
+[node name="Slider" type="HSlider" parent="Margin/Scroll/Layout/TabContainer/Spectrogram/fftSize"]
+custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+min_value = 5.0
+max_value = 14.0
+step = 1.0
+value = 8.0
+tick_count = 10
+ticks_on_borders = true
+
+[node name="Value" type="Label" parent="Margin/Scroll/Layout/TabContainer/Spectrogram/fftSize"]
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+text = "256"
+horizontal_alignment = 2
 
 [node name="Label" type="Label" parent="Margin/Scroll/Layout/TabContainer/Spectrogram/fftSize"]
 layout_mode = 2
