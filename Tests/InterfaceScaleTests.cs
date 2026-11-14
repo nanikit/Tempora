@@ -113,6 +113,7 @@ public partial class TimingShortcutTests
             timing.AddTimingPoint(0.5d, 1d, 0.5d);
             timing.AddTimingPoint(2d, 4d, 0.5d);
             timing.IsInstantiating = false;
+            MementoHandler.Instance.ResetTimingHistory();
 
             viewport.Size = root.Size;
             viewport.Size2DOverride = originalSize;
@@ -141,6 +142,8 @@ public partial class TimingShortcutTests
             AssertThat(point.MeasurePosition!.Value).IsEqualApprox(0.75d, 0.001d);
             AssertThat(point.Offset).IsEqual(1d);
             AssertThat(Context.Instance.HeldTimingPoint).IsNull();
+            MementoHandler.Instance.Undo();
+            AssertThat(Project.Instance.Timing.TimingPoints[1].MeasurePosition!.Value).IsEqual(0.5d);
         }
         finally
         {

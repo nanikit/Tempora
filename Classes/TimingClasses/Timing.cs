@@ -44,12 +44,9 @@ public partial class Timing : IMementoOriginator
     }
     public bool IsBatchOperationInProgress = false;
 
-    private bool ShouldCancelBatchOperation = false;
-
     public event EventHandler? Changed;
     public event EventHandler? PointCountChanged;
     public event Action<TimingPoint>? MeasurePositionRejected;
-    public event Action<TimingPoint?>? UndoCheckpointRequested;
 
     private void NotifyChanged()
     {

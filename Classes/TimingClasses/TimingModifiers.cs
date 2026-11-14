@@ -102,7 +102,6 @@ public partial class Timing
 
         ShiftTimingPointsUponTimeSignatureChange(oldTiming, timeSignaturePoint);
 
-        UndoCheckpointRequested?.Invoke(null);
 
         NotifyChanged();
     }
@@ -209,40 +208,55 @@ public partial class Timing
         if (!ValidateIndices(lowerIndex, higherIndex, out lowerIndex, out higherIndex))
             return;
 
-        IsBatchOperationInProgress = true;
+        double[] positions = TimingPoints.Select(point => point.MeasurePosition
+            ?? throw new InvalidOperationException("Timing point has no measure position.")).ToArray();
+        for (int i = lowerIndex; i <= higherIndex; i++)
+            positions[i] = getNewMeasurePosition(TimingPoints[i]);
+        if (!AreBatchPositionsValid(positions, lowerIndex, higherIndex))
+            return;
 
-        bool willMeasurePositionsIncrease = true;
-        if (higherIndex >= lowerIndex + 1)
-            willMeasurePositionsIncrease = getNewMeasurePosition(TimingPoints[lowerIndex + 1]) > TimingPoints[lowerIndex + 1].MeasurePosition;
+        IsBatchOperationInProgress = true;
+        bool willMeasurePositionsIncrease = positions[higherIndex] >= TimingPoints[higherIndex].MeasurePosition;
 
         // If the change decreases the music position, iterate forwards (less likely to trigger rejections).
         // Vice versa for increases
         int startIndex = willMeasurePositionsIncrease ? higherIndex : lowerIndex;
-        for (int i = startIndex
-            ; willMeasurePositionsIncrease ? i >= lowerIndex : i <= higherIndex
-            ; i = willMeasurePositionsIncrease ? i - 1 : i + 1)
+        try
         {
-            TimingPoint? timingPoint = TimingPoints[i];
-            if (timingPoint?.MeasurePosition == null)
-                throw new NullReferenceException(nameof(timingPoint));
-
-            timingPoint.MeasurePosition = getNewMeasurePosition(timingPoint);
-            timingPoint.TimeSignature = GetTimeSignature(timingPoint.MeasurePosition.Value); // Necessary because batch operation blocks automatic calculation
-
-            if (ShouldCancelBatchOperation)
+            for (int i = startIndex
+                ; willMeasurePositionsIncrease ? i >= lowerIndex : i <= higherIndex
+                ; i = willMeasurePositionsIncrease ? i - 1 : i + 1)
             {
-                ShouldCancelBatchOperation = false;
-                break;
+                TimingPoint timingPoint = TimingPoints[i];
+                timingPoint.MeasurePosition = positions[i];
+                timingPoint.TimeSignature = GetTimeSignature(positions[i]);
             }
         }
-
-        IsBatchOperationInProgress = false;
+        finally
+        {
+            IsBatchOperationInProgress = false;
+        }
 
         NotifyChanged();
     }
 
+    private bool AreBatchPositionsValid(double[] positions, int lowerIndex, int higherIndex)
+    {
+        for (int i = lowerIndex; i <= higherIndex; i++)
+            if (!double.IsFinite(positions[i]))
+                return false;
+        for (int i = Math.Max(1, lowerIndex); i <= Math.Min(positions.Length - 1, higherIndex + 1); i++)
+        {
+            if (positions[i - 1] < positions[i] && !AreMeasurePositionsEqual(positions[i - 1], positions[i]))
+                continue;
+            MeasurePositionRejected?.Invoke(TimingPoints[i == lowerIndex ? i - 1 : i]);
+            return false;
+        }
+        return true;
+    }
+
     /// <summary>
-    /// Scales Tempo of selected timing points (including higherIndex) by a multiplier. Adds a <see cref="TimingMemento"/> on completion.
+    /// Scales Tempo of selected timing points (including higherIndex) by a multiplier.
     /// </summary>
     public void ScaleTempo(int lowerIndex, int higherIndex, float multiplier)
     {
@@ -293,7 +307,6 @@ public partial class Timing
             higherTimingPoint.SetManualBpm(higherTimingPoint.Bpm * multiplier);
         }
 
-        UndoCheckpointRequested?.Invoke(null);
     }
 
     public double SnapOffsetChangeToBpmIncrement(int lowerIndex, int higherIndex, double offsetChange, double bpmIncrement = 0.1d)
@@ -327,6 +340,8 @@ public partial class Timing
     {
         if (!ValidateIndices(lowerIndex, higherIndex, out lowerIndex, out higherIndex))
             return;
+        if (!CanOffsetSelection(lowerIndex, higherIndex, offsetChange))
+            return;
 
         IsBatchOperationInProgress = true;
 
@@ -335,21 +350,25 @@ public partial class Timing
         // If the change decreases the offset, iterate forwards (less likely to trigger rejections).
         // Vice versa for increases
         int startIndex = increasing ? higherIndex : lowerIndex;
-        for (int i = startIndex
-            ; increasing ? i >= lowerIndex : i <= higherIndex
-            ; i = increasing ? i - 1 : i + 1)
+        try
         {
-            TimingPoint? timingPoint = TimingPoints[i];
-            if (timingPoint?.Offset == null)
-                throw new NullReferenceException(nameof(timingPoint));
-
-            timingPoint.Offset = timingPoint.Offset + offsetChange;
+            for (int i = startIndex
+                ; increasing ? i >= lowerIndex : i <= higherIndex
+                ; i = increasing ? i - 1 : i + 1)
+                TimingPoints[i].Offset += offsetChange;
         }
-
-        IsBatchOperationInProgress = false;
+        finally
+        {
+            IsBatchOperationInProgress = false;
+        }
 
         NotifyChanged();
     }
+
+    private bool CanOffsetSelection(int lowerIndex, int higherIndex, double offsetChange)
+        => double.IsFinite(offsetChange)
+            && (lowerIndex == 0 || TimingPoints[lowerIndex].Offset + offsetChange > TimingPoints[lowerIndex - 1].Offset)
+            && (higherIndex + 1 == TimingPoints.Count || TimingPoints[higherIndex].Offset + offsetChange < TimingPoints[higherIndex + 1].Offset);
 
     private static double? GetOffsetChangeToNextBpmIncrement(
         TimingPoint startPoint,

@@ -275,9 +275,13 @@ public partial class AudioVisualsContainer : VBoxContainer, ISettingsConsumer
             throw new Exception($"{nameof(e)} was not of type {nameof(GlobalEvents.ObjectArgument<float>)}");
         float time = floatArgument.Value;
 
+        Project.Instance.Edits.Begin();
         Project.Instance.Timing.AddTimingPoint(time, out TimingPoint? timingPoint);
         if (timingPoint == null)
+        {
+            Project.Instance.Edits.Commit();
             return;
+        }
         if (timingPoint.MeasurePosition == null)
             throw new NullReferenceException($"{nameof(timingPoint.MeasurePosition)} was null");
 
@@ -287,8 +291,6 @@ public partial class AudioVisualsContainer : VBoxContainer, ISettingsConsumer
         Context.Instance.HeldPointIsJustBeingAdded = true;
 
         TimingPointSelection.Instance.SelectTimingPoint(timingPoint);
-
-        //MementoHandler.Instance.AddTimingMemento();
     }
 
     private void OnTimingPointAdded(object? sender, EventArgs e)

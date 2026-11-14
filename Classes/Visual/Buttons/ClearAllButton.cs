@@ -33,11 +33,11 @@ public partial class ClearAllButton : Button
 
     private void ClearAllTimingPoints()
     {
-        Project.Instance.Timing.TimingPoints.Clear();
-        Project.Instance.Timing.TimeSignaturePoints.Clear();
-        GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.TimingChanged)); ;
+        Project.Instance.Edits.Apply(() =>
+        {
+            Project.Instance.Timing.DeleteAllTimingPoints();
+            Project.Instance.Timing.DeleteAllTimeSignaturePoints();
+        });
         ReleaseFocus();
-
-        MementoHandler.Instance.AddTimingMemento();
     }
 }

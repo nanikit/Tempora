@@ -204,7 +204,7 @@ public partial class VisualTimingPoint : Control
         }
         else
         {
-            TimingPoint.Delete();
+            Project.Instance.Edits.Apply(TimingPoint.Delete);
         }
 
         Viewport viewport = GetViewport();
@@ -270,7 +270,7 @@ public partial class VisualTimingPoint : Control
 
     private void OnBpmSubmitted(object? sender, EventArgs e)
     {
-        timingPoint.SetManualBpm(BpmEdit.Text.ToFloat());
+        Project.Instance.Edits.Apply(() => Project.Instance.Timing.TrySetBpm(timingPoint, BpmEdit.Text.ToFloat()));
     }
     #endregion
 

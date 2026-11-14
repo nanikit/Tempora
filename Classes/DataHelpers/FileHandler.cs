@@ -63,8 +63,14 @@ public partial class FileHandler : Node
 
     public static void SaveText(string path, string text)
     {
-        using var file = FileAccess.Open(path, FileAccess.ModeFlags.Write);
-        file.StoreString(text);
+        using FileAccess file = OpenForWriting(path);
+        CompleteWrite(file, file.StoreString(text));
+    }
+
+    public static void SaveBuffer(string path, byte[] buffer)
+    {
+        using FileAccess file = OpenForWriting(path);
+        CompleteWrite(file, file.StoreBuffer(buffer));
     }
 
     public static string LoadText(string path)
@@ -109,5 +115,21 @@ public partial class FileHandler : Node
         }
 
         return filePaths;
+    }
+
+    private static FileAccess OpenForWriting(string path)
+        => FileAccess.Open(path, FileAccess.ModeFlags.Write)
+            ?? throw new IOException($"Could not open '{path}' for writing: {FileAccess.GetOpenError()}.");
+
+    private static void CompleteWrite(FileAccess file, bool stored)
+    {
+        Error error = file.GetError();
+        if (!stored || error != Error.Ok)
+            throw new IOException($"Could not write '{file.GetPath()}': {error}.");
+
+        file.Flush();
+        error = file.GetError();
+        if (error != Error.Ok)
+            throw new IOException($"Could not flush '{file.GetPath()}': {error}.");
     }
 }

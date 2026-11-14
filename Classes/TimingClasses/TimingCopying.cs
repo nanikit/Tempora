@@ -13,6 +13,7 @@
 
 using System.Collections.Generic;
 using System;
+using System.Linq;
 using Tempora.Classes.DataHelpers;
 using Tempora.Classes.Utility;
 using Tempora.Classes.Audio;
@@ -59,6 +60,17 @@ public partial class Timing
     {
         return new TimingMemento(this);
     }
+
+    public bool Matches(IMemento memento)
+        => memento is TimingMemento snapshot
+            && timingPoints.Select(PointState).SequenceEqual(snapshot.clonedTimingPoints.Select(PointState))
+            && timeSignaturePoints.Select(SignatureState).SequenceEqual(snapshot.clonedTimeSignaturePoints.Select(SignatureState));
+
+    private static (double Offset, double? Measure, double Tempo, double? ManualBpm, int Upper, int Lower) PointState(TimingPoint point)
+        => (point.Offset, point.MeasurePosition, point.MeasuresPerSecond, point.ManualBpm, point.TimeSignature[0], point.TimeSignature[1]);
+
+    private static (int Measure, int Upper, int Lower) SignatureState(TimeSignaturePoint point)
+        => (point.Measure, point.TimeSignature[0], point.TimeSignature[1]);
 
     public void RestoreMemento(IMemento memento)
     {

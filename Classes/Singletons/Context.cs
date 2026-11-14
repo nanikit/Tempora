@@ -26,9 +26,7 @@ public partial class Context : Node
 
     public bool ShouldDeleteHeldPointIfNotOnGrid = false;
     public bool HeldPointIsJustBeingAdded = false;
-    private double? heldTimingPoint_PreviousMeasurePosition = null!;
-    private double? heldTimingPoint_PreviousOffset = null!;
-    private TimingPoint? heldTimingPoint = null!;
+    private TimingPoint? heldTimingPoint;
     public TimingPoint? HeldTimingPoint
     {
         get => heldTimingPoint;
@@ -36,44 +34,27 @@ public partial class Context : Node
         {
             if (heldTimingPoint == value)
                 return;
-            if (value == null)
+            if (value != null)
             {
-                if (HeldPointIsJustBeingAdded && !Project.Instance.Timing.IsTimingPointOnGrid(heldTimingPoint))
-                {
-                    TimingPoint? timingPointToDelete = heldTimingPoint;
-                    heldTimingPoint_PreviousMeasurePosition = null;
-                    heldTimingPoint_PreviousOffset = null;
-                    heldTimingPoint = null;
-                    timingPointToDelete?.Delete();
-                    GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.TimingChanged)); // Gets rid of VisualTimingPoint
-                    HeldPointIsJustBeingAdded = false;
-                    return;
-                }
-                bool doesTimingPointStillExist = heldTimingPoint != null;
-                bool hasMeasurePositionChanged = heldTimingPoint?.MeasurePosition != heldTimingPoint_PreviousMeasurePosition;
-                bool hasOffsetChanged = heldTimingPoint?.Offset != heldTimingPoint_PreviousOffset;
-                //if ((hasMeasurePositionChanged || hasOffsetChanged) && doesTimingPointStillExist && !HeldPointIsJustBeingAdded)
-                //{
-                //    MementoHandler.Instance.AddTimingMemento();
-                //}
-                if (HeldPointIsJustBeingAdded && doesTimingPointStillExist)
-                {
-                    GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.Instance.TimingPointAdded), this, new GlobalEvents.ObjectArgument<TimingPoint>(heldTimingPoint!));
-                    MementoHandler.Instance.AddTimingMemento();
-                }
-                HeldPointIsJustBeingAdded = false;
-                heldTimingPoint_PreviousMeasurePosition = null;
-                heldTimingPoint_PreviousOffset = null;
+                Project.Instance.Edits.Begin();
                 heldTimingPoint = value;
-                GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.Instance.TimingChanged), this, EventArgs.Empty); // Updates visuals to ensure no waveform sections are darkened.
                 return;
             }
-            heldTimingPoint = value;
-            heldTimingPoint_PreviousMeasurePosition = value?.MeasurePosition;
-            heldTimingPoint_PreviousOffset = value?.Offset;
+
+            TimingPoint? released = heldTimingPoint;
+            heldTimingPoint = null;
+            if (HeldPointIsJustBeingAdded && released != null && Project.Instance.Timing.TimingPoints.Contains(released))
+            {
+                if (!Project.Instance.Timing.IsTimingPointOnGrid(released))
+                    released.Delete();
+                else
+                    GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.TimingPointAdded), this, new GlobalEvents.ObjectArgument<TimingPoint>(released));
+            }
+            HeldPointIsJustBeingAdded = false;
+            GlobalEvents.Instance.NotifyTimingChanged();
+            Project.Instance.Edits.Commit();
         }
     }
-
     TimingPoint? timingPointNearestCursor;
     public TimingPoint? TimingPointNearestCursor
     {

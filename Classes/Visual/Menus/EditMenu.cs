@@ -46,6 +46,6 @@ public partial class EditMenu : PopupMenu
 
     private void OnClearAllConfirmationDialogConfirmed()
     {
-        Project.Instance.Timing.DeleteAllTimingPoints();
+        Project.Instance.Edits.Apply(Project.Instance.Timing.DeleteAllTimingPoints);
     }
 }

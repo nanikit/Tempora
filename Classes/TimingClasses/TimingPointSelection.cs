@@ -322,7 +322,7 @@ public partial class TimingPointSelection : Node
     {
         if (SelectionIndices == null)
             return;
-        timing.DeleteTimingPoints(SelectionIndices[0], SelectionIndices[1] + 1);
+        Project.Instance.Edits.Apply(() => timing.DeleteTimingPoints(SelectionIndices[0], SelectionIndices[1] + 1));
         SelectionIndices = null;
     }
 
@@ -333,18 +333,18 @@ public partial class TimingPointSelection : Node
         if (IsPointInSelection(point))
             DeleteSelection();
         else
-            timing.DeleteTimingPoint(point);
+            Project.Instance.Edits.Apply(() => timing.DeleteTimingPoint(point));
     }
 
     public void ScaleTempo(TimingPoint? point, float multiplier)
     {
         ArgumentNullException.ThrowIfNull(point);
         if (Count > 1 && IsPointInSelection(point))
-            timing.ScaleTempo(SelectionIndices![0], SelectionIndices[1], multiplier);
+            Project.Instance.Edits.Apply(() => timing.ScaleTempo(SelectionIndices![0], SelectionIndices[1], multiplier));
         else
         {
             int index = timing.TimingPoints.IndexOf(point);
-            timing.ScaleTempo(index, index, multiplier);
+            Project.Instance.Edits.Apply(() => timing.ScaleTempo(index, index, multiplier));
         }
     }
 
@@ -358,7 +358,7 @@ public partial class TimingPointSelection : Node
 
         double getNewPosition(TimingPoint? point) => (point?.MeasurePosition ?? 0) + positionDifference;
 
-        timing.BatchChangeMeasurePosition(SelectionIndices[0], SelectionIndices[1], getNewPosition);
+        Project.Instance.Edits.Apply(() => timing.BatchChangeMeasurePosition(SelectionIndices[0], SelectionIndices[1], getNewPosition));
     }
 
     /// <summary>
@@ -376,30 +376,26 @@ public partial class TimingPointSelection : Node
         {
             int index = timing.TimingPoints.IndexOf(point);
             offset = timing.SnapOffsetChangeToBpmIncrement(index, index, offset);
-            point.Offset = point.Offset + offset;
-            MementoHandler.Instance.AddTimingMemento(point);
+            Project.Instance.Edits.Apply(() => timing.TrySetOffset(point, point.Offset + offset), point);
         }
     }
 
     public void OffsetSelection(double offset)
     {
         if (SelectionIndices == null) return;
-        timing.BatchChangeOffset(SelectionIndices[0], SelectionIndices[1], offset);
-        MementoHandler.Instance.AddTimingMemento(SelectionIndices);
+        Project.Instance.Edits.Apply(() => timing.BatchChangeOffset(SelectionIndices[0], SelectionIndices[1], offset), SelectionIndices);
     }
 
     public void DoubleTempoForSelection()
     {
         if (SelectionIndices == null) return;
-        Project.Instance.Timing.ScaleTempo(SelectionIndices[0], SelectionIndices[1], 2);
-        //MementoHandler.Instance.AddTimingMemento(SelectionIndices);
+        Project.Instance.Edits.Apply(() => timing.ScaleTempo(SelectionIndices[0], SelectionIndices[1], 2));
     }
 
     public void HalveTempoForSelection()
     {
         if (SelectionIndices == null) return;
-        Project.Instance.Timing.ScaleTempo(SelectionIndices[0], SelectionIndices[1], 0.5f);
-        //MementoHandler.Instance.AddTimingMemento(SelectionIndices);
+        Project.Instance.Edits.Apply(() => timing.ScaleTempo(SelectionIndices[0], SelectionIndices[1], 0.5f));
     }
 
     private void OnTimingPointCountChanged(object? sender, EventArgs e)

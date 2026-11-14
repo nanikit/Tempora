@@ -56,7 +56,7 @@ public class TimingIsolationTests
     [TestCase("tempo", true)]
     [TestCase("single", false)]
     [TestCase("single", true)]
-    public void Undo_preserves_edits_while_adding_a_point(string edit, bool addingPoint)
+    public void Undo_restores_the_start_of_an_in_progress_edit(string edit, bool addingPoint)
     {
         Timing original = Project.Instance.Timing;
         var originalAudio = Project.Instance.AudioFile;
@@ -71,8 +71,11 @@ public class TimingIsolationTests
             open.IsInstantiating = false;
             MementoHandler.Instance.ResetTimingHistory();
             string beforeAdding = ProjectFileManager.CreateProjectFileString("audio.ogg");
-            open.AddTimingPoint(4, 8, 0.5);
-            MementoHandler.Instance.AddTimingMemento();
+            if (addingPoint)
+                Project.Instance.Edits.Begin();
+            Project.Instance.Edits.Apply(() => open.AddTimingPoint(4, 8, 0.5));
+            if (addingPoint)
+                Context.Instance.HeldTimingPoint = open.TimingPoints[^1];
             string beforeEdit = ProjectFileManager.CreateProjectFileString("audio.ogg");
             Context.Instance.HeldPointIsJustBeingAdded = addingPoint;
 
@@ -83,13 +86,13 @@ public class TimingIsolationTests
                     TimingPointSelection.Instance.DeleteSelection();
                     break;
                 case "signature":
-                    open.UpdateTimeSignature([3, 4], 0);
+                    Project.Instance.Edits.Apply(() => open.UpdateTimeSignature([3, 4], 0));
                     break;
                 case "tempo":
                     TimingPointSelection.Instance.ScaleTempo(open.TimingPoints[0], 2);
                     break;
                 case "single":
-                    open.TimingPoints[0].Delete();
+                    Project.Instance.Edits.Apply(open.TimingPoints[0].Delete);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(edit));
@@ -97,11 +100,12 @@ public class TimingIsolationTests
 
             AssertThat(ProjectFileManager.CreateProjectFileString("audio.ogg")).IsNotEqual(beforeEdit);
             MementoHandler.Instance.Undo();
-            string expected = edit == "single" && addingPoint ? beforeAdding : beforeEdit;
+            string expected = addingPoint ? beforeAdding : beforeEdit;
             AssertThat(ProjectFileManager.CreateProjectFileString("audio.ogg")).IsEqual(expected);
         }
         finally
         {
+            Context.Instance.HeldTimingPoint = null;
             Context.Instance.HeldPointIsJustBeingAdded = originallyAddingPoint;
             TimingPointSelection.Instance.DeselectAll();
             Project.Instance.Timing = original;

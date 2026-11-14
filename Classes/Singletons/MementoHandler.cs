@@ -59,46 +59,17 @@ public partial class MementoHandler : Node
         }
     }
 
-    private TimingPoint? timingPointBeingChanged = null;
-    private int[]? SelectionBeingChanged = null;
+    private object? lastHistoryGroup;
 
-    /// <summary>
-    /// When doing many changes to a single <see cref="TimingPoint"/>, this overload will save them all in one <see cref="IMemento"/>.
-    /// </summary>
-    /// <param name="timingPoint"></param>
-    public void AddTimingMemento(TimingPoint? timingPoint)
+    public void RecordEdit(object? historyGroup)
     {
-        if (timingPointBeingChanged == timingPoint)
+        if (historyGroup != null && ReferenceEquals(lastHistoryGroup, historyGroup))
             DeleteMementosAfterIndex(mementoIndex - 1);
-
-        IMemento memento = Project.Instance.Timing.GetMemento();
-        AddMemento(memento);
-
-        timingPointBeingChanged = timingPoint;
+        AddMemento(Project.Instance.Timing.GetMemento());
+        lastHistoryGroup = historyGroup;
     }
 
-    /// <summary>
-    /// When doing many changes to a single selection, this overload will save them all in one <see cref="IMemento"/>.
-    /// </summary>
-    /// <param name="timingPoint"></param>
-    public void AddTimingMemento(int[]? selection)
-    {
-        if (SelectionBeingChanged == selection)
-            DeleteMementosAfterIndex(mementoIndex - 1);
-
-        IMemento memento = Project.Instance.Timing.GetMemento();
-        AddMemento(memento);
-
-        SelectionBeingChanged = selection;
-    }
-
-    public void AddTimingMemento()
-    {
-        IMemento memento = Project.Instance.Timing.GetMemento();
-        AddMemento(memento);
-        timingPointBeingChanged = null;
-    }
-
+    public void AddTimingMemento() => RecordEdit(null);
     public void AddSelectionMemento()
     {
     }
@@ -107,8 +78,7 @@ public partial class MementoHandler : Node
     {
         mementoList.Clear();
         mementoIndex = 0;
-        timingPointBeingChanged = null;
-        SelectionBeingChanged = null;
+        lastHistoryGroup = null;
         AddTimingMemento();
     }
 
@@ -129,6 +99,7 @@ public partial class MementoHandler : Node
 
     internal void Undo()
     {
+        Context.Instance.HeldTimingPoint = null;
         switch (mementoIndex)
         {
             case > 0:
@@ -145,12 +116,14 @@ public partial class MementoHandler : Node
             throw new NullReferenceException($"{nameof(memento)}");
 
         Project.Instance.Timing.RestoreMemento(memento);
+        lastHistoryGroup = null;
+        Project.Instance.NotifyTimingEditFinished();
 
-        SelectionBeingChanged = null;
     }
 
     private void Redo()
     {
+        Context.Instance.HeldTimingPoint = null;
         switch (mementoIndex)
         {
             case var expression when (mementoIndex < (mementoList.Count - 1)):
@@ -166,5 +139,7 @@ public partial class MementoHandler : Node
         IMemento memento = mementoList[(int)mementoIndex];
 
         Project.Instance.Timing.RestoreMemento(memento);
+        lastHistoryGroup = null;
+        Project.Instance.NotifyTimingEditFinished();
     }
 }

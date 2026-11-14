@@ -245,8 +245,7 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
             double newBpm = !alt && Input.IsKeyPressed(Key.Shift)
                 ? previousBpm + (steps * 0.1d)
                 : (int)previousBpm + (steps * (alt ? 5 : 1));
-            nearestTimingPoint.SetManualBpm(newBpm);
-            MementoHandler.Instance.AddTimingMemento(nearestTimingPoint);
+            Project.Instance.Edits.Apply(() => Project.Instance.Timing.TrySetBpm(nearestTimingPoint, newBpm), nearestTimingPoint);
         }
         else
         {
@@ -304,7 +303,7 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
                     float xMovement = mouseMotion.Relative.X;
                     float bpmPerPixel = 0.02f;
                     float bpmDifference = xMovement * bpmPerPixel;
-                    Context.Instance.HeldTimingPoint.SetManualBpm(Context.Instance.HeldTimingPoint.Bpm + bpmDifference);
+                    Project.Instance.Edits.Apply(() => Project.Instance.Timing.TrySetBpm(Context.Instance.HeldTimingPoint, Context.Instance.HeldTimingPoint.Bpm + bpmDifference));
                     return;
                 }
                 else if (Input.IsKeyPressed(Key.Shift))

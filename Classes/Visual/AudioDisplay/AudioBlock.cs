@@ -77,7 +77,7 @@ public partial class AudioBlock : Control
         if (e is not GlobalEvents.ObjectArgument<int[]> intArrayArgument)
             throw new Exception($"{nameof(e)} was not of type {nameof(GlobalEvents.ObjectArgument<int[]>)}");
         int[] timeSignature = intArrayArgument.Value;
-        Project.Instance.Timing.UpdateTimeSignature(timeSignature, NominalMeasurePosition);
+        Project.Instance.Edits.Apply(() => Project.Instance.Timing.UpdateTimeSignature(timeSignature, NominalMeasurePosition));
     }
 
     public void UpdateLabels()

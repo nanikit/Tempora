@@ -22,6 +22,23 @@ namespace Tempora.Classes.TimingClasses;
 
 public partial class Timing
 {
+    public bool TrySetOffset(TimingPoint point, double offset)
+    {
+        if (point.Offset == offset || !IsTimingPointPropertyChangeValid(point, TimingPoint.PropertyType.Offset, offset))
+            return false;
+        point.Offset = offset;
+        return true;
+    }
+
+    public bool TrySetBpm(TimingPoint point, double bpm)
+    {
+        if (!IsTimingPointPropertyChangeValid(point, TimingPoint.PropertyType.Bpm, bpm))
+            return false;
+        double? before = point.ManualBpm;
+        point.SetManualBpm(bpm);
+        return before != point.ManualBpm;
+    }
+
     public bool ShouldHandleTimingPointChanges = true;
 
     private void SubscribeToEvents(TimingPoint timingPoint)
@@ -61,12 +78,6 @@ public partial class Timing
         if (sender is not TimingPoint timingPoint)
             throw new Exception("Sender wasn't a TimingPoint.");
         DeleteTimingPoint(timingPoint);
-    }
-
-    private void OnTimingPointMeasurePositionChangeRejected(object? sender, EventArgs e)
-    {
-        if (IsBatchOperationInProgress)
-            ShouldCancelBatchOperation = true;
     }
 
     /// <summary>

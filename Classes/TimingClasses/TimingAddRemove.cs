@@ -75,7 +75,6 @@ public partial class Timing
         timingPoint.IsInstantiating = false;
 
         // No timing memento added, as this isn't method shouldn't be executed directly from a user action.
-        //ActionsHandler.Instance.AddTimingMemento();
     }
 
     /// <summary>
@@ -136,8 +135,6 @@ public partial class Timing
 
         timingPoint.IsInstantiating = false;
 
-        //ActionsHandler.Instance.AddTimingMemento();
-
         NotifyPointCountChanged();
     }
 
@@ -153,7 +150,6 @@ public partial class Timing
 
         NotifyPointCountChanged();
 
-        UndoCheckpointRequested?.Invoke(timingPoint);
     }
 
     /// <summary>
@@ -176,7 +172,6 @@ public partial class Timing
 
         NotifyPointCountChanged();
 
-        UndoCheckpointRequested?.Invoke(null);
     }
 
 

@@ -13,7 +13,10 @@ public partial class ClearAllConfirmationDialog : ConfirmationDialog
 
     private void OnClearAllConfirmationDialogConfirmed()
     {
-        Project.Instance.Timing.DeleteAllTimingPoints();
-        Project.Instance.Timing.DeleteAllTimeSignaturePoints();
+        Project.Instance.Edits.Apply(() =>
+        {
+            Project.Instance.Timing.DeleteAllTimingPoints();
+            Project.Instance.Timing.DeleteAllTimeSignaturePoints();
+        });
     }
 }

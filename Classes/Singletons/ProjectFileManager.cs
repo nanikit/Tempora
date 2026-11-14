@@ -56,8 +56,10 @@ public partial class ProjectFileManager : Node, ISettingsConsumer
 
         SaveFileDialog.FileSelected += OnSaveFilePathSelected;
         LoadFileDialog.FileSelected += OnLoadFilePathSelected;
-        GlobalEvents.Instance.TimingChanged += OnTimingChanged;
+        Project.Instance.TimingEditFinished += OnTimingEditFinished;
     }
+
+    public override void _ExitTree() => Project.Instance.TimingEditFinished -= OnTimingEditFinished;
 
     public override void _Input(InputEvent inputEvent)
     {
@@ -158,7 +160,7 @@ public partial class ProjectFileManager : Node, ISettingsConsumer
         }
     }
 
-    private void OnTimingChanged(object? sender, EventArgs e)
+    private void OnTimingEditFinished(object? sender, EventArgs e)
     {
         if (Project.Instance.Timing.IsInstantiating)
             return;
@@ -266,15 +268,29 @@ public partial class ProjectFileManager : Node, ISettingsConsumer
             ? fileDir + "//" + audioFilePathShort
             : Path.Combine(fileDir, audioFilePathShort);
 
-        using var audioFile = Godot.FileAccess.Open(audioFilePathLong, Godot.FileAccess.ModeFlags.Write);
-        var error = Godot.FileAccess.GetOpenError();
-        audioFile.StoreBuffer(Project.Instance.AudioFile.FileBuffer);
+        FileHandler.SaveBuffer(audioFilePathLong, Project.Instance.AudioFile.FileBuffer);
 
         string file = CreateProjectFileString(audioFilePathShort);
         FileHandler.SaveText(filePath, file);
     }
 
-    public static void AutoSave() => SaveProject(AutoSavePath);
+    private Timing? lastSavedTiming;
+    private IMemento? lastSavedState;
+    private AudioFile? lastSavedAudio;
+
+    public static void AutoSave()
+    {
+        var project = Project.Instance;
+        var store = Instance;
+        if (store.lastSavedTiming == project.Timing && store.lastSavedAudio == project.AudioFile
+            && store.lastSavedState != null && project.Timing.Matches(store.lastSavedState))
+            return;
+        store.lastSavedState = null;
+        SaveProject(AutoSavePath);
+        store.lastSavedTiming = project.Timing;
+        store.lastSavedAudio = project.AudioFile;
+        store.lastSavedState = project.Timing.GetMemento();
+    }
 
     public static string CreateProjectFileString() => CreateProjectFileString(Project.Instance.AudioFile.FilePath);
 

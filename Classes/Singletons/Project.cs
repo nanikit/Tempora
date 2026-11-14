@@ -29,6 +29,8 @@ public partial class Project : Node, ISettingsConsumer
     public Settings Settings { get; set; } = null!;
 
     private Timing timing = null!;
+    public TimingEditSession Edits { get; private set; } = null!;
+    public event EventHandler? TimingEditFinished;
     public Timing Timing
     {
         get => timing;
@@ -41,7 +43,9 @@ public partial class Project : Node, ISettingsConsumer
             timing.Changed += OnTimingChanged;
             timing.PointCountChanged += OnPointCountChanged;
             timing.MeasurePositionRejected += OnMeasurePositionRejected;
-            timing.UndoCheckpointRequested += OnUndoCheckpointRequested;
+            Edits = new TimingEditSession(timing);
+            Edits.Committed += OnEditCommitted;
+            Edits.Finished += NotifyTimingEditFinished;
         }
     }
 
@@ -52,17 +56,15 @@ public partial class Project : Node, ISettingsConsumer
         timing.Changed -= OnTimingChanged;
         timing.PointCountChanged -= OnPointCountChanged;
         timing.MeasurePositionRejected -= OnMeasurePositionRejected;
-        timing.UndoCheckpointRequested -= OnUndoCheckpointRequested;
+        Edits.Committed -= OnEditCommitted;
+        Edits.Finished -= NotifyTimingEditFinished;
     }
 
     private void OnTimingChanged(object? sender, EventArgs args) => GlobalEvents.Instance.NotifyTimingChanged();
     private void OnPointCountChanged(object? sender, EventArgs args) => GlobalEvents.Instance.NotifyTimingPointCountChanged();
     private void OnMeasurePositionRejected(TimingPoint point) => GlobalEvents.Instance.NotifyMeasurePositionRejected(point);
-    private void OnUndoCheckpointRequested(TimingPoint? deletedPoint)
-    {
-        if (deletedPoint == null || !Context.Instance.HeldPointIsJustBeingAdded)
-            MementoHandler.Instance.AddTimingMemento();
-    }
+    private void OnEditCommitted(object? historyGroup) => MementoHandler.Instance.RecordEdit(historyGroup);
+    public void NotifyTimingEditFinished() => TimingEditFinished?.Invoke(this, EventArgs.Empty);
 
     public override void _ExitTree() => UnsubscribeTiming();
 
