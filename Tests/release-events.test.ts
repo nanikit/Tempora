@@ -260,8 +260,8 @@ scenario(
     boundary.runs([run(10, { conclusion: "failure", run_attempt: 5 })]);
     boundary.jobs(10, [
       { id: 101, name: "gdUnit4", conclusion: "success" },
-      { id: 102, name: "Export Game", conclusion: "failure" },
-      { id: 103, name: "Package Artifacts", conclusion: "skipped" },
+      { id: 102, name: "Export Game", conclusion: "success" },
+      { id: 103, name: "Export Game", conclusion: "failure" },
     ]);
     assertEquals(await planRelease(repository, event), {
       action: "retry",
@@ -269,7 +269,7 @@ scenario(
       requestId: 70,
       runId: 10,
       attempt: 5,
-      jobId: 102,
+      jobId: 103,
     });
   },
 );

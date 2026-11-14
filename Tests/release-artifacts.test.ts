@@ -80,8 +80,8 @@ scenario(
     boundary.runs([run(10, { conclusion: "failure", run_attempt: 2 })]);
     boundary.jobs(10, [
       { id: 101, name: "gdUnit4", conclusion: "success" },
-      { id: 102, name: "Package Artifacts", conclusion: "failure" },
-      { id: 103, name: "Package Artifacts", conclusion: "cancelled" },
+      { id: 102, name: "Export Game", conclusion: "failure" },
+      { id: 103, name: "Export Game", conclusion: "cancelled" },
     ]);
     await findTestResult(repository, sourceSha, { currentRunId: 20 });
     assertEquals(await outputs(), "test-passed=true\nrun-id=10\n");

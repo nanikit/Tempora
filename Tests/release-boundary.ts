@@ -104,7 +104,6 @@ export class Boundary {
   jobs(runId: number, jobs: ArtifactJob[] = [
     { id: 101, name: "gdUnit4", conclusion: "success" },
     { id: 102, name: "Export Game", conclusion: "success" },
-    { id: 103, name: "Package Artifacts", conclusion: "success" },
   ]): void {
     this.api(`actions/runs/${runId}/jobs?filter=all&per_page=100`, [{
       jobs: jobs.slice(0, 1),

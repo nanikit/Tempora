@@ -1,61 +1,69 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-info=$(find raw-export-archives -type f -name 'build-info.json' -print -quit)
-version=$(jq -er '.version' "$info")
-release_dir="$RUNNER_TEMP/release-artifacts"
-mac_work_dir="$RUNNER_TEMP/macos-work"
-mkdir -p "$release_dir" "$mac_work_dir"
+package_artifacts() {
+  local archive_dir=$1 version release_dir
+  version=$(jq -er '.version' build-info.json)
+  release_dir=$(mktemp -d "$RUNNER_TEMP/release-artifacts.XXXXXX")
 
-archives=()
-while IFS= read -r -d '' archive; do
-  archives+=("$archive")
-done < <(find raw-export-archives -type f -name '*.zip' -print0)
+  cp "$archive_dir/Windows.zip" "$release_dir/Tempora-v$version-Windows.zip"
+  cp "$archive_dir/LinuxX11.zip" "$release_dir/Tempora-v$version-Linux.zip"
+  sign_macos_archive "$archive_dir/macOS.zip" "$release_dir/Tempora-v$version-macOS.zip"
 
-mac_archive=''
-for archive in "${archives[@]}"; do
-  archive_name=$(basename "$archive")
-  if [ "$archive_name" = 'macOS.zip' ]; then
-    mac_archive="$archive"
-  else
-    case "$archive_name" in
-      *Windows*) platform='Windows' ;;
-      *Linux*) platform='Linux' ;;
-      *) echo "Unexpected export archive: $archive_name" >&2; exit 1 ;;
-    esac
-    cp "$archive" "$release_dir/Tempora-v$version-$platform.zip"
+  for platform in Windows Linux macOS; do
+    test -s "$release_dir/Tempora-v$version-$platform.zip"
+  done
+  cp build-info.json "$release_dir/build-info.json"
+  echo "directory=$release_dir" >> "$GITHUB_OUTPUT"
+}
+
+sign_macos_archive() {
+  local work_dir app rcodesign
+  work_dir=$(mktemp -d "$RUNNER_TEMP/macos-work.XXXXXX")
+  install_rcodesign "$work_dir"
+  rcodesign="$work_dir/rcodesign"
+
+  unzip -q "$1" -d "$work_dir/app"
+  app=$(find "$work_dir/app" -type d -name '*.app' -print -quit)
+  if [ -z "$app" ]; then
+    echo 'No .app bundle found in macOS archive.' >&2
+    exit 1
   fi
-done
 
-if [ -z "$mac_archive" ]; then
-  echo 'macOS export archive not found.' >&2
-  exit 1
-fi
+  printf '%s\n' '<plist version="1.0"><dict/></plist>' > "$work_dir/entitlements.plist"
+  # 0.29.0 replaces existing flags, then removes LINKER_SIGNED itself.
+  # --shallow preserves the .NET libraries in Resources, as Apple's codesign does.
+  "$rcodesign" sign --shallow --code-signature-flags linker-signed \
+    --runtime-version 0.0.0 --entitlements-xml-file "$work_dir/entitlements.plist" "$app"
+  check_signature_settings "$rcodesign" "$app/Contents/MacOS/Tempora"
 
-ditto -x -k "$mac_archive" "$mac_work_dir"
-app=$(find "$mac_work_dir" -type d -name '*.app' -print -quit)
-if [ -z "$app" ]; then
-  echo 'No .app bundle found in macOS archive.' >&2
-  exit 1
-fi
+  (
+    cd "$(dirname "$app")"
+    zip -qry "$2" "$(basename "$app")"
+  )
+}
 
-xattr -cr "$app"
-codesign --force --deep --sign - "$app"
-codesign --verify --deep --strict --verbose=4 "$app"
-signature=$(codesign -dv --verbose=4 "$app" 2>&1)
-if printf '%s\n' "$signature" | grep -Eq '\(adhoc,runtime\)|Runtime Version='; then
-  echo 'macOS app is still signed with hardened runtime.' >&2
-  exit 1
-fi
+install_rcodesign() {
+  local archive='apple-codesign-0.29.0-x86_64-unknown-linux-musl'
+  local digest='dbe85cedd8ee4217b64e9a0e4c2aef92ab8bcaaa41f20bde99781ff02e600002'
+  curl --fail --location --silent --show-error \
+    "https://github.com/indygreg/apple-platform-rs/releases/download/apple-codesign%2F0.29.0/$archive.tar.gz" \
+    --output "$1/rcodesign.tar.gz"
+  printf '%s  %s\n' "$digest" "$1/rcodesign.tar.gz" | sha256sum -c
+  tar -xzf "$1/rcodesign.tar.gz" -C "$1" --strip-components=1
+}
 
-mac_zip="$release_dir/Tempora-v$version-macOS.zip"
-(
-  cd "$(dirname "$app")"
-  ditto -c -k --keepParent "$(basename "$app")" "$mac_zip"
-)
+check_signature_settings() {
+  local signature
+  signature=$("$1" print-signature-info "$2")
+  # rcodesign verify rejects valid ad-hoc signatures in 0.29.0.
+  # Check both slices of the universal executable without claiming bundle verification.
+  if [ "$(grep -c 'flags: CodeSignatureFlags(ADHOC)$' <<< "$signature")" -ne 2 ] ||
+     [ "$(grep -c 'runtime_version: 0[.]0[.]0$' <<< "$signature")" -ne 2 ]; then
+    printf '%s\n' "$signature" >&2
+    echo 'Expected ad-hoc signing without hardened runtime for both macOS architectures.' >&2
+    exit 1
+  fi
+}
 
-for platform in Windows Linux macOS; do
-  test -s "$release_dir/Tempora-v$version-$platform.zip"
-done
-cp "$info" "$release_dir/build-info.json"
-echo "directory=$release_dir" >> "$GITHUB_OUTPUT"
+package_artifacts "${1:?Export archive directory is required.}"

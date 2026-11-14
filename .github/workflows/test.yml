@@ -167,36 +167,12 @@ jobs:
           presets_to_export: Linux/X11,Windows,macOS
           archive_output: true
 
-      - name: upload raw export archives
-        uses: actions/upload-artifact@v4
-        with:
-          name: raw-export-archives
-          path: |
-            ${{ steps.export.outputs.archive_directory }}/*
-            build-info.json
-          if-no-files-found: error
-          overwrite: true
-
-  package_artifacts:
-    name: Package Artifacts
-    needs: [test, export_game]
-    runs-on: macos-latest
-    steps:
-      - name: checkout tested source
-        uses: actions/checkout@v6
-        with:
-          ref: ${{ needs.test.outputs.commit }}
-
-      - name: download raw export archives
-        uses: actions/download-artifact@v4
-        with:
-          name: raw-export-archives
-          path: raw-export-archives
-
       - name: re-sign macOS app and name release archives
         id: artifacts
         shell: bash
-        run: bash .github/scripts/package-artifacts.sh
+        env:
+          ARCHIVE_DIRECTORY: ${{ steps.export.outputs.archive_directory }}
+        run: bash .github/scripts/package-artifacts.sh "$ARCHIVE_DIRECTORY"
 
       - name: upload ready-to-publish artifacts
         uses: actions/upload-artifact@v4
