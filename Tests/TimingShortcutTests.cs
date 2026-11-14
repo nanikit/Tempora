@@ -195,6 +195,7 @@ public partial class TimingShortcutTests
             Wheel(viewport, cursor, MouseButton.WheelDown);
             await runner.AwaitInputProcessed();
             AssertThat(container.NominalMeasurePositionStartForTopBlock).IsEqual(1);
+            await VerifyAudioPanelRendering(runner, viewport, container);
             await VerifyPointerTimeLayout(runner, viewport, container);
             await VerifyTextScaleChanges(runner, viewport, container);
             await VerifyVisualSettingsPreview(runner);

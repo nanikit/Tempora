@@ -86,19 +86,13 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
     /// <param name="nominalMeasurePositionStart"></param>
     /// <returns></returns>
     public static float ActualMeasurePositionStart(int nominalMeasurePositionStart, Settings settings)
-        => nominalMeasurePositionStart - settings.MeasureOverlap - settings.DownbeatPositionOffset;
+        => new AudioPanelLayout(nominalMeasurePositionStart, settings.MeasureOverlap, settings.DownbeatPositionOffset).StartMeasure;
 
-    public float ActualMeasurePositionStartForPanel
-    {
-        get => ActualMeasurePositionStart(NominalMeasurePosition, Settings);
-        private set { }
-    }
+    private AudioPanelLayout Layout => new(NominalMeasurePosition, Settings.MeasureOverlap, Settings.DownbeatPositionOffset);
 
-    public float ActualMeasurePositionEndForPanel
-    {
-        get => ActualMeasurePositionStartForPanel + 1 + (2 * Settings.MeasureOverlap);
-        private set { }
-    }
+    public float ActualMeasurePositionStartForPanel => Layout.StartMeasure;
+
+    public float ActualMeasurePositionEndForPanel => Layout.EndMeasure;
 
     /// <summary>
     ///     List of horizontally stacked waveforms to display
@@ -411,7 +405,8 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
     /// </summary>
     public void RenderAudio()
     {
-        var panelSegments = GetPanelSegments();
+        var timing = GetTimingAnchors();
+        var panelSegments = GetPanelSegments(timing);
         var children = audioSegments.GetChildren();
 
         bool shouldRenderSpectrogram = Settings.RenderAsSpectrogram;
@@ -449,30 +444,25 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
                     continue;
                 }
 
-                childIndexOffset++;
                 break;
             }
 
             float segmentStart = panelSegments[panelIndex][0];
             float segmentEnd = panelSegments[panelIndex][1];
 
-            ModifyOrAddAudioSegment(segmentStart, segmentEnd, shouldRenderSpectrogram, existingSegment: existingSegment);
+            ModifyOrAddAudioSegment(segmentStart, segmentEnd, timing, shouldRenderSpectrogram, existingSegment: existingSegment);
         }
     }
 
-    private void ModifyOrAddAudioSegment(float segmentStart, float segmentEnd, bool renderAsSpectrogram, Node? existingSegment = null)
+    private void ModifyOrAddAudioSegment(float segmentStart, float segmentEnd, IReadOnlyList<TimingAnchor> timing, bool renderAsSpectrogram, Node? existingSegment = null)
     {
-        float measurePositionStart = (float)Project.Instance.Timing.OffsetToMeasurePosition(segmentStart);
-        float measurePositionEnd = (float)Project.Instance.Timing.OffsetToMeasurePosition(segmentEnd);
+        float measurePositionStart = (float)TimingMath.OffsetToMeasurePosition(segmentStart, timing);
+        float measurePositionEnd = (float)TimingMath.OffsetToMeasurePosition(segmentEnd, timing);
 
-        float margin = Settings.MeasureOverlap;
         TimingPoint? heldTimingPoint = Context.Instance.HeldTimingPoint;
 
-        float panelLengthInMeasures = (1f + (2 * margin));
-        float length = Size.X * (measurePositionEnd - measurePositionStart) / panelLengthInMeasures;
-
-        float relativePositionStart = (measurePositionStart - ActualMeasurePositionStartForPanel);
-        float xPositionFromLeft = Size.X * relativePositionStart / panelLengthInMeasures;
+        float xPositionFromLeft = MeasurePositionToXPosition(measurePositionStart);
+        float length = MeasurePositionToXPosition(measurePositionEnd) - xPositionFromLeft;
 
         bool canHeldTimingPointBeInSegment = (heldTimingPoint == null)
             || (
@@ -522,28 +512,14 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
     }
 
     public List<float[]> GetPanelSegments()
-    {
-        List<float[]> panelSegments = new(2);
+        => GetPanelSegments(GetTimingAnchors());
 
-        float segmentStart = MathF.Max((float)Project.Instance.Timing.MeasurePositionToOffset(ActualMeasurePositionStartForPanel), 0);
-        float panelEnd = MathF.Min((float)Project.Instance.Timing.MeasurePositionToOffset(ActualMeasurePositionEndForPanel), Project.Instance.AudioFile.GetAudioLength());
-        if (segmentStart >= panelEnd)
-            return panelSegments;
+    private List<float[]> GetPanelSegments(IReadOnlyList<TimingAnchor> timing)
+        => TimingMath.GetPanelSegments(Layout.StartMeasure, Layout.EndMeasure, Project.Instance.AudioFile.GetAudioLength(), timing);
 
-        TimingPoint? previousTimingPoint = Project.Instance.Timing.GetOperatingTimingPoint_ByMeasurePosition(ActualMeasurePositionStartForPanel);
-        TimingPoint? firstTimingPointInPanel = Project.Instance.Timing.GetNextTimingPoint(previousTimingPoint);
-        int firstPointIndex = firstTimingPointInPanel == null ? Project.Instance.Timing.TimingPoints.Count : Project.Instance.Timing.TimingPoints.IndexOf(firstTimingPointInPanel);
-        for (int i = firstPointIndex; i < Project.Instance.Timing.TimingPoints.Count && Project.Instance.Timing.TimingPoints[i].MeasurePosition < ActualMeasurePositionEndForPanel; i++)
-        {
-            float segmentEnd = Math.Clamp((float)Project.Instance.Timing.TimingPoints[i].Offset, segmentStart, panelEnd);
-            if (segmentStart < segmentEnd)
-                panelSegments.Add([segmentStart, segmentEnd]);
-            segmentStart = segmentEnd;
-        }
-        if (segmentStart < panelEnd)
-            panelSegments.Add([segmentStart, panelEnd]);
-        return panelSegments;
-    }
+    private static TimingAnchor[] GetTimingAnchors()
+        => Project.Instance.Timing.TimingPoints.Select(point => new TimingAnchor(point.Offset,
+            point.MeasurePosition ?? throw new NullReferenceException("Timing point has no measure position"), point.MeasuresPerSecond)).ToArray();
 
     /// <summary>
     ///     Instantiate an amount of <see cref="VisualTimingPoint" /> nodes and adds as children.
@@ -665,7 +641,7 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
 
             if (measurePosition < ActualMeasurePositionStartForPanel)
                 continue;
-            if (measurePosition > ActualMeasurePositionStartForPanel + 1 + (2 * Settings.MeasureOverlap))
+            if (measurePosition > ActualMeasurePositionEndForPanel)
                 break;
 
             GridLine gridLine = GetGridLine(timeSignature, divisor, index, measureOffset);
@@ -680,9 +656,7 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
     {
         var gridLine = new GridLine(timeSignature, divisor, index, Size.Y);
 
-        float offset = Settings.DownbeatPositionOffset;
-        float margin = Settings.MeasureOverlap;
-        float xPosition = Size.X * ((gridLine.RelativeMeasurePosition + measureOffset + margin + offset) / ((2 * margin) + 1f));
+        float xPosition = MeasurePositionToXPosition(NominalMeasurePosition + gridLine.RelativeMeasurePosition + measureOffset);
         gridLine.Position = new Vector2(xPosition, Size.Y / 2);
         gridLine.ZIndex = 90;
 
@@ -828,13 +802,11 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
         if (Project.Instance.Timing.TimingPoints.Count == 0)
             return;
 
-        float margin = Settings.MeasureOverlap;
-
         int firstIndex = Project.Instance.Timing.TimingPoints.FindLastIndex(point => point.MeasurePosition <= ActualMeasurePositionStartForPanel);
         // If there's only TimingPoints AFTER MeasurePositionStart
         if (firstIndex == -1)
             firstIndex = Project.Instance.Timing.TimingPoints.FindIndex(point => point.MeasurePosition > ActualMeasurePositionStartForPanel);
-        int lastIndex = Project.Instance.Timing.TimingPoints.FindLastIndex(point => point.MeasurePosition < ActualMeasurePositionStartForPanel + 1 + (2 * margin));
+        int lastIndex = Project.Instance.Timing.TimingPoints.FindLastIndex(point => point.MeasurePosition < ActualMeasurePositionEndForPanel);
         if (lastIndex == -1)
             lastIndex = firstIndex;
 
@@ -874,8 +846,7 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
     #region Calculators
 
     public float XPositionToMeasurePosition(float x) =>
-        //GD.Print($"XPositionToMeasurePosition: NominalMeasurePositionStartForWindow = {NominalMeasurePositionStartForWindow}");
-        XPositionToRelativeMeasurePosition(x) + NominalMeasurePosition;
+        Layout.XPositionToMeasurePosition(x, Size.X);
 
     /// <summary>
     ///     Return music position relative to <see cref="NominalMeasurePosition" />
@@ -883,20 +854,10 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
     /// <param name="x"></param>
     /// <returns></returns>
     public float XPositionToRelativeMeasurePosition(float x)
-    {
-        float offset = Settings.DownbeatPositionOffset;
-        float margin = Settings.MeasureOverlap;
-        float windowLengthInMeasures = 1f + (2 * margin);
-        return (x * windowLengthInMeasures / Size.X) - margin - offset;
-    }
+        => XPositionToMeasurePosition(x) - NominalMeasurePosition;
 
     public float MeasurePositionToXPosition(float measurePosition)
-    {
-        float offset = Settings.DownbeatPositionOffset;
-        float margin = Settings.MeasureOverlap;
-        float windowLengthInMeasures = 1f + (2 * margin);
-        return Size.X * (measurePosition - NominalMeasurePosition + margin + offset) / windowLengthInMeasures;
-    }
+        => Layout.MeasurePositionToXPosition(measurePosition, Size.X);
 
     #endregion
 }
