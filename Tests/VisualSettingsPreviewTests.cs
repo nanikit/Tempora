@@ -97,7 +97,7 @@ public partial class TimingShortcutTests
             Edit(intensity, "6");
             decibels.ButtonPressed = !original.UseDb;
             Edit(frequency, (original.MinFreq + 500).ToString());
-            Edit(frequency, (original.MinFreq + 1000).ToString());
+            Edit(frequency, "0");
             AssertThat(Project.Instance.SpectrogramContext.SpectrogramGenerator).IsSame(spectrum);
             await runner.AwaitMillis(350);
             spectrum = Project.Instance.SpectrogramContext.SpectrogramGenerator;
@@ -105,7 +105,7 @@ public partial class TimingShortcutTests
             AssertThat(spectrum.StepSize).IsEqual(128);
             AssertThat(Project.Instance.SpectrogramContext.Intensity).IsEqual(6);
             AssertThat(Project.Instance.SpectrogramContext.DB).IsEqual(!original.UseDb);
-            AssertThat(spectrum.FreqMin).IsBetween(original.MinFreq + 1000 - spectrum.HzPerPx, original.MinFreq + 1000d);
+            AssertThat(spectrum.FreqMin).IsEqual(0d);
             AssertThat(new SettingsStore().Load().SpectrogramMinFreq).IsEqual(original.MinFreq);
 
             Edit(step, "");
@@ -124,14 +124,14 @@ public partial class TimingShortcutTests
             window.Popup();
             AssertThat(frequency.Text).IsEqual(original.MinFreq.ToString());
             fft.Value = 9;
-            Edit(frequency, (original.MinFreq + 1000).ToString());
+            Edit(frequency, "0");
             save.EmitSignal(Button.SignalName.Pressed);
             spectrum = Project.Instance.SpectrogramContext.SpectrogramGenerator;
             await runner.AwaitMillis(350);
             AssertThat(Project.Instance.SpectrogramContext.SpectrogramGenerator).IsSame(spectrum);
-            AssertThat(new SettingsStore().Load().SpectrogramMinFreq).IsEqual(original.MinFreq + 1000);
+            AssertThat(new SettingsStore().Load().SpectrogramMinFreq).IsEqual(0);
             AssertThat(new SettingsStore().Load().SpectrogramFftSize).IsEqual(512);
-            AssertThat(spectrum.FreqMin).IsBetween(original.MinFreq + 1000 - spectrum.HzPerPx, original.MinFreq + 1000d);
+            AssertThat(spectrum.FreqMin).IsEqual(0d);
 
             window.Popup();
             window.GetNode<Button>("Margin/Scroll/Layout/TabContainer/Spectrogram/DefaultsButton").EmitSignal(Button.SignalName.Pressed);
@@ -140,7 +140,7 @@ public partial class TimingShortcutTests
             int defaultFrequency = new Settings().SpectrogramMinFreq;
             AssertThat(spectrum.FreqMin).IsBetween(defaultFrequency - spectrum.HzPerPx, (double)defaultFrequency);
             window.EmitSignal(Window.SignalName.CloseRequested);
-            AssertThat(new SettingsStore().Load().SpectrogramMinFreq).IsEqual(original.MinFreq + 1000);
+            AssertThat(new SettingsStore().Load().SpectrogramMinFreq).IsEqual(0);
 
             await VerifyFailedSettingsSave(runner, window, slider, save, cancel);
             await VerifySpectrogramLimits(runner, application);

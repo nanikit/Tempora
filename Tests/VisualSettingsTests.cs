@@ -7,6 +7,18 @@ using static GdUnit4.Assertions;
 [TestSuite]
 public class VisualSettingsTests
 {
+    [TestCase(256, "0", true)]
+    [TestCase(256, "2000", true)]
+    [TestCase(256, "2200", true)]
+    [TestCase(256, "23999", true)]
+    [TestCase(256, "24000", false)]
+    [TestCase(256, "-1", false)]
+    [TestCase(512, "0", true)]
+    [TestCase(512, "20000", true)]
+    public void Long_songs_accept_low_minimum_frequencies(int fft, string frequency, bool valid)
+        => AssertThat(VisualSettings.TryParse(1, ("64", fft, frequency, "5"), true,
+            48000, 48000 * 229, out _)).IsEqual(valid);
+
     [TestCase]
     public void Narrow_frequency_ranges_still_require_bounded_fft_work()
         => AssertThat(new VisualSettings(1, 16, 16384, 22049, 5, true).IsValid(44100, 44100 * 180)).IsFalse();
@@ -56,8 +68,9 @@ public class VisualSettingsTests
 
     [TestCase(64, 44100 * 30, true)]
     [TestCase(1, 44100 * 180, false)]
-    [TestCase(16, 44100 * 180, false)]
-    public void Expensive_spectral_values_are_rejected_before_allocation(int step, int samples, bool preview)
+    [TestCase(16, 44100 * 180, true)]
+    [TestCase(16, 44100 * 229, false)]
+    public void Spectral_work_is_bounded_before_allocation(int step, int samples, bool preview)
     {
         var values = new VisualSettings(1, step, 256, 2200, 5, true);
         AssertThat(values.IsValid(44100, samples)).IsEqual(preview);

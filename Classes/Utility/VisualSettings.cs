@@ -35,11 +35,10 @@ public readonly record struct VisualSettings(double TextScaleFactor, int StepSiz
         if (columns > Godot.Image.MaxWidth || rows > Godot.Image.MaxHeight || columns * rows * 4 > System.Array.MaxLength)
             return false;
 
-        var cost = EstimateCost(sampleRate, sampleCount);
-        var baseline = From(new Settings()).EstimateCost(sampleRate, sampleCount);
+        long work = EstimateFftWork(sampleRate, sampleCount);
+        long baseline = From(new Settings()).EstimateFftWork(sampleRate, sampleCount);
         // Default settings must remain usable when a longer song raises both estimates.
-        return cost.Bytes <= System.Math.Max(512L * 1024 * 1024, baseline.Bytes)
-            && cost.FftWork <= System.Math.Max(1L << 30, baseline.FftWork);
+        return work <= System.Math.Max(1L << 30, baseline);
     }
 
     public void ApplyTo(Settings settings)
@@ -55,14 +54,10 @@ public readonly record struct VisualSettings(double TextScaleFactor, int StepSiz
     private (long Columns, long Rows) ImageSize(int sampleRate, int sampleCount)
         => (System.Math.Max(1, (sampleCount - FftSize) / StepSize), FftSize / 2 - (long)((double)MinFreq * FftSize / sampleRate));
 
-    private (long Bytes, long FftWork) EstimateCost(int sampleRate, int sampleCount)
+    private long EstimateFftWork(int sampleRate, int sampleCount)
     {
-        var (columns, rows) = ImageSize(sampleRate, sampleCount);
-        // Include FFT results, image copies, PCM copies, array headers, and FFT workspace.
-        long bytes = columns * rows * 16 + (long)System.Math.Max(sampleCount, FftSize + StepSize) * 32
-            + columns * 64 + (long)FftSize * 32;
+        var (columns, _) = ImageSize(sampleRate, sampleCount);
         // Frequency cropping does not reduce the full FFT computed by the library.
-        long work = columns * FftSize * System.Numerics.BitOperations.Log2((uint)FftSize);
-        return (bytes, work);
+        return columns * FftSize * System.Numerics.BitOperations.Log2((uint)FftSize);
     }
 }
