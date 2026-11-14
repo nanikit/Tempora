@@ -17,6 +17,7 @@ using Godot;
 using Tempora.Classes.Audio;
 using Tempora.Classes.DataHelpers;
 using Tempora.Classes.Visual.AudioDisplay;
+using Tempora.Classes.TimingClasses;
 
 namespace Tempora.Classes.Utility;
 
@@ -26,6 +27,44 @@ namespace Tempora.Classes.Utility;
 public partial class Project : Node, ISettingsConsumer
 {
     public Settings Settings { get; set; } = null!;
+
+    private Timing timing = null!;
+    public Timing Timing
+    {
+        get => timing;
+        set
+        {
+            if (timing == value)
+                return;
+            UnsubscribeTiming();
+            timing = value;
+            timing.Changed += OnTimingChanged;
+            timing.PointCountChanged += OnPointCountChanged;
+            timing.MeasurePositionRejected += OnMeasurePositionRejected;
+            timing.UndoCheckpointRequested += OnUndoCheckpointRequested;
+        }
+    }
+
+    private void UnsubscribeTiming()
+    {
+        if (timing == null)
+            return;
+        timing.Changed -= OnTimingChanged;
+        timing.PointCountChanged -= OnPointCountChanged;
+        timing.MeasurePositionRejected -= OnMeasurePositionRejected;
+        timing.UndoCheckpointRequested -= OnUndoCheckpointRequested;
+    }
+
+    private void OnTimingChanged(object? sender, EventArgs args) => GlobalEvents.Instance.NotifyTimingChanged();
+    private void OnPointCountChanged(object? sender, EventArgs args) => GlobalEvents.Instance.NotifyTimingPointCountChanged();
+    private void OnMeasurePositionRejected(TimingPoint point) => GlobalEvents.Instance.NotifyMeasurePositionRejected(point);
+    private void OnUndoCheckpointRequested(TimingPoint? deletedPoint)
+    {
+        if (deletedPoint == null || !Context.Instance.HeldPointIsJustBeingAdded)
+            MementoHandler.Instance.AddTimingMemento();
+    }
+
+    public override void _ExitTree() => UnsubscribeTiming();
 
     private static Project instance = null!;
 
@@ -107,5 +146,6 @@ public partial class Project : Node, ISettingsConsumer
     public override void _Ready()
     {
         Instance = this;
+        Timing = new Timing(Settings);
     }
 }

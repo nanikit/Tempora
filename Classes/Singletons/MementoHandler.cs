@@ -71,7 +71,7 @@ public partial class MementoHandler : Node
         if (timingPointBeingChanged == timingPoint)
             DeleteMementosAfterIndex(mementoIndex - 1);
 
-        IMemento memento = Timing.Instance.GetMemento();
+        IMemento memento = Project.Instance.Timing.GetMemento();
         AddMemento(memento);
 
         timingPointBeingChanged = timingPoint;
@@ -86,7 +86,7 @@ public partial class MementoHandler : Node
         if (SelectionBeingChanged == selection)
             DeleteMementosAfterIndex(mementoIndex - 1);
 
-        IMemento memento = Timing.Instance.GetMemento();
+        IMemento memento = Project.Instance.Timing.GetMemento();
         AddMemento(memento);
 
         SelectionBeingChanged = selection;
@@ -94,7 +94,7 @@ public partial class MementoHandler : Node
 
     public void AddTimingMemento()
     {
-        IMemento memento = Timing.Instance.GetMemento();
+        IMemento memento = Project.Instance.Timing.GetMemento();
         AddMemento(memento);
         timingPointBeingChanged = null;
     }
@@ -144,7 +144,7 @@ public partial class MementoHandler : Node
         if (memento == null)
             throw new NullReferenceException($"{nameof(memento)}");
 
-        Timing.Instance.RestoreMemento(memento);
+        Project.Instance.Timing.RestoreMemento(memento);
 
         SelectionBeingChanged = null;
     }
@@ -165,6 +165,6 @@ public partial class MementoHandler : Node
 
         IMemento memento = mementoList[(int)mementoIndex];
 
-        Timing.Instance.RestoreMemento(memento);
+        Project.Instance.Timing.RestoreMemento(memento);
     }
 }

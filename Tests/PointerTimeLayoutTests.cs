@@ -49,9 +49,9 @@ public partial class TimingShortcutTests
     {
         int originalRows = Project.Instance.Settings.NumberOfRows;
         Vector2I originalSize = viewport.Size;
-        Timing originalTiming = Timing.Instance;
+        Timing originalTiming = Project.Instance.Timing;
         Timing timing = new Timing(Project.Instance.Settings) { IsInstantiating = true };
-        Timing.Instance = timing;
+        Project.Instance.Timing = timing;
 
         try
         {
@@ -88,7 +88,7 @@ public partial class TimingShortcutTests
             Context.Instance.HeldTimingPoint = null;
             Context.Instance.TimingPointNearestCursor = null;
             TimingPointSelection.Instance.DeselectAll();
-            Timing.Instance = originalTiming;
+            Project.Instance.Timing = originalTiming;
             Project.Instance.Settings.NumberOfRows = originalRows;
             viewport.Size = originalSize;
         }
@@ -100,7 +100,7 @@ public partial class TimingShortcutTests
         await runner.AwaitIdleFrame();
         AudioDisplayPanel panel = container.AudioBlocks[0].AudioDisplayPanel;
         var point = VisibleTimingPoints(panel).Last();
-        int count = Timing.Instance.TimingPoints.Count;
+        int count = Project.Instance.Timing.TimingPoints.Count;
 
         DoubleClickBpm(viewport, point);
         await runner.AwaitInputProcessed();
@@ -133,7 +133,7 @@ public partial class TimingShortcutTests
         AssertThat(point.BpmEdit.Visible).IsFalse();
         AssertThat(point.BpmLabel.Visible).IsTrue();
         AssertThat(point.BpmLabel.GetThemeColor("font_color")).IsEqual(Colors.White);
-        AssertThat(Timing.Instance.TimingPoints.Count).IsEqual(count);
+        AssertThat(Project.Instance.Timing.TimingPoints.Count).IsEqual(count);
         AssertThat(point.TimingPoint.Bpm).IsEqual(150d);
     }
 
@@ -209,7 +209,7 @@ public partial class TimingShortcutTests
 
                 SendInput(viewport, new InputEventMouseMotion { Position = audioBounds.GetCenter() });
                 await runner.AwaitInputProcessed();
-                AssertThat(Timing.Instance.GetTimeSignature(row.NominalMeasurePosition)[index]).IsEqual(expected);
+                AssertThat(Project.Instance.Timing.GetTimeSignature(row.NominalMeasurePosition)[index]).IsEqual(expected);
                 AssertThat(stepper.HasMouseInside).IsFalse();
                 AssertThat(stepper.GetNode<Button>("ValueLabel/IncrementButton").Visible).IsFalse();
                 AssertThat(row.AudioDisplayPanel.GetGlobalRect()).IsEqual(audioBounds);
@@ -255,7 +255,7 @@ public partial class TimingShortcutTests
         await runner.AwaitIdleFrame();
         AudioDisplayPanel restored = container.AudioBlocks[restoredIndex].AudioDisplayPanel;
         IAudioSegmentDisplay waveform = restored.GetNode<Node2D>("AudioSegments").GetChildren().OfType<IAudioSegmentDisplay>().First(segment => segment.Visible);
-        AssertThat(waveform.TimeRange[0]).IsEqualApprox((float)Timing.Instance.MeasurePositionToOffset(restored.ActualMeasurePositionStartForPanel), 0.001f);
+        AssertThat(waveform.TimeRange[0]).IsEqualApprox((float)Project.Instance.Timing.MeasurePositionToOffset(restored.ActualMeasurePositionStartForPanel), 0.001f);
         AssertThat(VisibleTimingPoints(restored).Last().TimingPoint.MeasurePosition!.Value).IsEqual(13d);
     }
 
@@ -268,7 +268,7 @@ public partial class TimingShortcutTests
         await runner.AwaitIdleFrame();
         AssertThat(container.NominalMeasurePositionStartForTopBlock).IsLessEqual(container.LastTopMeasure);
         var scrollbar = (BlockScrollBar)runner.FindChild("BlockScrollBar")!;
-        int totalMeasures = Timing.Instance.GetLastMeasure() - container.FirstTopMeasure + 1;
+        int totalMeasures = Project.Instance.Timing.GetLastMeasure(Project.Instance.AudioFile?.GetAudioLength() ?? 0) - container.FirstTopMeasure + 1;
         AssertThat(scrollbar.Page).IsEqual((double)System.Math.Min(container.VisibleRowCount, totalMeasures));
         AssertThat(scrollbar.MaxValue - scrollbar.Page).IsEqual((double)container.LastTopMeasure);
 
@@ -356,7 +356,7 @@ public partial class TimingShortcutTests
     {
         PressKey(viewport, Key.Escape, true);
         PressKey(viewport, Key.Escape, false);
-        TimingPoint movingPoint = Timing.Instance.TimingPoints[1];
+        TimingPoint movingPoint = Project.Instance.Timing.TimingPoints[1];
         Vector2 start = panel.GlobalPosition + new Vector2(panel.MeasurePositionToXPosition(0.5f), panel.Size.Y / 2);
         Vector2 end = panel.GlobalPosition + new Vector2(panel.MeasurePositionToXPosition(-0.0625f), panel.Size.Y / 2);
         SendInput(viewport, new InputEventMouseMotion { Position = start });
@@ -383,11 +383,11 @@ public partial class TimingShortcutTests
         Vector2 end = start + new Vector2(0, scrollbar.Size.Y);
         Drag(viewport, start, end);
         await runner.AwaitInputProcessed();
-        AssertThat(container.AudioBlocks[0].NominalMeasurePosition).IsEqual(Timing.Instance.GetLastMeasure());
+        AssertThat(container.AudioBlocks[0].NominalMeasurePosition).IsEqual(Project.Instance.Timing.GetLastMeasure(Project.Instance.AudioFile.GetAudioLength()));
 
         var marker = scrollbar.GetNode<ColorRect>("PlaybackMarker");
         double midpoint = (scrollbar.MinValue + scrollbar.MaxValue) / 2;
-        MusicPlayer.Instance.SeekPlay((float)Timing.Instance.MeasurePositionToOffset(midpoint));
+        MusicPlayer.Instance.SeekPlay((float)Project.Instance.Timing.MeasurePositionToOffset(midpoint));
         await runner.AwaitMillis(100);
         AssertThat(marker.Visible).IsTrue();
         AssertThat(marker.Color).IsEqual(container.AudioBlocks[0].AudioDisplayPanel.Playhead.DefaultColor);
@@ -452,12 +452,12 @@ public partial class TimingShortcutTests
         var scrollbar = (BlockScrollBar)runner.FindChild("BlockScrollBar")!;
         scrollbar.Value = scrollbar.MaxValue;
         await runner.AwaitIdleFrame();
-        AssertThat(lastRow.NominalMeasurePosition).IsEqual(Timing.Instance.GetLastMeasure());
+        AssertThat(lastRow.NominalMeasurePosition).IsEqual(Project.Instance.Timing.GetLastMeasure(Project.Instance.AudioFile?.GetAudioLength() ?? 0));
 
         Wheel(viewport, cursor, MouseButton.WheelUp);
         Pan(viewport, cursor, 1);
         await runner.AwaitInputProcessed();
-        AssertThat(lastRow.NominalMeasurePosition).IsEqual(Timing.Instance.GetLastMeasure());
+        AssertThat(lastRow.NominalMeasurePosition).IsEqual(Project.Instance.Timing.GetLastMeasure(Project.Instance.AudioFile?.GetAudioLength() ?? 0));
     }
 
     private static IEnumerable<VisualTimingPoint> VisibleTimingPoints(AudioDisplayPanel panel)

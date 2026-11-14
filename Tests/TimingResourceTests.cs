@@ -13,10 +13,10 @@ public class TimingResourceTests
     [TestCase]
     public void Editing_copying_and_restoring_timing_leaves_no_orphan_nodes()
     {
-        Timing originalTiming = Timing.Instance;
+        Timing originalTiming = Project.Instance.Timing;
         int orphanCount = Node.GetOrphanNodeIds().Count;
         Timing timing = new Timing(Project.Instance.Settings) { IsInstantiating = true };
-        Timing.Instance = timing;
+        Project.Instance.Timing = timing;
         try
         {
             timing.AddTimingPoint(0d, 0d, 0.5d);
@@ -35,7 +35,7 @@ public class TimingResourceTests
         }
         finally
         {
-            Timing.Instance = originalTiming;
+            Project.Instance.Timing = originalTiming;
             MementoHandler.Instance.ResetTimingHistory();
         }
     }

@@ -39,7 +39,7 @@ public class ProjectFileRoundTripTest
     {
         TimingPoint loaded = SaveAndReloadSingleTimingPoint(measurePosition: 0d, offset: 1.5d, measuresPerSecond: 0.5d);
 
-        AssertThat(Timing.Instance.TimingPoints.Count).IsEqual(1);
+        AssertThat(Project.Instance.Timing.TimingPoints.Count).IsEqual(1);
         AssertThat(loaded.Offset).IsEqual(1.5d);
         AssertThat(loaded.MeasurePosition!.Value).IsEqual(0d);
     }
@@ -66,26 +66,26 @@ public class ProjectFileRoundTripTest
         Project.Instance.AudioFile = new AudioFile(audioPath);
 
         // Save a project file that contains a single timing point.
-        Timing.Instance = new Timing(Project.Instance.Settings) { IsInstantiating = true };
-        Timing.Instance.AddTimingPoint(0d, 1.0d, 0.5d);
-        Timing.Instance.IsInstantiating = false;
+        Project.Instance.Timing = new Timing(Project.Instance.Settings) { IsInstantiating = true };
+        Project.Instance.Timing.AddTimingPoint(0d, 1.0d, 0.5d);
+        Project.Instance.Timing.IsInstantiating = false;
         string savePath = ProjectSettings.GlobalizePath($"{SaveDir}/single.tmpr");
         ProjectFileManager.SaveProjectAs(savePath);
 
         // Simulate editing another project so the undo history accumulates extra snapshots.
         MementoHandler.Instance.ResetTimingHistory();
-        Timing.Instance.AddTimingPoint(2d, 3.0d, 0.5d);
+        Project.Instance.Timing.AddTimingPoint(2d, 3.0d, 0.5d);
         MementoHandler.Instance.AddTimingMemento();
-        Timing.Instance.AddTimingPoint(3d, 4.0d, 0.5d);
+        Project.Instance.Timing.AddTimingPoint(3d, 4.0d, 0.5d);
         MementoHandler.Instance.AddTimingMemento();
 
         ProjectFileManager.Instance.LoadProjectFromFilePath(savePath);
-        AssertThat(Timing.Instance.TimingPoints.Count).IsEqual(1);
+        AssertThat(Project.Instance.Timing.TimingPoints.Count).IsEqual(1);
 
         // Right after loading, undo must be a no-op; otherwise it restores the previous project's snapshot.
         MementoHandler.Instance.Undo();
 
-        AssertThat(Timing.Instance.TimingPoints.Count).IsEqual(1);
+        AssertThat(Project.Instance.Timing.TimingPoints.Count).IsEqual(1);
     }
 
     private TimingPoint SaveAndReloadSingleTimingPoint(double measurePosition, double offset, double measuresPerSecond)
@@ -94,9 +94,9 @@ public class ProjectFileRoundTripTest
         string audioPath = ProjectSettings.GlobalizePath("res://Audio/click-quick.ogg");
         Project.Instance.AudioFile = new AudioFile(audioPath);
 
-        Timing.Instance = new Timing(Project.Instance.Settings) { IsInstantiating = true };
-        Timing.Instance.AddTimingPoint(measurePosition, offset, measuresPerSecond);
-        Timing.Instance.IsInstantiating = false;
+        Project.Instance.Timing = new Timing(Project.Instance.Settings) { IsInstantiating = true };
+        Project.Instance.Timing.AddTimingPoint(measurePosition, offset, measuresPerSecond);
+        Project.Instance.Timing.IsInstantiating = false;
 
         // In production, saving goes to an OS path chosen by the file dialog (user:// is for AutoSave only).
         // Passing a user:// subpath as-is would be broken by Path.GetDirectoryName (backslashes), so convert to an OS path.
@@ -104,6 +104,6 @@ public class ProjectFileRoundTripTest
         ProjectFileManager.SaveProjectAs(savePath);
         ProjectFileManager.Instance.LoadProjectFromFilePath(savePath);
 
-        return Timing.Instance.TimingPoints[0];
+        return Project.Instance.Timing.TimingPoints[0];
     }
 }

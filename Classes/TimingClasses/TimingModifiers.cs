@@ -102,9 +102,9 @@ public partial class Timing
 
         ShiftTimingPointsUponTimeSignatureChange(oldTiming, timeSignaturePoint);
 
-        MementoHandler.Instance.AddTimingMemento();
+        UndoCheckpointRequested?.Invoke(null);
 
-        GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.TimingChanged));
+        NotifyChanged();
     }
 
     public static void CorrectTimeSignature(int[] timeSignature, out int[] correctedTimeSignature)
@@ -238,7 +238,7 @@ public partial class Timing
 
         IsBatchOperationInProgress = false;
 
-        GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.TimingChanged));
+        NotifyChanged();
     }
 
     /// <summary>
@@ -293,30 +293,7 @@ public partial class Timing
             higherTimingPoint.SetManualBpm(higherTimingPoint.Bpm * multiplier);
         }
 
-        MementoHandler.Instance.AddTimingMemento();
-    }
-
-    /// <summary>
-    /// Scales the tempo of the <see cref="TimingPoint"/>. 
-    /// If it is part of a selection, the whole selection's tempo will be scaled.
-    /// </summary>
-    /// <param name="timingPoint"></param>
-    /// <param name="multiplier"></param>
-    /// <exception cref="ArgumentNullException"></exception>
-    public void ScaleTempo(TimingPoint? timingPoint, float multiplier)
-    {
-        if (timingPoint == null)
-            throw new ArgumentNullException();
-        int index = TimingPoints.IndexOf(timingPoint);
-        if (TimingPointSelection.Instance.Count > 1 && TimingPointSelection.Instance.IsPointInSelection(timingPoint))
-        {
-            int lower = (int)TimingPointSelection.Instance.SelectionIndices?[0]!; // Can't be null if Count > 1
-            int higher = (int)TimingPointSelection.Instance.SelectionIndices?[1]!; // Can't be null if Count > 1
-
-            ScaleTempo(lower, higher, multiplier);
-            return;
-        }
-        ScaleTempo(index, index, multiplier);
+        UndoCheckpointRequested?.Invoke(null);
     }
 
     public double SnapOffsetChangeToBpmIncrement(int lowerIndex, int higherIndex, double offsetChange, double bpmIncrement = 0.1d)
@@ -371,7 +348,7 @@ public partial class Timing
 
         IsBatchOperationInProgress = false;
 
-        GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.TimingChanged));
+        NotifyChanged();
     }
 
     private static double? GetOffsetChangeToNextBpmIncrement(

@@ -18,6 +18,7 @@ using Tempora.Classes.Utility;
 using Tempora.Classes.Audio;
 
 namespace Tempora.Classes.TimingClasses;
+
 public partial class Timing
 {
     public static Timing CloneAndParseForOsu(Timing timing, AudioFile audioFile)
@@ -39,7 +40,7 @@ public partial class Timing
         var newTiming = CopyTiming(timing);
         if (timing.Settings.RemovePointsThatChangeNothing)
             newTiming.RemovePointsThatChangeNothing();
-        
+
         return newTiming;
     }
 
@@ -72,7 +73,7 @@ public partial class Timing
         TimeSignaturePoints = CloneUtility.CloneList<TimeSignaturePoint>(timingMemento.clonedTimeSignaturePoints);
 
         if (oldCount != TimingPoints.Count)
-            GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.TimingPointCountChanged));
+            NotifyPointCountChanged();
     }
 
     private class TimingMemento(Timing originator) : IMemento

@@ -165,7 +165,7 @@ SliderTickRate:1
         oszPath = Path.ChangeExtension(oszPath, ".osz");
         changedPath = oszPath;
 
-        string dotOsu = GetDotOsu(Timing.Instance, Project.Instance.AudioFile);
+        string dotOsu = GetDotOsu(Project.Instance.Timing, Project.Instance.AudioFile);
 
         SaveOsz(oszPath, dotOsu, Project.Instance.AudioFile);
     }
@@ -207,7 +207,7 @@ SliderTickRate:1
         var random = new Random();
         int rand = random.Next();
         string path = $"user://{rand}.osz";
-        string dotOsu = GetDotOsu(Timing.Instance, Project.Instance.AudioFile);
+        string dotOsu = GetDotOsu(Project.Instance.Timing, Project.Instance.AudioFile);
         SaveOsz(path, dotOsu, Project.Instance.AudioFile);
 
         string globalPath = ProjectSettings.GlobalizePath(path);

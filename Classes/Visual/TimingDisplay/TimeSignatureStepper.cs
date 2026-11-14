@@ -31,7 +31,7 @@ public partial class TimeSignatureStepper : HBoxContainer
 
     // Called when the node enters the scene tree for the first time.
     public override void _Ready()
-	{
+    {
         NumeratorStepper.HandleChangesElsewhere = true;
         DenominatorStepper.HandleChangesElsewhere = true;
         NumeratorStepper.ValueIncremented += OnNumeratorIncremented;
@@ -58,7 +58,7 @@ public partial class TimeSignatureStepper : HBoxContainer
             newTimeSignature[0] = intArgument.Value;
         else if (sender == DenominatorStepper)
             newTimeSignature[1] = intArgument.Value;
-        Timing.CorrectTimeSignature(newTimeSignature, out newTimeSignature); // Also done by Timing.Instance, may be redundant
+        Timing.CorrectTimeSignature(newTimeSignature, out newTimeSignature); // Also done by Project.Instance.Timing, may be redundant
         TimeSignatureSubmitted?.Invoke(this, new GlobalEvents.ObjectArgument<int[]>(newTimeSignature));
     }
 

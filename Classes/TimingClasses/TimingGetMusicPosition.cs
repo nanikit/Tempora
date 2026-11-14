@@ -194,9 +194,8 @@ public partial class Timing
         return (distanceToPrevious < distanceToNext) ? previous : next;
     }
 
-    public int GetLastMeasure()
+    public int GetLastMeasure(double lengthInSeconds)
     {
-        float lengthInSeconds = Project.Instance.AudioFile?.GetAudioLength() ?? 0;
         double lastMeasure = OffsetToMeasurePosition(lengthInSeconds);
         return (int)lastMeasure;
     }
@@ -245,8 +244,6 @@ public partial class Timing
     {
         if (numberOfBeatsToAdd == 0)
             return measurePositionFrom;
-
-        int lastMeasure = timing.GetLastMeasure();
 
         double currentMeasurePosition = measurePositionFrom;
         double beatsLeftToAdd = numberOfBeatsToAdd;

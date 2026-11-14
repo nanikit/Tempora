@@ -33,6 +33,13 @@ public partial class Timing
         timingPoint.PropertyChanged += OnTimingPointPropertyChanged;
     }
 
+    private void UnsubscribeFromEvents(TimingPoint timingPoint)
+    {
+        timingPoint.AttemptDelete -= OnTimingPointDeleteAttempt;
+        timingPoint.ChangeFinalized -= OnTimingPointChanged;
+        timingPoint.PropertyChanged -= OnTimingPointPropertyChanged;
+    }
+
     private void ReSubscribe()
     {
         foreach (TimingPoint timingPoint in timingPoints)
@@ -46,8 +53,8 @@ public partial class Timing
         if (sender is not TimingPoint timingPoint)
             throw new Exception("Sender wasn't a TimingPoint.");
 
-        if (!timingPoint.IsInstantiating && !IsBatchOperationInProgress)
-            GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.TimingChanged));
+        if (!timingPoint.IsInstantiating)
+            NotifyChanged();
     }
     private void OnTimingPointDeleteAttempt(object? sender, EventArgs e)
     {
@@ -243,7 +250,7 @@ public partial class Timing
                 TimingPoint? rejectingTimingPoint = null;
                 CanTimingPointGoHere(timingPoint, (double)newValue!, out rejectingTimingPoint);
                 if (rejectingTimingPoint != null)
-                    GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.MeasurePositionChangeRejected), new GlobalEvents.ObjectArgument<TimingPoint>(rejectingTimingPoint));
+                    MeasurePositionRejected?.Invoke(rejectingTimingPoint);
                 break;
             default:
                 break;

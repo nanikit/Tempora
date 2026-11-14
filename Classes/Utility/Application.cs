@@ -22,7 +22,6 @@ public partial class Application : Node
     public override void _EnterTree()
     {
         LoadSettings();
-        Timing.Instance = new Timing(settings);
         ApplyLanguage();
         ApplyVolume("Music", settings.MusicVolumeNormalized);
         ApplyVolume("Metronome", settings.MetronomeVolumeNormalized);

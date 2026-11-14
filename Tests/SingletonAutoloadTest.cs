@@ -19,7 +19,7 @@ public class SingletonAutoloadTest
     {
         AssertThat(GlobalEvents.Instance).IsNotNull();
         AssertThat(Project.Instance).IsNotNull();
-        AssertThat(Timing.Instance).IsNotNull();
+        AssertThat(Project.Instance.Timing).IsNotNull();
         AssertThat(MusicPlayer.Instance).IsNotNull();
     }
 }

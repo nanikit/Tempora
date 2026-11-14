@@ -22,7 +22,7 @@ public partial class TimingPointSelection : Node
     public event EventHandler? SelectorChanged = null;
     public event EventHandler? SelectionChanged = null;
 
-    private Timing timing => Timing.Instance;
+    private Timing timing => Project.Instance.Timing;
 
     public static TimingPointSelection Instance = null!;
 
@@ -189,10 +189,10 @@ public partial class TimingPointSelection : Node
         }
     }
 
-    public bool AreTherePointsBefore(int index) => index > 0 && Timing.Instance.TimingPoints.Count > 1;
-    public bool AreTherePointsAfter(int index) => Timing.Instance.TimingPoints.Count - 1 > index;
-    public bool AreTherePointsBefore(TimingPoint point) => AreTherePointsBefore(Timing.Instance.TimingPoints.IndexOf(point));
-    public bool AreTherePointsAfter(TimingPoint point) => AreTherePointsAfter(Timing.Instance.TimingPoints.IndexOf(point));
+    public bool AreTherePointsBefore(int index) => index > 0 && Project.Instance.Timing.TimingPoints.Count > 1;
+    public bool AreTherePointsAfter(int index) => Project.Instance.Timing.TimingPoints.Count - 1 > index;
+    public bool AreTherePointsBefore(TimingPoint point) => AreTherePointsBefore(Project.Instance.Timing.TimingPoints.IndexOf(point));
+    public bool AreTherePointsAfter(TimingPoint point) => AreTherePointsAfter(Project.Instance.Timing.TimingPoints.IndexOf(point));
     /// <summary>
     /// If point is in selection, returns true if there's points before selection. 
     /// If point is not in selection, returns true if there's points before point.
@@ -232,7 +232,7 @@ public partial class TimingPointSelection : Node
     {
         if (first > last)
             (first, last) = (last, first);
-        int lastIndexInList = Timing.Instance.TimingPoints.Count - 1;
+        int lastIndexInList = Project.Instance.Timing.TimingPoints.Count - 1;
         if (first < 0 || last < 0 || first > lastIndexInList || last > lastIndexInList)
             SelectionIndices = null;
         SelectionIndices = [first, last];
@@ -251,7 +251,7 @@ public partial class TimingPointSelection : Node
     {
         if (indexFrom == null || indexFrom < 0)
             return;
-        Select((int)indexFrom, Timing.Instance.TimingPoints.Count - 1);
+        Select((int)indexFrom, Project.Instance.Timing.TimingPoints.Count - 1);
     }
 
     public void SelectAllTo(int? indexTo)
@@ -265,14 +265,14 @@ public partial class TimingPointSelection : Node
     {
         if (point == null)
             return;
-        SelectAllFrom(Timing.Instance.TimingPoints.IndexOf(point));
+        SelectAllFrom(Project.Instance.Timing.TimingPoints.IndexOf(point));
     }
 
     public void SelectAllTo(TimingPoint? point)
     {
         if (point == null)
             return;
-        SelectAllTo(Timing.Instance.TimingPoints.IndexOf(point));
+        SelectAllTo(Project.Instance.Timing.TimingPoints.IndexOf(point));
     }
 
     public void DeselectAll() => SelectionIndices = null;
@@ -326,11 +326,33 @@ public partial class TimingPointSelection : Node
         SelectionIndices = null;
     }
 
+    public void DeleteTimingPointOrSelection(TimingPoint? point)
+    {
+        if (point == null)
+            return;
+        if (IsPointInSelection(point))
+            DeleteSelection();
+        else
+            timing.DeleteTimingPoint(point);
+    }
+
+    public void ScaleTempo(TimingPoint? point, float multiplier)
+    {
+        ArgumentNullException.ThrowIfNull(point);
+        if (Count > 1 && IsPointInSelection(point))
+            timing.ScaleTempo(SelectionIndices![0], SelectionIndices[1], multiplier);
+        else
+        {
+            int index = timing.TimingPoints.IndexOf(point);
+            timing.ScaleTempo(index, index, multiplier);
+        }
+    }
+
     public void MoveSelection(double? referencePosition, double newPosition)
     {
         if (SelectionIndices == null || referencePosition == null) return;
 
-        newPosition = Timing.Instance.SnapMeasurePosition(newPosition);
+        newPosition = Project.Instance.Timing.SnapMeasurePosition(newPosition);
 
         double positionDifference = newPosition - referencePosition.Value;
 
@@ -369,14 +391,14 @@ public partial class TimingPointSelection : Node
     public void DoubleTempoForSelection()
     {
         if (SelectionIndices == null) return;
-        Timing.Instance.ScaleTempo(SelectionIndices[0], SelectionIndices[1], 2);
+        Project.Instance.Timing.ScaleTempo(SelectionIndices[0], SelectionIndices[1], 2);
         //MementoHandler.Instance.AddTimingMemento(SelectionIndices);
     }
 
     public void HalveTempoForSelection()
     {
         if (SelectionIndices == null) return;
-        Timing.Instance.ScaleTempo(SelectionIndices[0], SelectionIndices[1], 0.5f);
+        Project.Instance.Timing.ScaleTempo(SelectionIndices[0], SelectionIndices[1], 0.5f);
         //MementoHandler.Instance.AddTimingMemento(SelectionIndices);
     }
 

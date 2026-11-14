@@ -52,8 +52,7 @@ public partial class Timing
         {
             UpdateMPS(TimingPoints[index + 1]);
         }
-        if (!IsInstantiating)
-            GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.TimingPointCountChanged));
+        NotifyPointCountChanged();
     }
 
     /// <summary>
@@ -91,8 +90,7 @@ public partial class Timing
 
         timingPoint.IsInstantiating = false;
 
-        if (!IsInstantiating)
-            GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.TimingPointCountChanged));
+        NotifyPointCountChanged();
 
         int index = TimingPoints.IndexOf(timingPoint);
 
@@ -100,8 +98,7 @@ public partial class Timing
         {
             UpdateMPS(TimingPoints[index - 1]);
 
-            if (!IsInstantiating)
-                GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.TimingChanged));
+            NotifyChanged();
         }
     }
 
@@ -131,6 +128,7 @@ public partial class Timing
            )
         {
             TimingPoints.Remove(timingPoint);
+            UnsubscribeFromEvents(timingPoint);
             timingPoint = null;
             //GD.Print("Timing Point refused to add!");
             return;
@@ -140,36 +138,22 @@ public partial class Timing
 
         //ActionsHandler.Instance.AddTimingMemento();
 
-        GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.TimingPointCountChanged));
+        NotifyPointCountChanged();
     }
 
-    private void DeleteTimingPoint(TimingPoint timingPoint)
+    public void DeleteTimingPoint(TimingPoint timingPoint)
     {
         TimingPoint? previousTimingPoint = GetPreviousTimingPoint(timingPoint);
 
         TimingPoints.Remove(timingPoint);
+        UnsubscribeFromEvents(timingPoint);
 
         if (previousTimingPoint != null && TimingPoints.IndexOf(previousTimingPoint) != TimingPoints.Count - 1)
             UpdateMPS(previousTimingPoint);
 
-        GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.TimingPointCountChanged));
+        NotifyPointCountChanged();
 
-        if (!Context.Instance.HeldPointIsJustBeingAdded)
-            MementoHandler.Instance.AddTimingMemento();
-    }
-
-    /// <summary>
-    /// Delete selection if the <see cref="TimingPoint"/> is in the selection. Otherwise, delete the timing point.
-    /// </summary>
-    /// <param name="timingPoint"></param>
-    public void DeleteTimingPointOrSelection(TimingPoint? timingPoint)
-    {
-        if (timingPoint == null)
-            return;
-        if (TimingPointSelection.Instance.IsPointInSelection(timingPoint))
-            TimingPointSelection.Instance.DeleteSelection();
-        else
-            DeleteTimingPoint(timingPoint);
+        UndoCheckpointRequested?.Invoke(timingPoint);
     }
 
     /// <summary>
@@ -183,14 +167,16 @@ public partial class Timing
         TimingPoint? previousTimingPoint = (indexFrom - 1) >= 0 ? TimingPoints[(indexFrom - 1)] : null;
         bool isIndexToLast = indexTo == TimingPoints.Count;
 
+        foreach (TimingPoint point in TimingPoints.GetRange(indexFrom, indexTo - indexFrom))
+            UnsubscribeFromEvents(point);
         TimingPoints.RemoveRange(indexFrom, indexTo - indexFrom);
 
         if (!isIndexToLast && previousTimingPoint != null)
             UpdateMPS(previousTimingPoint);
 
-        GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.TimingPointCountChanged));
+        NotifyPointCountChanged();
 
-        MementoHandler.Instance.AddTimingMemento();
+        UndoCheckpointRequested?.Invoke(null);
     }
 
 
@@ -205,7 +191,7 @@ public partial class Timing
     public void DeleteAllTimeSignaturePoints()
     {
         TimeSignaturePoints.Clear();
-        GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.TimingChanged));
+        NotifyChanged();
     }
 
     private void RemovePointsThatChangeNothing()

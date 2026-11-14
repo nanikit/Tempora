@@ -36,7 +36,7 @@ public partial class BeatSaberExporter : Node, ISettingsConsumer
         string audioFilename = Path.GetFileNameWithoutExtension(audioFile.FilePath);
         int audioSamples = audioFile.PcmLeft.Length - 1;
 
-        Timing timing = Timing.CloneAndParseForBeatSaber(Timing.Instance);
+        Timing timing = Timing.CloneAndParseForBeatSaber(Project.Instance.Timing);
         AddAdditionalTimingPointsIfRequired(timing, audioFile.AudacityOrigin);
 
         List<BpmDataPoint> bpmData = GetBpmDataPoints(timing.TimingPoints, audioSamples, audioFile.SampleRate, audioFile.AudacityOrigin);

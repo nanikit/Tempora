@@ -38,7 +38,7 @@ public partial class Context : Node
                 return;
             if (value == null)
             {
-                if (HeldPointIsJustBeingAdded && !Timing.Instance.IsTimingPointOnGrid(heldTimingPoint))
+                if (HeldPointIsJustBeingAdded && !Project.Instance.Timing.IsTimingPointOnGrid(heldTimingPoint))
                 {
                     TimingPoint? timingPointToDelete = heldTimingPoint;
                     heldTimingPoint_PreviousMeasurePosition = null;

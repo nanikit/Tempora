@@ -28,12 +28,12 @@ public partial class ContextMenu : PopupMenu
     /// </summary>
     public object? TargetObject;
 
-	// Called when the node enters the scene tree for the first time.
-	public override void _Ready()
-	{
+    // Called when the node enters the scene tree for the first time.
+    public override void _Ready()
+    {
         GlobalEvents.Instance.ContextMenuRequested += OnContextMenuRequested;
         IdPressed += OnIdPressed;
-	}
+    }
 
     private void OnContextMenuRequested(object? sender, EventArgs eventArgs)
     {
@@ -50,7 +50,7 @@ public partial class ContextMenu : PopupMenu
         ShowMenu();
     }
 
-	public void ShowMenu()
+    public void ShowMenu()
     {
 
         bool shouldShowMenu = GenerateOptions();
@@ -99,7 +99,7 @@ public partial class ContextMenu : PopupMenu
 
         if (!isInSelection && selection.AreTherePointsBefore(timingPoint))
             AddItem("Select all points from beginning to here", OptionIDs[Options.SelectAllFromBeginningToHere]);
-        else if (selection.SelectionIndices != null && isInSelection && selection.AreTherePointsBefore(selection.SelectionIndices[0]))  
+        else if (selection.SelectionIndices != null && isInSelection && selection.AreTherePointsBefore(selection.SelectionIndices[0]))
             AddItem("Extend selection to the beginning", OptionIDs[Options.ExtendSelectionToBeginning]);
 
         if (!isInSelection && selection.AreTherePointsAfter(timingPoint))
@@ -156,15 +156,15 @@ public partial class ContextMenu : PopupMenu
         {
             case var value when id == OptionIDs[Options.DoubleBPM]:
                 assertTargetIsTimingPoint();
-                Timing.Instance.ScaleTempo(timingPoint, 2);
+                TimingPointSelection.Instance.ScaleTempo(timingPoint, 2);
                 break;
             case var value when id == OptionIDs[Options.HalveBPM]:
                 assertTargetIsTimingPoint();
-                Timing.Instance.ScaleTempo(timingPoint, 0.5f);
+                TimingPointSelection.Instance.ScaleTempo(timingPoint, 0.5f);
                 break;
             case var value when (id == OptionIDs[Options.DeleteTimingPoint] || id == OptionIDs[Options.DeleteTimingPoints]):
                 assertTargetIsTimingPoint();
-                Timing.Instance.DeleteTimingPointOrSelection(timingPoint);
+                TimingPointSelection.Instance.DeleteTimingPointOrSelection(timingPoint);
                 break;
             case var value when (id == OptionIDs[Options.SelectAllFromBeginningToHere]):
                 assertTargetIsTimingPoint();

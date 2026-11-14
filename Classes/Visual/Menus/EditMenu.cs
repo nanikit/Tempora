@@ -27,7 +27,7 @@ public partial class EditMenu : PopupMenu
 
     // Called when the node enters the scene tree for the first time.
     public override void _Ready()
-	{
+    {
         IdPressed += OnIdPressed;
         clearAllConfirmationDialog.Confirmed += OnClearAllConfirmationDialogConfirmed;
     }
@@ -46,6 +46,6 @@ public partial class EditMenu : PopupMenu
 
     private void OnClearAllConfirmationDialogConfirmed()
     {
-        Timing.Instance.DeleteAllTimingPoints();
+        Project.Instance.Timing.DeleteAllTimingPoints();
     }
 }

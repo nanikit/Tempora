@@ -87,7 +87,7 @@ public partial class VisualTimingPoint : Control
     // Called when the node enters the scene tree for the first time.
     public override void _Ready()
     {
-        //numberLabel.Text = Timing.Instance.TimingPoints.IndexOf(TimingPoint).ToString();
+        //numberLabel.Text = Project.Instance.Timing.TimingPoints.IndexOf(TimingPoint).ToString();
         UpdateLabels(TimingPoint);
         BpmLabel.Resized += CenterBpmLabel;
         CenterBpmLabel();
@@ -188,7 +188,7 @@ public partial class VisualTimingPoint : Control
     #region Timing Changes
     public void UpdateLabels(TimingPoint timingPoint)
     {
-        //numberLabel.Text = Timing.Instance.TimingPoints.IndexOf(timingPoint).ToString();
+        //numberLabel.Text = Project.Instance.Timing.TimingPoints.IndexOf(timingPoint).ToString();
         BpmLabel.Text = timingPoint.Bpm.ToString("0.###");
     }
 
@@ -258,7 +258,7 @@ public partial class VisualTimingPoint : Control
 
     private void OnBPMLabelDoubleClicked(object? sender, EventArgs e)
     {
-        if (!Timing.Instance.CanBpmBeChangedManually(timingPoint))
+        if (!Project.Instance.Timing.CanBpmBeChangedManually(timingPoint))
         {
             Project.Instance.NotificationMessage = "Can only change BPM of last timing point.";
             return;

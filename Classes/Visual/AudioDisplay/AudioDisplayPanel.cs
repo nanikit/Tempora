@@ -167,9 +167,9 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
 
         Vector2 mousePos = mouseEvent.Position;
         float measurePosition = GetMouseMeasurePosition(mousePos);
-        float sampletime = (float)Timing.Instance.MeasurePositionToOffset(measurePosition);
+        float sampletime = (float)Project.Instance.Timing.MeasurePositionToOffset(measurePosition);
 
-        TimingPoint? nearestTimingPoint = Timing.Instance.GetNearestTimingPoint(XPositionToMeasurePosition(mousePos.X));
+        TimingPoint? nearestTimingPoint = Project.Instance.Timing.GetNearestTimingPoint(XPositionToMeasurePosition(mousePos.X));
         Context.Instance.TimingPointNearestCursor = nearestTimingPoint;
 
         switch (mouseEvent)
@@ -220,7 +220,7 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
             return;
         panGestureAccumulator -= steps;
 
-        TimingPoint? nearestTimingPoint = Timing.Instance.GetNearestTimingPoint(
+        TimingPoint? nearestTimingPoint = Project.Instance.Timing.GetNearestTimingPoint(
             XPositionToMeasurePosition(GetLocalMousePosition().X));
 
         AdjustTimingWithScroll(nearestTimingPoint, -steps);
@@ -235,7 +235,7 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
         bool alt = Input.IsKeyPressed(Key.Alt);
         if (Input.IsKeyPressed(Key.Ctrl))
         {
-            if (!Timing.Instance.CanBpmBeChangedManually(nearestTimingPoint))
+            if (!Project.Instance.Timing.CanBpmBeChangedManually(nearestTimingPoint))
             {
                 Project.Instance.ShowNotification("Can only change BPM of last timing point.", 1d);
                 return;
@@ -264,7 +264,7 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
     {
         float measurePosition = XPositionToMeasurePosition(mousePositionInLocalCoords.X);
         if (Input.IsKeyPressed(Key.Shift))
-            measurePosition = (float)Timing.Instance.SnapMeasurePosition(measurePosition);
+            measurePosition = (float)Project.Instance.Timing.SnapMeasurePosition(measurePosition);
 
         return measurePosition;
     }
@@ -312,12 +312,12 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
                     float xMovement = mouseMotion.Relative.X;
                     float secondsPerPixel = 0.0002f;
                     float secondsDifference = xMovement * secondsPerPixel;
-                    //Context.Instance.HeldTimingPoint.Offset_Set(Context.Instance.HeldTimingPoint.Offset - secondsDifference, Timing.Instance);
+                    //Context.Instance.HeldTimingPoint.Offset_Set(Context.Instance.HeldTimingPoint.Offset - secondsDifference, Project.Instance.Timing);
                     TimingPointSelection.Instance.OffsetSelection(-secondsDifference);
                     return;
                 }
 
-                //Timing.Instance.SnapTimingPoint(Context.Instance.HeldTimingPoint, measurePosition, out _);
+                //Project.Instance.Timing.SnapTimingPoint(Context.Instance.HeldTimingPoint, measurePosition, out _);
                 TimingPointSelection.Instance.MoveSelection(Context.Instance.HeldTimingPoint.MeasurePosition, measurePosition);
 
                 GetViewport().SetInputAsHandled();
@@ -329,7 +329,7 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
                 && GetViewport().GuiGetFocusOwner() is not BpmEdit:
                 mousePos = GetLocalMousePosition();
                 measurePosition = GetMouseMeasurePosition(mousePos);
-                float sampletime = (float)Timing.Instance.MeasurePositionToOffset(measurePosition);
+                float sampletime = (float)Project.Instance.Timing.MeasurePositionToOffset(measurePosition);
                 AttemptToAddTimingPoint?.Invoke(this, new GlobalEvents.ObjectArgument<float>(sampletime));
                 break;
 
@@ -341,7 +341,7 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
 
     private void OnTimingChanged(object? sender, EventArgs e)
     {
-        if (!Visible || Timing.Instance.IsInstantiating || Timing.Instance.IsBatchOperationInProgress)
+        if (!Visible || Project.Instance.Timing.IsInstantiating || Project.Instance.Timing.IsBatchOperationInProgress)
             return;
         UpdateTimingPointsIndices();
         RenderAudio();
@@ -397,7 +397,7 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
     {
         var mousePos = GetLocalMousePosition();
         float measurePosition = GetMouseMeasurePosition(mousePos);
-        float sampletime = (float)Timing.Instance.MeasurePositionToOffset(measurePosition);
+        float sampletime = (float)Project.Instance.Timing.MeasurePositionToOffset(measurePosition);
 
         var heldTimingPoint = Context.Instance?.HeldTimingPoint;
         float seekTime = heldTimingPoint != null ? (float)(heldTimingPoint.Offset - 0.05d) : sampletime;
@@ -463,8 +463,8 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
 
     private void ModifyOrAddAudioSegment(float segmentStart, float segmentEnd, bool renderAsSpectrogram, Node? existingSegment = null)
     {
-        float measurePositionStart = (float)Timing.Instance.OffsetToMeasurePosition(segmentStart);
-        float measurePositionEnd = (float)Timing.Instance.OffsetToMeasurePosition(segmentEnd);
+        float measurePositionStart = (float)Project.Instance.Timing.OffsetToMeasurePosition(segmentStart);
+        float measurePositionEnd = (float)Project.Instance.Timing.OffsetToMeasurePosition(segmentEnd);
 
         float margin = Settings.MeasureOverlap;
         TimingPoint? heldTimingPoint = Context.Instance.HeldTimingPoint;
@@ -477,8 +477,8 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
 
         bool canHeldTimingPointBeInSegment = (heldTimingPoint == null)
             || (
-                Timing.Instance.CanTimingPointGoHere(heldTimingPoint, measurePositionStart, out var _)
-                || Timing.Instance.CanTimingPointGoHere(heldTimingPoint, measurePositionEnd, out var _)
+                Project.Instance.Timing.CanTimingPointGoHere(heldTimingPoint, measurePositionStart, out var _)
+                || Project.Instance.Timing.CanTimingPointGoHere(heldTimingPoint, measurePositionEnd, out var _)
                 )
             || (Time.GetTicksMsec() - heldTimingPoint.SystemTimeWhenCreatedMsec) < 30; ;
 
@@ -526,17 +526,17 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
     {
         List<float[]> panelSegments = new(2);
 
-        float segmentStart = MathF.Max((float)Timing.Instance.MeasurePositionToOffset(ActualMeasurePositionStartForPanel), 0);
-        float panelEnd = MathF.Min((float)Timing.Instance.MeasurePositionToOffset(ActualMeasurePositionEndForPanel), Project.Instance.AudioFile.GetAudioLength());
+        float segmentStart = MathF.Max((float)Project.Instance.Timing.MeasurePositionToOffset(ActualMeasurePositionStartForPanel), 0);
+        float panelEnd = MathF.Min((float)Project.Instance.Timing.MeasurePositionToOffset(ActualMeasurePositionEndForPanel), Project.Instance.AudioFile.GetAudioLength());
         if (segmentStart >= panelEnd)
             return panelSegments;
 
-        TimingPoint? previousTimingPoint = Timing.Instance.GetOperatingTimingPoint_ByMeasurePosition(ActualMeasurePositionStartForPanel);
-        TimingPoint? firstTimingPointInPanel = Timing.Instance.GetNextTimingPoint(previousTimingPoint);
-        int firstPointIndex = firstTimingPointInPanel == null ? Timing.Instance.TimingPoints.Count : Timing.Instance.TimingPoints.IndexOf(firstTimingPointInPanel);
-        for (int i = firstPointIndex; i < Timing.Instance.TimingPoints.Count && Timing.Instance.TimingPoints[i].MeasurePosition < ActualMeasurePositionEndForPanel; i++)
+        TimingPoint? previousTimingPoint = Project.Instance.Timing.GetOperatingTimingPoint_ByMeasurePosition(ActualMeasurePositionStartForPanel);
+        TimingPoint? firstTimingPointInPanel = Project.Instance.Timing.GetNextTimingPoint(previousTimingPoint);
+        int firstPointIndex = firstTimingPointInPanel == null ? Project.Instance.Timing.TimingPoints.Count : Project.Instance.Timing.TimingPoints.IndexOf(firstTimingPointInPanel);
+        for (int i = firstPointIndex; i < Project.Instance.Timing.TimingPoints.Count && Project.Instance.Timing.TimingPoints[i].MeasurePosition < ActualMeasurePositionEndForPanel; i++)
         {
-            float segmentEnd = Math.Clamp((float)Timing.Instance.TimingPoints[i].Offset, segmentStart, panelEnd);
+            float segmentEnd = Math.Clamp((float)Project.Instance.Timing.TimingPoints[i].Offset, segmentStart, panelEnd);
             if (segmentStart < segmentEnd)
                 panelSegments.Add([segmentStart, segmentEnd]);
             segmentStart = segmentEnd;
@@ -588,7 +588,7 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
         int index = 0;
 
         // this assumes all children are VisualTimingPoint
-        foreach (TimingPoint timingPoint in Timing.Instance.TimingPoints)
+        foreach (TimingPoint timingPoint in Project.Instance.Timing.TimingPoints)
         {
             if (timingPoint == null)
                 throw new NullReferenceException($"{nameof(timingPoint)} was null");
@@ -638,7 +638,7 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
             child.QueueFree();
 
         int divisor = Settings.GridDivisor;
-        int[] timeSignature = Timing.Instance.GetTimeSignature(NominalMeasurePosition - 1);
+        int[] timeSignature = Project.Instance.Timing.GetTimeSignature(NominalMeasurePosition - 1);
 
         int measureOffset = -1;
         int divisionIndex = 0;
@@ -652,7 +652,7 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
             {
                 divisionIndex = 0;
                 measureOffset += 1;
-                timeSignature = Timing.Instance.GetTimeSignature(NominalMeasurePosition + measureOffset);
+                timeSignature = Project.Instance.Timing.GetTimeSignature(NominalMeasurePosition + measureOffset);
                 continue;
             }
 
@@ -660,7 +660,7 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
             {
                 divisionIndex = 0;
                 measureOffset += 1;
-                timeSignature = Timing.Instance.GetTimeSignature(NominalMeasurePosition + measureOffset);
+                timeSignature = Project.Instance.Timing.GetTimeSignature(NominalMeasurePosition + measureOffset);
                 continue;
             }
 
@@ -673,7 +673,7 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
             gridLine.ZIndex = 0;
             GridFolder.AddChild(gridLine);
 
-            timeSignature = Timing.Instance.GetTimeSignature(measurePosition);
+            timeSignature = Project.Instance.Timing.GetTimeSignature(measurePosition);
         }
     }
 
@@ -788,7 +788,7 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
     //{
     //    PreviewLine.Position = new Vector2(MeasurePositionToXPosition(measurePosition), 0);
 
-    //    TimeSpan musicTime = TimeSpan.FromSeconds(Timing.Instance.MeasurePositionToTime(measurePosition));
+    //    TimeSpan musicTime = TimeSpan.FromSeconds(Project.Instance.Timing.MeasurePositionToTime(measurePosition));
     //    PreviewLine.TimeLabel.Text = musicTime.ToString(@"mm\:ss\:fff");
     //}
 
@@ -799,12 +799,12 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
 
         if (Input.IsKeyPressed(Key.Shift))
         {
-            measurePosition = (float)Timing.Instance.SnapMeasurePosition(measurePosition);
+            measurePosition = (float)Project.Instance.Timing.SnapMeasurePosition(measurePosition);
         }
 
         PreviewLine.Position = new Vector2(MeasurePositionToXPosition(measurePosition), 0);
 
-        float time = (float)Timing.Instance.MeasurePositionToOffset(measurePosition);
+        float time = (float)Project.Instance.Timing.MeasurePositionToOffset(measurePosition);
         var musicTime = TimeSpan.FromSeconds(time);
         PreviewLine.TimeLabel.Text = (time < 0 ? "-" : "") + musicTime.ToString(@"mm\:ss\:fff");
     }
@@ -826,16 +826,16 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
 
     public void UpdateTimingPointsIndices()
     {
-        if (Timing.Instance.TimingPoints.Count == 0)
+        if (Project.Instance.Timing.TimingPoints.Count == 0)
             return;
 
         float margin = Settings.MeasureOverlap;
 
-        int firstIndex = Timing.Instance.TimingPoints.FindLastIndex(point => point.MeasurePosition <= ActualMeasurePositionStartForPanel);
+        int firstIndex = Project.Instance.Timing.TimingPoints.FindLastIndex(point => point.MeasurePosition <= ActualMeasurePositionStartForPanel);
         // If there's only TimingPoints AFTER MeasurePositionStart
         if (firstIndex == -1)
-            firstIndex = Timing.Instance.TimingPoints.FindIndex(point => point.MeasurePosition > ActualMeasurePositionStartForPanel);
-        int lastIndex = Timing.Instance.TimingPoints.FindLastIndex(point => point.MeasurePosition < ActualMeasurePositionStartForPanel + 1 + (2 * margin));
+            firstIndex = Project.Instance.Timing.TimingPoints.FindIndex(point => point.MeasurePosition > ActualMeasurePositionStartForPanel);
+        int lastIndex = Project.Instance.Timing.TimingPoints.FindLastIndex(point => point.MeasurePosition < ActualMeasurePositionStartForPanel + 1 + (2 * margin));
         if (lastIndex == -1)
             lastIndex = firstIndex;
 

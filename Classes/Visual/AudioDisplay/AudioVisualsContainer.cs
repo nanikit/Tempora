@@ -49,10 +49,10 @@ public partial class AudioVisualsContainer : VBoxContainer, ISettingsConsumer
 
     public List<AudioBlock> AudioBlocks = [];
 
-    public int FirstTopMeasure => Timing.Instance.TimeSignaturePoints.Count > 0
-            ? Math.Min((int)Timing.Instance.OffsetToMeasurePosition(0), Timing.Instance.TimeSignaturePoints[0].Measure)
-            : (int)Timing.Instance.OffsetToMeasurePosition(0);
-    public int LastTopMeasure => Math.Max(FirstTopMeasure, Timing.Instance.GetLastMeasure() - (VisibleRowCount - 1));
+    public int FirstTopMeasure => Project.Instance.Timing.TimeSignaturePoints.Count > 0
+            ? Math.Min((int)Project.Instance.Timing.OffsetToMeasurePosition(0), Project.Instance.Timing.TimeSignaturePoints[0].Measure)
+            : (int)Project.Instance.Timing.OffsetToMeasurePosition(0);
+    public int LastTopMeasure => Math.Max(FirstTopMeasure, Project.Instance.Timing.GetLastMeasure(Project.Instance.AudioFile?.GetAudioLength() ?? 0) - (VisibleRowCount - 1));
 
     public int NominalMeasurePositionStartForTopBlock
     {
@@ -154,7 +154,7 @@ public partial class AudioVisualsContainer : VBoxContainer, ISettingsConsumer
     {
         double playbackTime = MusicPlayer.GetPlaybackTime();
         float sampleTime = Project.Instance.AudioFile.PlaybackTimeToSampleTime((float)playbackTime);
-        float measurePosition = (float)Timing.Instance.OffsetToMeasurePosition(sampleTime);
+        float measurePosition = (float)Project.Instance.Timing.OffsetToMeasurePosition(sampleTime);
         foreach (AudioBlock audioBlock in GetChildren().OfType<AudioBlock>())
         {
             AudioDisplayPanel audioDisplayPanel = audioBlock.AudioDisplayPanel;
@@ -275,14 +275,14 @@ public partial class AudioVisualsContainer : VBoxContainer, ISettingsConsumer
             throw new Exception($"{nameof(e)} was not of type {nameof(GlobalEvents.ObjectArgument<float>)}");
         float time = floatArgument.Value;
 
-        Timing.Instance.AddTimingPoint(time, out TimingPoint? timingPoint);
+        Project.Instance.Timing.AddTimingPoint(time, out TimingPoint? timingPoint);
         if (timingPoint == null)
             return;
         if (timingPoint.MeasurePosition == null)
             throw new NullReferenceException($"{nameof(timingPoint.MeasurePosition)} was null");
 
         float measurePosition = (float)timingPoint.MeasurePosition;
-        Timing.Instance.SnapTimingPoint(timingPoint, measurePosition);
+        Project.Instance.Timing.SnapTimingPoint(timingPoint, measurePosition);
         Context.Instance.HeldTimingPoint = timingPoint;
         Context.Instance.HeldPointIsJustBeingAdded = true;
 

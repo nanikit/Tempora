@@ -51,9 +51,9 @@ public partial class TimingShortcutTests
         bool roundBpm = Project.Instance.Settings.RoundBPM;
         int rows = Project.Instance.Settings.NumberOfRows;
         AudioFile originalAudio = Project.Instance.AudioFile;
-        Timing originalTiming = Timing.Instance;
+        Timing originalTiming = Project.Instance.Timing;
         Timing timing = new Timing(Project.Instance.Settings) { IsInstantiating = true };
-        Timing.Instance = timing;
+        Project.Instance.Timing = timing;
         Project.Instance.Settings.RoundBPM = false;
         timing.AddTimingPoint(0d, 0d, 0.5d);
         timing.AddTimingPoint(0.35d, 0.7d, 0.5d);
@@ -209,7 +209,7 @@ public partial class TimingShortcutTests
             SendInput(viewport, new InputEventMouseButton { Position = cursor, ButtonIndex = MouseButton.Left });
             Context.Instance.HeldTimingPoint = null;
             TimingPointSelection.Instance.DeselectAll();
-            Timing.Instance = originalTiming;
+            Project.Instance.Timing = originalTiming;
             Project.Instance.Settings.RoundBPM = roundBpm;
             Project.Instance.Settings.NumberOfRows = rows;
             Project.Instance.AudioFile = originalAudio;

@@ -100,12 +100,12 @@ public partial class TimingShortcutTests
 
     private static async Task VerifyScaledDragging(ISceneRunner runner, SubViewport viewport, Window root)
     {
-        Timing originalTiming = Timing.Instance;
+        Timing originalTiming = Project.Instance.Timing;
         int originalGrid = Project.Instance.Settings.GridDivisor;
         Vector2I originalSize = viewport.Size;
         var timing = new Timing(Project.Instance.Settings) { IsInstantiating = true };
         var container = (AudioVisualsContainer)runner.FindChild("AudioVisualsContainer")!;
-        Timing.Instance = timing;
+        Project.Instance.Timing = timing;
         Project.Instance.Settings.GridDivisor = 4;
         try
         {
@@ -146,7 +146,7 @@ public partial class TimingShortcutTests
         {
             Context.Instance.HeldTimingPoint = null;
             TimingPointSelection.Instance.DeselectAll();
-            Timing.Instance = originalTiming;
+            Project.Instance.Timing = originalTiming;
             Project.Instance.Settings.GridDivisor = originalGrid;
             viewport.Size2DOverrideStretch = false;
             viewport.Size2DOverride = Vector2I.Zero;

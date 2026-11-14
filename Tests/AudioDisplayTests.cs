@@ -81,14 +81,14 @@ public class AudioDisplayTests
     public void Rows_outside_the_song_remain_empty_after_timing_changes()
     {
         AudioFile originalAudio = Project.Instance.AudioFile;
-        Timing originalTiming = Timing.Instance;
+        Timing originalTiming = Project.Instance.Timing;
         var settings = new Settings { DownbeatPositionOffset = 0, MeasureOverlap = 0 };
         var panel = new AudioDisplayPanel { Settings = settings };
         try
         {
             Project.Instance.AudioFile = new AudioFile(ProjectSettings.GlobalizePath("res://Audio/clickedy.mp3"));
             var timing = new Timing(settings) { IsInstantiating = true };
-            Timing.Instance = timing;
+            Project.Instance.Timing = timing;
             timing.AddTimingPoint(-0.5, -1, 0.5);
             timing.AddTimingPoint(0.25, 0.5, 0.5);
             timing.AddTimingPoint(100, 200, 0.5);
@@ -113,7 +113,7 @@ public class AudioDisplayTests
         finally
         {
             panel.Free();
-            Timing.Instance = originalTiming;
+            Project.Instance.Timing = originalTiming;
             if (originalAudio != null)
                 Project.Instance.AudioFile = originalAudio;
         }

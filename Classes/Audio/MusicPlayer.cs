@@ -105,7 +105,7 @@ public partial class MusicPlayer : AudioStreamPlayer, ISettingsConsumer
 
     private void OnSelectedPositionChanged(object? _sender, EventArgs e)
     {
-        double time = Timing.Instance.MeasurePositionToOffset(Context.Instance.SelectedMeasurePosition);
+        double time = Project.Instance.Timing.MeasurePositionToOffset(Context.Instance.SelectedMeasurePosition);
         PauseTime = time >= 0 ? (double)time : 0;
     }
 

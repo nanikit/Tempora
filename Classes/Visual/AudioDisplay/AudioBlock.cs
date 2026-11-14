@@ -57,7 +57,7 @@ public partial class AudioBlock : Control
 
     private void OnTimingChanged(object? sender, EventArgs e)
     {
-        if (!Visible || Timing.Instance.IsBatchOperationInProgress)
+        if (!Visible || Project.Instance.Timing.IsBatchOperationInProgress)
             return;
         UpdateLabels();
     }
@@ -77,16 +77,16 @@ public partial class AudioBlock : Control
         if (e is not GlobalEvents.ObjectArgument<int[]> intArrayArgument)
             throw new Exception($"{nameof(e)} was not of type {nameof(GlobalEvents.ObjectArgument<int[]>)}");
         int[] timeSignature = intArrayArgument.Value;
-        Timing.Instance.UpdateTimeSignature(timeSignature, NominalMeasurePosition);
+        Project.Instance.Timing.UpdateTimeSignature(timeSignature, NominalMeasurePosition);
     }
 
     public void UpdateLabels()
     {
-        int[] timeSignature = Timing.Instance.GetTimeSignature(NominalMeasurePosition);
+        int[] timeSignature = Project.Instance.Timing.GetTimeSignature(NominalMeasurePosition);
         measureLabel.Text = NominalMeasurePosition.ToString();
         timeSignatureLineEdit.Text = $"{timeSignature[0]}/{timeSignature[1]}";
         timeSignatureStepper.TimeSignature = timeSignature;
-        bool isTimeSigPointHere = Timing.Instance.TimeSignaturePoints.Exists(point => point.Measure == nominalMeasurePosition);
+        bool isTimeSigPointHere = Project.Instance.Timing.TimeSignaturePoints.Exists(point => point.Measure == nominalMeasurePosition);
         if (isTimeSigPointHere)
         {
             timeSignatureLineEdit.AddThemeColorOverride("font_color", GlobalConstants.TemporaYellow);

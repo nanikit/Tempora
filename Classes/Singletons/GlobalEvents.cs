@@ -43,6 +43,11 @@ public partial class GlobalEvents : Node
     public event EventHandler? TimingPointAdded;
     public event EventHandler? SpectrogramUpdated;
 
+    public void NotifyTimingChanged() => TimingChanged?.Invoke(this, EventArgs.Empty);
+    public void NotifyTimingPointCountChanged() => TimingPointCountChanged?.Invoke(this, EventArgs.Empty);
+    public void NotifyMeasurePositionRejected(TimingPoint point)
+        => MeasurePositionChangeRejected?.Invoke(this, new ObjectArgument<TimingPoint>(point));
+
     /// <summary>
     /// Allows any class to invoke any event defined in <see cref="GlobalEvents"/>
     /// </summary>

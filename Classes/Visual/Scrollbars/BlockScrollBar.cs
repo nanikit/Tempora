@@ -74,7 +74,7 @@ public partial class BlockScrollBar : VScrollBar
 
     private void OnTimingChanged(object? sender, EventArgs e)
     {
-        if (Timing.Instance.IsBatchOperationInProgress)
+        if (Project.Instance.Timing.IsBatchOperationInProgress)
             return;
         UpdateScrollBar();
     }
@@ -100,7 +100,7 @@ public partial class BlockScrollBar : VScrollBar
     public void UpdateLimits()
     {
         int firstMeasure = audioVisualsContainer.FirstTopMeasure;
-        int endMeasure = Math.Max(firstMeasure + 1, Timing.Instance.GetLastMeasure() + 1);
+        int endMeasure = Math.Max(firstMeasure + 1, Project.Instance.Timing.GetLastMeasure(Project.Instance.AudioFile?.GetAudioLength() ?? 0) + 1);
         isRangeChanging = true;
         MinValue = firstMeasure;
         MaxValue = endMeasure;

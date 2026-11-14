@@ -33,8 +33,8 @@ public partial class ClearAllButton : Button
 
     private void ClearAllTimingPoints()
     {
-        Timing.Instance.TimingPoints.Clear();
-        Timing.Instance.TimeSignaturePoints.Clear();
+        Project.Instance.Timing.TimingPoints.Clear();
+        Project.Instance.Timing.TimeSignaturePoints.Clear();
         GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.TimingChanged)); ;
         ReleaseFocus();
 

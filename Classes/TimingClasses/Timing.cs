@@ -46,8 +46,22 @@ public partial class Timing : IMementoOriginator
 
     private bool ShouldCancelBatchOperation = false;
 
-    public static Timing Instance { get => instance; set => instance = value; }
-    private static Timing instance = null!;
+    public event EventHandler? Changed;
+    public event EventHandler? PointCountChanged;
+    public event Action<TimingPoint>? MeasurePositionRejected;
+    public event Action<TimingPoint?>? UndoCheckpointRequested;
+
+    private void NotifyChanged()
+    {
+        if (!IsInstantiating && !IsBatchOperationInProgress)
+            Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void NotifyPointCountChanged()
+    {
+        if (!IsInstantiating)
+            PointCountChanged?.Invoke(this, EventArgs.Empty);
+    }
 
     private List<TimingPoint> timingPoints = [];
 
@@ -58,9 +72,11 @@ public partial class Timing : IMementoOriginator
         {
             if (timingPoints == value)
                 return;
+            foreach (TimingPoint point in timingPoints)
+                UnsubscribeFromEvents(point);
             timingPoints = value;
             ReSubscribe();
-            GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.TimingChanged));
+            NotifyChanged();
         }
     }
 
@@ -74,7 +90,7 @@ public partial class Timing : IMementoOriginator
             if (timeSignaturePoints == value)
                 return;
             timeSignaturePoints = value;
-            GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.TimingChanged));
+            NotifyChanged();
         }
     }
 
@@ -204,7 +220,7 @@ public partial class Timing : IMementoOriginator
 
     public bool CanBpmBeChangedManually(TimingPoint timingPoint)
     {
-        var timingPoints = Timing.Instance.TimingPoints;
+        var timingPoints = TimingPoints;
         if (timingPoints.Count == 0)
             throw new ArgumentException($"{nameof(TimingPoint)} was not a part of {nameof(Timing)}");
 
