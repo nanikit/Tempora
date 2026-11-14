@@ -13,7 +13,6 @@
 
 using System;
 using System.IO;
-using System.Linq;
 using Godot;
 using Tempora.Classes.DataHelpers;
 using Tempora.Classes.Utility;
@@ -212,11 +211,25 @@ public partial class AudioFile : PcmData
 
         for (int i = 0; i < length - 1; i++)
         {
-            AudioDataPer10Min[i] = PcmLeft[(i * 10)..((i * 10) + 10)].Min();
-            AudioDataPer10Max[i] = PcmLeft[(i * 10)..((i * 10) + 10)].Max();
+            (AudioDataPer10Min[i], AudioDataPer10Max[i]) = GetExtrema(i * 10, i * 10 + 10);
         }
-        AudioDataPer10Min[length - 1] = PcmLeft[((length - 1) * 10-1)..^1].Min();
-        AudioDataPer10Max[length - 1] = PcmLeft[((length - 1) * 10-1)..^1].Max();
+        (AudioDataPer10Min[length - 1], AudioDataPer10Max[length - 1]) =
+            GetExtrema((length - 1) * 10 - 1, PcmLeft.Length - 1);
+    }
+
+    private (float Min, float Max) GetExtrema(int start, int end)
+    {
+        float min = PcmLeft[start];
+        float max = min;
+        for (int i = start + 1; i < end; i++)
+        {
+            float sample = PcmLeft[i];
+            if (sample < min || float.IsNaN(sample))
+                min = sample;
+            if (sample > max || float.IsNaN(max))
+                max = sample;
+        }
+        return (min, max);
     }
 
     public static bool IsAudioFileExtensionValid(string path, out string extension)

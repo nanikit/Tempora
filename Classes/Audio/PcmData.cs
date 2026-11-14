@@ -21,69 +21,49 @@ namespace Tempora.Classes.Audio;
 
 
 /// <summary>
-/// Stores audio PCM data. The PCM data is stored twice - once as <see cref="PcmFloats"/> and once as <see cref="PcmBytes"/>.
+/// Stores audio PCM data as <see cref="PcmFloats"/>.
 /// <para>"PCM": Pulse-code modulation. 
 /// Any format to store audio where the audio is split up into evenly-spaced samples with a given <see cref="SampleRate"/> i.e. 41000 samples/second.
-/// The value for each sample is the amplitude of the sample. For floats, the range is -1 to 1.
-/// For bytes, it depends on <see cref="BitsPerSample"/></para>
+/// The value for each sample is the amplitude of the sample, normally between -1 and 1.</para>
 /// </summary>
 public class PcmData
 {
     #region fields
     protected int sampleRate;
-    protected int bitsPerSample;
-    protected byte[][] pcmBytes;
-    protected float[][] pcmFloats;
+    protected float[][] pcmFloats = [];
     protected int channels;
     protected int startSilenceSamples = 0;
     #endregion
     #region constructors
     /// <param name="sampleRate">The number of samples per second.</param>
-    /// <param name="bitsPerSample">The number of bits per sample. Allowed values are 8 or 16.</param>
-    /// <param name="pcmBytes">The PCM sound data per channel in little-endian order. For 8 bits per sample, samples are unsigned from 0 to 255. For 16 bits per sample, samples are signed from -32768 to 32767 and in little endian byte order.</param>
     /// <param name="pcmFloats">The PCM sound data per channel. </param>
-    /// <exception cref="System.ArgumentNullException">Raised when the bytes array or any of its subarrays is a null reference.</exception>
-    /// <exception cref="System.ArgumentException">Raised when the bytes' subarrays are of unequal length.</exception>
-    /// <exception cref="System.ArgumentException">Raised when the number of bits per samples is neither 8 nor 16.</exception>
-    public PcmData(int sampleRate, int bitsPerSample, byte[][] pcmBytes, float[][] pcmFloats, int playbackOriginSample = 0)
+    /// <exception cref="System.ArgumentNullException">Raised when the samples array or any of its subarrays is a null reference.</exception>
+    /// <exception cref="System.ArgumentException">Raised when the channels have unequal lengths.</exception>
+    public PcmData(int sampleRate, float[][] pcmFloats, int playbackOriginSample = 0)
     {
-        if (pcmBytes == null)
+        if (pcmFloats == null)
         {
-            throw new ArgumentNullException("The data bytes are a null reference.");
+            throw new ArgumentNullException(nameof(pcmFloats));
         }
-        for (int i = 0; i < pcmBytes.Length; i++)
+        for (int i = 0; i < pcmFloats.Length; i++)
         {
-            if (pcmBytes[i] == null)
+            if (pcmFloats[i] == null)
             {
-                throw new ArgumentNullException("The data bytes of a particular channel is a null reference.");
+                throw new ArgumentNullException(nameof(pcmFloats), "The samples of a channel are a null reference.");
             }
         }
-        for (int i = 1; i < pcmBytes.Length; i++)
+        for (int i = 1; i < pcmFloats.Length; i++)
         {
-            if (pcmBytes[i].Length != pcmBytes[0].Length)
+            if (pcmFloats[i].Length != pcmFloats[0].Length)
             {
-                throw new ArgumentException("The data bytes of the channels are of unequal length.");
+                throw new ArgumentException("The channels have unequal lengths.", nameof(pcmFloats));
             }
         }
-        if (bitsPerSample != 8 & bitsPerSample != 16)
-        {
-            throw new ArgumentException("The number of bits per sample is neither 8 nor 16.");
-        }
-        else
-        {
-            this.sampleRate = sampleRate;
-            this.bitsPerSample = bitsPerSample;
-            this.pcmBytes = pcmBytes;
-            this.pcmFloats = pcmFloats;
-            this.startSilenceSamples = playbackOriginSample;
-        }
+        InitializeValues(sampleRate, pcmFloats, playbackOriginSample);
     }
 
     public PcmData(string audioFilePath)
     {
-        pcmBytes = new byte[0][];
-        pcmFloats = new float[0][];
-
         string extension = Path.GetExtension(audioFilePath).ToLower();
 
         switch (extension)
@@ -103,9 +83,6 @@ public class PcmData
 
     public PcmData(byte[] fileBuffer, string extension)
     {
-        pcmBytes = new byte[0][];
-        pcmFloats = new float[0][];
-
         switch (extension)
         {
             case ".ogg":
@@ -122,39 +99,32 @@ public class PcmData
     {
         // Based on https://github.com/leezer3/OpenBVE/blob/84064b7ef4e51def0b26e07226c114c004bcd4d3/source/Plugins/Sound.Vorbis/Plugin.Parser.cs#L12
 
-        AudioDataHelper.DecodeOgg(path, out float[] floatsMixed, out int channels, out int sampleRate, out int numSamplesCombined);
-
-        // Convert PCM bit depth from 32-bit float to 16-bit integer.
-        byte[] shortsMixed_byte = AudioDataHelper.ConvertToPCM8(floatsMixed);
+        AudioDataHelper.DecodeOgg(path, out float[] floatsMixed, out int channels, out int sampleRate, out _);
         float[][] floats = AudioDataHelper.SeparateByChannels(floatsMixed, channels);
-        byte[][] shorts_byte = AudioDataHelper.SeparateByChannels(shortsMixed_byte, channels);
-
-        InitializeValues(sampleRate, channels, floats, shorts_byte, 16, 0);
+        InitializeValues(sampleRate, floats, 0);
     }
 
     private void InitializeFromMp3(string path)
     {
         AudioDataHelper.DecodeMp3(path, out byte[] shortsMixed_byte, out int channels,
-            out int sampleRate, out int numRawBytes, out int startSilenceSamples);
-        var floats = AudioDataHelper.ConvertToFloats(shortsMixed_byte, channels, out _, out byte[][] shorts_byte);
-        InitializeValues(sampleRate, channels, floats, shorts_byte, 16, startSilenceSamples);
+            out int sampleRate, out _, out int startSilenceSamples);
+        var floats = AudioDataHelper.ConvertToFloats(shortsMixed_byte, channels);
+        InitializeValues(sampleRate, floats, startSilenceSamples);
     }
 
     private void InitializeFromMp3(byte[] mp3File)
     {
         AudioDataHelper.DecodeMp3(mp3File, out byte[] shortsMixed_byte, out int channels,
-            out int sampleRate, out int numRawBytes, out int startSilenceSamples);
-        var floats = AudioDataHelper.ConvertToFloats(shortsMixed_byte, channels, out _, out byte[][] shorts_byte);
-        InitializeValues(sampleRate, channels, floats, shorts_byte, 16, startSilenceSamples);
+            out int sampleRate, out _, out int startSilenceSamples);
+        var floats = AudioDataHelper.ConvertToFloats(shortsMixed_byte, channels);
+        InitializeValues(sampleRate, floats, startSilenceSamples);
     }
 
-    private void InitializeValues(int sampleRate, int channels, float[][] pcmFloats, byte[][] pcmBytes, int bitsPerSample, int startSilenceSamples)
+    private void InitializeValues(int sampleRate, float[][] pcmFloats, int startSilenceSamples)
     {
         this.sampleRate = sampleRate;
-        this.channels = channels;
+        this.channels = pcmFloats.Length;
         this.pcmFloats = pcmFloats;
-        this.pcmBytes = pcmBytes;
-        this.bitsPerSample = bitsPerSample;
         this.startSilenceSamples = startSilenceSamples;
     }
 
@@ -162,25 +132,6 @@ public class PcmData
     #region Properties
     /// <summary>Gets the number of samples per second.</summary>
     public int SampleRate => this.sampleRate;
-    /// <summary>Gets the number of bits per sample. Allowed values are 8 or 16.</summary>
-    public int BitsPerSample => this.bitsPerSample;
-    /// <summary>Gets the PCM sound data per channel represented as signed 16-bit (short) or unsigned 8-bit int (uint).
-    /// That is, for 8 bits per sample, samples are unsigned from 0 to 255. For 16 bits per sample, samples are signed from -32768 to 32767 and in little endian byte order.</summary>
-    public byte[][] PcmBytes
-    {
-        get
-        {
-            return pcmBytes;
-        }
-        protected set
-        {
-            if (value == pcmBytes)
-                return;
-            pcmBytes = value;
-            channels = pcmBytes.Length;
-        }
-    }
-
     /// <summary>The PCM sound data per channel. Samples are floats between -1 and 1.</summary>
     public float[][] PcmFloats => pcmFloats;
     /// <summary>
@@ -200,18 +151,9 @@ public class PcmData
     /// </summary>
     public double[] GetPcmAsDoubles(double multiplier = 16_000)
     {
-        if (pcmFloats[0].Length > 0)
-        {
-            return pcmFloats[0]
-                .Select(x => (double)x * multiplier)
-                .ToArray();
-        }
-        else
-        {
-            return PCMDataConverter.ConvertToDouble(pcmBytes[0])
-                .Select(x => x * multiplier)
-                .ToArray();
-        }
+        return pcmFloats[0]
+            .Select(x => (double)x * multiplier)
+            .ToArray();
     }
 
 }

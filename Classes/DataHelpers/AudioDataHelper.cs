@@ -12,17 +12,18 @@
 // Full license text is available at: https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode
 
 using System;
+using System.Buffers.Binary;
 using System.IO;
-using Godot;
-using NAudio.Wave;
-using NAudio.Vorbis;
-using NLayer.NAudioSupport;
-using System.Runtime.CompilerServices;
 using System.Linq;
-using Tempora.Classes.Audio;
-using NVorbis;
-using System.Threading.Channels;
 using System.Reflection.PortableExecutable;
+using System.Runtime.CompilerServices;
+using System.Threading.Channels;
+using Godot;
+using NAudio.Vorbis;
+using NAudio.Wave;
+using NLayer.NAudioSupport;
+using NVorbis;
+using Tempora.Classes.Audio;
 
 namespace Tempora.Classes.DataHelpers;
 
@@ -68,7 +69,7 @@ public partial class AudioDataHelper
     /// <summary>
     /// Read an MP3 file and output the raw contents. MP3 data is 16-bit integer.
     /// </summary>
-    public static void DecodeMp3(byte[] mp3File, out byte[] shortsMixed_byte, out int channels, 
+    public static void DecodeMp3(byte[] mp3File, out byte[] shortsMixed_byte, out int channels,
         out int sampleRate, out int numRawBytes, out int startSilenceSamples)
     {
         using var mp3FileMemoryStream = new MemoryStream(mp3File);
@@ -79,7 +80,7 @@ public partial class AudioDataHelper
     /// <summary>
     /// Read an MP3 file and output the raw contents. MP3 data is 16-bit integer.
     /// </summary>
-    public static void DecodeMp3(string mp3Path, out byte[] shortsMixed_byte, out int channels, 
+    public static void DecodeMp3(string mp3Path, out byte[] shortsMixed_byte, out int channels,
         out int sampleRate, out int numRawBytes, out int startSilenceSamples)
     {
         using var reader = new Mp3FileReaderBase(mp3Path, wf => new Mp3FrameDecompressor(wf));
@@ -103,7 +104,7 @@ public partial class AudioDataHelper
         {
             byte[] frameData = xingFrame.RawData;
             ExtractLameHeaderInfo(frameData, out encoderDelaySamples, out _);
-            
+
             // Logic: Retrieve encoder delay from Xing header. Assume all decorders add 528 samples.
             // Add 1 due to discrepancy, which is mentioned in https://lame.sourceforge.io/tech-FAQ.txt
             startSilenceSamples = encoderDelaySamples + decoderDelaySamples + 1;
@@ -138,7 +139,7 @@ public partial class AudioDataHelper
 
         // Convert Ogg Vorbis to raw 32-bit float n channels PCM.
         numSamplesCombined = reader.Read(floatsMixed, 0, samplesPerChannel * channels);
-        
+
     }
 
     /// <summary>
@@ -163,68 +164,6 @@ public partial class AudioDataHelper
     }
     #endregion
     #region Array and sample manipulation
-    /// <summary>
-    /// Convert a 32-bit float audio sample (between -1 and 1) into a short value (16-bit signed integer)
-    /// </summary>
-    /// <param name="floatSample"></param>
-    /// <returns></returns>
-    public static short ConvertToShort(float floatSample)
-    {
-        Math.Clamp(floatSample, -1.0f, 1.0f);
-        return (short)(floatSample * short.MaxValue);
-    }
-
-    public static float ConvertToFloat(short shortSample)
-    {
-        float floatSample = shortSample / short.MaxValue;
-        return Math.Clamp(floatSample, -1.0f, 1.0f);
-    }
-
-    public static byte[] ConvertToPCM8(float[] floats)
-    {
-        int numRawSamples = floats.Length;
-        byte[] pcm8 = new byte[numRawSamples * sizeof(short)];
-        using (MemoryStream stream = new MemoryStream(pcm8))
-        using (BinaryWriter writer = new BinaryWriter(stream))
-        {
-            for (int i = 0; i < numRawSamples; i++)
-            {
-                float sampleFloat = floats[i];
-                short sampleShort = ConvertToShort(sampleFloat);
-                writer.Write(sampleShort);
-            }
-        }
-        return pcm8;
-    }
-
-    public static byte[][] SeparateByChannels(byte[] pcm8, int channels)
-    {
-        byte[][] pcm8_separated_asbytes = new byte[channels][];
-
-        int numSamplesCombined = pcm8.Length / sizeof(short);
-        int numSamplesPerChannel = numSamplesCombined / channels;
-
-        for (int i = 0; i < channels; i++)
-        {
-            pcm8_separated_asbytes[i] = new byte[pcm8.Length / channels];
-        }
-
-        for (int sampleIndex = 0; sampleIndex < numSamplesPerChannel; sampleIndex++)
-        {
-            int byteIndexForSample = sampleIndex * sizeof(short) * channels;
-            for (int channelIndex = 0; channelIndex < channels; channelIndex++)
-            {
-                for (int relativeByteIndex = 0; relativeByteIndex < sizeof(short); relativeByteIndex++)
-                {
-                    pcm8_separated_asbytes[channelIndex][sampleIndex * sizeof(short) + relativeByteIndex]
-                        = pcm8[byteIndexForSample + sizeof(short) * channelIndex + relativeByteIndex];
-                }
-            }
-        }
-
-        return pcm8_separated_asbytes;
-    }
-
     public static float[][] SeparateByChannels(float[] floatsMixed, int channels)
     {
         float[][] floats = new float[channels][];
@@ -246,39 +185,27 @@ public partial class AudioDataHelper
 
         return floats;
     }
-    public static float[][] ConvertToFloats(byte[] pcm8, int channels, out short[][] pcm8_separated, out byte[][] pcm8_separated_asbytes)
+    public static float[][] ConvertToFloats(byte[] pcm16, int channels)
     {
-        int numSamplesCombined = pcm8.Length / sizeof(short);
+        int numSamplesCombined = pcm16.Length / sizeof(short);
         int numSamplesPerChannel = numSamplesCombined / channels;
-
-        // Separate data into separate buffer streams
-        float[][] floats_separated = new float[channels][];
-        pcm8_separated = new short[channels][];
-
-        for (int i = 0; i < channels; i++)
-        {
-            floats_separated[i] = new float[numSamplesPerChannel];
-            pcm8_separated[i] = new short[numSamplesPerChannel];
-        }
-
-        pcm8_separated_asbytes = SeparateByChannels(pcm8, channels);
-
-        // Get shorts and floats for each channel
+        float[][] floats = new float[channels][];
         for (int channelIndex = 0; channelIndex < channels; channelIndex++)
         {
-            Buffer.BlockCopy(pcm8_separated_asbytes[channelIndex], 0, pcm8_separated[channelIndex], 0, pcm8_separated_asbytes[channelIndex].Length);
-            for (int sampleIndex = 0; (sampleIndex < numSamplesPerChannel); sampleIndex++)
+            floats[channelIndex] = new float[numSamplesPerChannel];
+            for (int sampleIndex = 0; sampleIndex < numSamplesPerChannel; sampleIndex++)
             {
-                floats_separated[channelIndex][sampleIndex] = (float)pcm8_separated[channelIndex][sampleIndex] / short.MaxValue;
+                int byteIndex = (sampleIndex * channels + channelIndex) * sizeof(short);
+                short sample = BinaryPrimitives.ReadInt16LittleEndian(pcm16.AsSpan(byteIndex, sizeof(short)));
+                floats[channelIndex][sampleIndex] = (float)sample / short.MaxValue;
             }
         }
-
-        return floats_separated;
+        return floats;
     }
 
     public static Vector2[] ConvertToStereoVector2Floats(byte[] pcm8)
     {
-        float[][] floats = ConvertToFloats(pcm8, 2, out _, out _);
+        float[][] floats = ConvertToFloats(pcm8, 2);
         Vector2[] stereoFloats = new Vector2[floats[0].Length];
         for (int sampleIndex = 0; sampleIndex < floats[0].Length; sampleIndex++)
         {
