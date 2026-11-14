@@ -11,10 +11,8 @@
 //
 // Full license text is available at: https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode
 
-using System.Collections.Generic;
 using Godot;
 using Tempora.Classes.Audio;
-using Tempora.Classes.Visual.AudioDisplay;
 using GD = Tempora.Classes.DataHelpers.GD;
 
 namespace Tempora.Classes.Visual.AudioDisplay;
@@ -25,25 +23,26 @@ public partial class WaveformSegment : Node2D, IAudioSegmentDisplay
 
     public override void _Draw()
     {
-        int sampleIndexStart = AudioDataRange[0];
-        int sampleEndIndex = AudioDataRange[1];
-
-        int numberOfSamples = sampleEndIndex - sampleIndexStart;
-        float samplesPerPoint = numberOfSamples / Width / PointsPerLengthwisePixel;
-
         int nbPoints = (int)Width * PointsPerLengthwisePixel;
         if (nbPoints <= 0)
             return;
-
-        var points = new Vector2[nbPoints];
-
-        var multilinePoints = new Vector2[(nbPoints * 2) - 2];
 
         if (AudioFile == null)
         {
             GD.Print("AudioFile was Null");
             return;
         }
+
+        DrawMultiline(CreateWaveformLinePoints(nbPoints), Color, 1f);
+    }
+
+    private Vector2[] CreateWaveformLinePoints(int nbPoints)
+    {
+        int sampleIndexStart = AudioFile.SampleTimeToSampleIndex(TimeRange[0]);
+        int sampleEndIndex = AudioFile.SampleTimeToSampleIndex(TimeRange[1]);
+        int numberOfSamples = sampleEndIndex - sampleIndexStart;
+        float samplesPerPoint = numberOfSamples / Width / PointsPerLengthwisePixel;
+        var multilinePoints = new Vector2[(nbPoints * 2) - 2];
 
         for (int pointIndex = 0; pointIndex < nbPoints; pointIndex++)
         {
@@ -55,8 +54,6 @@ public partial class WaveformSegment : Node2D, IAudioSegmentDisplay
             pickedFloatSample = GetPickedFloatSample(sampleIndexBegin, sampleIndexEnd, pointIndex);
 
             var coordinate = new Vector2((float)pointIndex / PointsPerLengthwisePixel, -pickedFloatSample * Height / 2);
-
-            points[pointIndex] = coordinate;
 
             if (pointIndex == 0)
             {
@@ -73,12 +70,7 @@ public partial class WaveformSegment : Node2D, IAudioSegmentDisplay
             }
         }
 
-        DrawMultiline(multilinePoints, Color, 1f);
-        //DrawPolyline(multilinePoints, white, 1f);
-
-        // Testing saving waveform result as texture or image to use elsewhere
-        //Image waveImage = GetViewport().GetTexture().GetImage();
-        //waveImage.SavePng("user://renderedWave.png");
+        return multilinePoints;
     }
 
     private float GetPickedFloatSample(int sampleIndexBegin, int sampleIndexEnd, int pointIndex)
@@ -168,46 +160,16 @@ public partial class WaveformSegment : Node2D, IAudioSegmentDisplay
     /// </summary>
     private int PointsPerLengthwisePixel = 2;
 
-    private int[] audioDataRange = [0, 0];
+    public float[] TimeRange { get; set; } = null!;
 
-    /// <summary>
-    ///     Indices for the first and last audio sample to use from <see cref="Tempora.Classes.Audio.AudioFile.PcmLeft" />
-    /// </summary>
-    private int[] AudioDataRange
-    {
-        get
-        {
-            int sampleStart = AudioFile?.SampleTimeToSampleIndex(TimeRange[0]) ?? 0;
-            int sampleEnd = AudioFile?.SampleTimeToSampleIndex(TimeRange[1]) ?? 0;
-
-            return [sampleStart, sampleEnd];
-        }
-        set => audioDataRange = value;
-    }
-
-    private float[] timeRange = null!;
-
-    public float[] TimeRange
-    {
-        get => timeRange;
-        set
-        {
-            if (value[0] > value[1])
-            {
-            }
-
-            timeRange = value;
-        }
-    }
-
-    public Color Color { get => color; set => color = value; }
+    public Color Color { get; set; } = DefaultColor;
 
     public static readonly Color DefaultColor = GlobalConstants.AudioFullExposure;
-    public static readonly Color DarkenedColor = GlobalConstants.AudioDarkened;
-    private Color color = DefaultColor;
     #endregion
 
     #region Initialization
+
+    public WaveformSegment() { }
 
     public WaveformSegment(AudioFile audioFile, float length, float height, float[] timeRange)
     {
@@ -217,7 +179,6 @@ public partial class WaveformSegment : Node2D, IAudioSegmentDisplay
     public void Instantiate(AudioFile audioFile, float length, float height, float[] timeRange)
     {
         AudioFile = audioFile;
-        AudioDataRange = [0, AudioFile.PcmLeft.Length];
         Height = height;
         Width = length;
         TimeRange = timeRange;

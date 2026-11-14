@@ -471,44 +471,23 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
                 )
             || (Time.GetTicksMsec() - heldTimingPoint.SystemTimeWhenCreatedMsec) < 30; ;
 
-        IAudioSegmentDisplay audioSegment;
-        if (existingSegment is WaveformSegment waveform)
+        Node2D segment = (Node2D?)existingSegment
+            ?? (renderAsSpectrogram ? new SpectrogramSegment() : new WaveformSegment());
+        if (segment is WaveformSegment waveform)
         {
             waveform.Instantiate(Project.Instance.AudioFile, length, Size.Y, [segmentStart, segmentEnd]);
             waveform.Position = new Vector2(xPositionFromLeft, Size.Y / 2);
-            waveform.Color = (canHeldTimingPointBeInSegment ? WaveformSegment.DefaultColor : WaveformSegment.DarkenedColor);
-            audioSegment = waveform;
-            audioSegment.Render();
         }
-        else if (existingSegment is SpectrogramSegment spectrogram)
+        else if (segment is SpectrogramSegment spectrogram)
         {
             spectrogram.InstantiateAndRender(Project.Instance.AudioFile, Project.Instance.SpectrogramContext, length, Size.Y, [segmentStart, segmentEnd]);
             spectrogram.Position = new Vector2(length / 2 + xPositionFromLeft, Size.Y / 2);
-            spectrogram.Color = (canHeldTimingPointBeInSegment ? SpectrogramSegment.DefaultColor : SpectrogramSegment.DarkenedColor);
-            audioSegment = spectrogram;
         }
-        else
-        {
-            switch (renderAsSpectrogram)
-            {
-                case false:
-                    audioSegment = new WaveformSegment(Project.Instance.AudioFile, length, Size.Y, [segmentStart, segmentEnd])
-                    {
-                        Position = new Vector2(xPositionFromLeft, Size.Y / 2),
-                        Color = (canHeldTimingPointBeInSegment ? WaveformSegment.DefaultColor : WaveformSegment.DarkenedColor)
-                    };
-                    break;
-                case true:
-                    audioSegment = new SpectrogramSegment(Project.Instance.AudioFile, Project.Instance.SpectrogramContext, length, Size.Y, [segmentStart, segmentEnd])
-                    {
-                        Position = new Vector2(length / 2 + xPositionFromLeft, Size.Y / 2),
-                        Color = (canHeldTimingPointBeInSegment ? SpectrogramSegment.DefaultColor : SpectrogramSegment.DarkenedColor)
-                    };
-                    break;
-            }
-            audioSegments.AddChild((Node)audioSegment);
-        }
-        audioSegment.Visible = true;
+        ((IAudioSegmentDisplay)segment).Color = canHeldTimingPointBeInSegment
+            ? GlobalConstants.AudioFullExposure : GlobalConstants.AudioDarkened;
+        if (existingSegment == null)
+            audioSegments.AddChild(segment);
+        segment.Visible = true;
     }
 
     public List<float[]> GetPanelSegments()
