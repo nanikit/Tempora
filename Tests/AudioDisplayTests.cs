@@ -3,7 +3,6 @@ namespace Tempora.Tests;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using GdUnit4;
 using Godot;
@@ -34,22 +33,28 @@ public class AudioDisplayTests
     }
 
     [TestCase]
-    public void Completed_analysis_keeps_only_spectrum_sized_storage()
+    public void Completed_analysis_does_not_retain_the_song_buffer()
     {
         var audio = new PcmData(44100, [new float[1_000_000]]);
-        long before = GC.GetTotalMemory(true);
-        var spectrum = Analyze(audio);
-        long retained = GC.GetTotalMemory(true) - before;
-        long spectrumBytes = spectrum.GetFFTs().Sum(fft => fft.LongLength * sizeof(double) + 40);
-        Godot.GD.Print($"Spectrum retained bytes: {retained}; FFT storage estimate: {spectrumBytes}");
-        AssertThat(retained).IsLess(spectrumBytes + 1_048_576);
-        GC.KeepAlive(spectrum);
+        var (ffts, generator, heapSize) = MeasureCompletedAnalysis(audio);
+        long reclaimed = heapSize - GC.GetTotalMemory(true);
+        Godot.GD.Print($"Spectrum generator reclaimed bytes: {reclaimed}; FFT results remain alive");
+        AssertThat(generator.IsAlive).IsFalse();
+        AssertThat(reclaimed).IsLess(1_048_576);
+        GC.KeepAlive(ffts);
         GC.KeepAlive(audio);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static Spectrogram.SpectrogramGenerator Analyze(PcmData audio)
-        => SpectrogramHelper.GetSpectrogramGenerator(audio, stepSize: 64, fftSize: 256, minFreq: 2200);
+    private static (List<double[]> Ffts, WeakReference Generator, long HeapSize) MeasureCompletedAnalysis(PcmData audio)
+    {
+        var spectrum = SpectrogramHelper.GetSpectrogramGenerator(audio, stepSize: 64, fftSize: 256, minFreq: 2200);
+        var ffts = spectrum.GetFFTs();
+        var generator = new WeakReference(spectrum);
+        long heapSize = GC.GetTotalMemory(true);
+        GC.KeepAlive(spectrum);
+        return (ffts, generator, heapSize);
+    }
 
     [TestCase]
     public void Spectrum_pixels_match_the_untrimmed_analysis()
@@ -57,7 +62,7 @@ public class AudioDisplayTests
         var audio = new PcmData(ProjectSettings.GlobalizePath("res://Audio/clickedy.mp3"));
         var expected = new Spectrogram.SpectrogramGenerator(audio.SampleRate, 256, 64, minFreq: 2200);
         expected.Add(audio.GetPcmAsDoubles(16_000));
-        var actual = Analyze(audio);
+        var actual = SpectrogramHelper.GetSpectrogramGenerator(audio, stepSize: 64, fftSize: 256, minFreq: 2200);
         AssertThat(actual.GetFFTs().Count).IsEqual(expected.GetFFTs().Count);
         for (int column = 0; column < expected.GetFFTs().Count; column++)
             AssertThat(actual.GetFFTs()[column]).IsEqual(expected.GetFFTs()[column]);
