@@ -214,6 +214,7 @@ public partial class TimingShortcutTests
             Project.Instance.Settings.RoundBPM = roundBpm;
             Project.Instance.Settings.NumberOfRows = rows;
             Project.Instance.AudioFile = originalAudio;
+            await runner.AwaitIdleFrame();
         }
     }
 

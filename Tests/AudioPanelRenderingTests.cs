@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using GdUnit4;
 using Godot;
+using Tempora.Classes.Audio;
 using Tempora.Classes.TimingClasses;
 using Tempora.Classes.Utility;
 using Tempora.Classes.Visual.AudioDisplay;
@@ -63,7 +64,17 @@ public partial class TimingShortcutTests
                 panel.UpdateVisuals();
                 await runner.AwaitIdleFrame();
                 AssertThat(VisibleAudioSegments(panel)).IsEqual(segments);
+
+                panel.NominalMeasurePosition = 10000;
+                await runner.AwaitIdleFrame();
+                AssertThat(panel.GetNode<Node2D>("AudioSegments").GetChildCount()).IsEqual(0);
+                AssertThat(segments.All(node => !GodotObject.IsInstanceValid(node))).IsTrue();
+                panel.NominalMeasurePosition = container.AudioBlocks[0].NominalMeasurePosition;
+                await runner.AwaitIdleFrame();
+                AssertThat(VisibleAudioSegments(panel).Length).IsEqual(2);
             }
+
+            await VerifyHiddenRowsReleaseAudio(runner, container);
         }
         finally
         {
@@ -78,6 +89,47 @@ public partial class TimingShortcutTests
             settings.GridDivisor = divisor;
             Wheel(viewport, panel.GetGlobalRect().GetCenter(), MouseButton.WheelDown);
             await runner.AwaitInputProcessed();
+        }
+    }
+
+    private static async Task VerifyHiddenRowsReleaseAudio(ISceneRunner runner, AudioVisualsContainer container)
+    {
+        var project = Project.Instance;
+        int rows = project.Settings.NumberOfRows;
+        AudioFile audio = project.AudioFile;
+        try
+        {
+            project.Settings.NumberOfRows = 2;
+            container.UpdateNumberOfVisibleBlocks();
+            await runner.AwaitIdleFrame();
+            var panel = container.AudioBlocks[1].AudioDisplayPanel;
+            var segments = VisibleAudioSegments(panel);
+            AssertThat(segments.Length).IsGreater(0);
+            var textures = segments.OfType<SpectrogramSegment>().Select(segment => segment.Texture).ToArray();
+
+            project.Settings.NumberOfRows = 1;
+            container.UpdateNumberOfVisibleBlocks();
+            await runner.AwaitIdleFrame();
+            AssertThat(panel.Visible).IsFalse();
+            AssertThat(panel.GetNode<Node2D>("AudioSegments").GetChildCount()).IsEqual(0);
+            AssertThat(segments.All(node => !GodotObject.IsInstanceValid(node))).IsTrue();
+            AssertThat(textures.All(texture => !GodotObject.IsInstanceValid(texture))).IsTrue();
+
+            project.AudioFile = new AudioFile(ResourceLoader.Load<AudioStreamMP3>("res://Audio/Loop.mp3"));
+            AssertThat(panel.GetNode<Node2D>("AudioSegments").GetChildCount()).IsEqual(0);
+            project.Settings.NumberOfRows = 2;
+            container.UpdateNumberOfVisibleBlocks();
+            await runner.AwaitIdleFrame();
+            var restored = VisibleAudioSegments(panel);
+            AssertThat(restored.Length).IsGreater(0);
+            AssertThat(restored.Cast<IAudioSegmentDisplay>().All(segment => ReferenceEquals(segment.AudioFile, project.AudioFile))).IsTrue();
+        }
+        finally
+        {
+            project.AudioFile = audio;
+            project.Settings.NumberOfRows = rows;
+            container.UpdateNumberOfVisibleBlocks();
+            await runner.AwaitIdleFrame();
         }
     }
 

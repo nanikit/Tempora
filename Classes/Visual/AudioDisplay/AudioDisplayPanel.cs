@@ -126,6 +126,7 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
         PreviewLine.TimeLabel.ThemeChanged += OnTextThemeChanged;
 
         Resized += OnResized;
+        VisibilityChanged += OnVisibilityChanged;
         Settings.DisplayChanged += OnSettingsChanged;
         TreeExiting += () => Settings.DisplayChanged -= OnSettingsChanged;
         GlobalEvents.Instance.SelectedPositionChanged += OnSelectedPositionChanged;
@@ -356,6 +357,12 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
 
     private void OnSettingsChanged(object? sender, EventArgs e) => UpdateVisuals();
 
+    private void OnVisibilityChanged()
+    {
+        if (!Visible)
+            RenderAudio();
+    }
+
     private void OnSelectedPositionChanged(object? sender, EventArgs e) => UpdateSelectedPositionLine();
 
     private void OnMouseEntered()
@@ -406,51 +413,27 @@ public partial class AudioDisplayPanel : Control, ISettingsConsumer
     public void RenderAudio()
     {
         var timing = GetTimingAnchors();
-        var panelSegments = GetPanelSegments(timing);
+        var panelSegments = Visible ? GetPanelSegments(timing) : [];
         var children = audioSegments.GetChildren();
-
         bool shouldRenderSpectrogram = Settings.RenderAsSpectrogram;
-
-        foreach (Node? child in children)
+        int panelIndex = 0;
+        foreach (Node child in children)
         {
-            if (child is WaveformSegment waveform)
-                waveform.Visible = false;
-            else if (child is SpectrogramSegment spectrogram)
-                spectrogram.Visible = false;
-
-            // If the child is the wrong type (depending on shouldRenderSpectrogram), it is removed.
-            if ((shouldRenderSpectrogram && child is not SpectrogramSegment)
-                || (!shouldRenderSpectrogram && child is not WaveformSegment))
+            bool canReuse = shouldRenderSpectrogram ? child is SpectrogramSegment : child is WaveformSegment;
+            if (!canReuse || panelIndex >= panelSegments.Count)
             {
+                audioSegments.RemoveChild(child);
                 child.QueueFree();
                 continue;
             }
+            float[] range = panelSegments[panelIndex++];
+            ModifyOrAddAudioSegment(range[0], range[1], timing, shouldRenderSpectrogram, child);
         }
 
-        int childIndexOffset = 0;
-        for (int panelIndex = 0; panelIndex < panelSegments.Count; panelIndex++)
+        for (; panelIndex < panelSegments.Count; panelIndex++)
         {
-            Node? existingSegment = null;
-
-            // If a child exists of the correct audio display type, modify it instead of making a new one.
-            while (panelIndex + childIndexOffset < children.Count)
-            {
-                existingSegment = children[panelIndex + childIndexOffset];
-                if ((shouldRenderSpectrogram && existingSegment is not SpectrogramSegment && existingSegment is not null)
-                || (!shouldRenderSpectrogram && existingSegment is not WaveformSegment && existingSegment is not null))
-                {
-                    existingSegment = null;
-                    childIndexOffset++;
-                    continue;
-                }
-
-                break;
-            }
-
-            float segmentStart = panelSegments[panelIndex][0];
-            float segmentEnd = panelSegments[panelIndex][1];
-
-            ModifyOrAddAudioSegment(segmentStart, segmentEnd, timing, shouldRenderSpectrogram, existingSegment: existingSegment);
+            float[] range = panelSegments[panelIndex];
+            ModifyOrAddAudioSegment(range[0], range[1], timing, shouldRenderSpectrogram);
         }
     }
 

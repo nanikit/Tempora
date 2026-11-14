@@ -3,6 +3,7 @@ using Godot;
 using Tempora.Classes.Audio;
 
 namespace Tempora.Classes.Visual.AudioDisplay;
+
 public partial class SpectrogramSegment : Sprite2D, IAudioSegmentDisplay
 {
     public float[] TimeRange { get; set; } = null!;
@@ -17,11 +18,7 @@ public partial class SpectrogramSegment : Sprite2D, IAudioSegmentDisplay
 
     public static readonly Color DefaultColor = GlobalConstants.AudioFullExposure;
     private SpectrogramContext spectrogramContext = null!;
-
-    public override void _Ready()
-    {
-        Render();
-    }
+    private ImageTexture? ownedTexture;
 
     public SpectrogramSegment() { }
 
@@ -47,13 +44,32 @@ public partial class SpectrogramSegment : Sprite2D, IAudioSegmentDisplay
     {
         if (Width <= 0 || Height <= 0)
         {
-            Texture = null;
+            ReplaceTexture(null);
             return;
         }
         int sampleIndexStart = AudioFile.SampleTimeToSampleIndex(TimeRange[0]);
         int sampleEndIndex = AudioFile.SampleTimeToSampleIndex(TimeRange[1]);
 
-        Texture = spectrogramContext.GetSpectrogramSlice(sampleIndexStart, sampleEndIndex, (int)Math.Ceiling(Height), (int)Math.Ceiling(Width));
+        ReplaceTexture(spectrogramContext.GetSpectrogramSlice(sampleIndexStart, sampleEndIndex, (int)Math.Ceiling(Height), (int)Math.Ceiling(Width)));
         Scale = new Vector2(Width, Height) / Texture.GetSize();
+    }
+
+    private void ReplaceTexture(ImageTexture? texture)
+    {
+        Texture = texture;
+        ownedTexture?.Dispose();
+        ownedTexture = texture;
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            ownedTexture?.Dispose();
+            ownedTexture = null;
+            AudioFile = null!;
+            spectrogramContext = null!;
+        }
+        base.Dispose(disposing);
     }
 }

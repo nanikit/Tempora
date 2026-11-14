@@ -3,6 +3,8 @@ namespace Tempora.Tests;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using GdUnit4;
 using Godot;
 using NAudio.Wave;
@@ -18,12 +20,50 @@ using static GdUnit4.Assertions;
 [RequireGodotRuntime]
 public class AudioDisplayTests
 {
-    [TestCase]
-    public void Audio_shorter_than_an_fft_window_still_has_a_spectrum()
+    [TestCase(1)]
+    [TestCase(255)]
+    [TestCase(256)]
+    [TestCase(300)]
+    [TestCase(320)]
+    [TestCase(321)]
+    public void Audio_shorter_than_an_fft_window_still_has_a_spectrum(int samples)
     {
-        var audio = new PcmData(44100, [new float[300]]);
+        var audio = new PcmData(44100, [new float[samples]]);
         var spectrum = SpectrogramHelper.GetSpectrogramGenerator(audio, stepSize: 64, fftSize: 256, minFreq: 2200);
         AssertThat(spectrum.GetFFTs().Count).IsEqual(1);
+    }
+
+    [TestCase]
+    public void Completed_analysis_keeps_only_spectrum_sized_storage()
+    {
+        var audio = new PcmData(44100, [new float[1_000_000]]);
+        long before = GC.GetTotalMemory(true);
+        var spectrum = Analyze(audio);
+        long retained = GC.GetTotalMemory(true) - before;
+        long spectrumBytes = spectrum.GetFFTs().Sum(fft => fft.LongLength * sizeof(double) + 40);
+        Godot.GD.Print($"Spectrum retained bytes: {retained}; FFT storage estimate: {spectrumBytes}");
+        AssertThat(retained).IsLess(spectrumBytes + 1_048_576);
+        GC.KeepAlive(spectrum);
+        GC.KeepAlive(audio);
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static Spectrogram.SpectrogramGenerator Analyze(PcmData audio)
+        => SpectrogramHelper.GetSpectrogramGenerator(audio, stepSize: 64, fftSize: 256, minFreq: 2200);
+
+    [TestCase]
+    public void Spectrum_pixels_match_the_untrimmed_analysis()
+    {
+        var audio = new PcmData(ProjectSettings.GlobalizePath("res://Audio/clickedy.mp3"));
+        var expected = new Spectrogram.SpectrogramGenerator(audio.SampleRate, 256, 64, minFreq: 2200);
+        expected.Add(audio.GetPcmAsDoubles(16_000));
+        var actual = Analyze(audio);
+        AssertThat(actual.GetFFTs().Count).IsEqual(expected.GetFFTs().Count);
+        for (int column = 0; column < expected.GetFFTs().Count; column++)
+            AssertThat(actual.GetFFTs()[column]).IsEqual(expected.GetFFTs()[column]);
+        using var expectedImage = SpectrogramHelper.GenerateGodotImage(expected, SpectrogramHelper.TemporaColormap);
+        using var actualImage = SpectrogramHelper.GenerateGodotImage(actual, SpectrogramHelper.TemporaColormap);
+        AssertThat(actualImage.GetData()).IsEqual(expectedImage.GetData());
     }
 
     [TestCase(false)]
@@ -57,6 +97,21 @@ public class AudioDisplayTests
     }
 
     [TestCase]
+    public void Spectrum_slices_release_temporary_images()
+    {
+        using var source = Image.CreateEmpty(40, 12, false, Image.Format.Rgba8);
+        source.Fill(Colors.White);
+        double before = Performance.GetMonitor(Performance.Monitor.ObjectCount);
+        foreach (var range in new[] { (0, 40), (40, 40), (-40, -1) })
+        {
+            using var texture = SpectrogramHelper.GetSpectrogramSlice(source, range.Item1, range.Item2, 12, 100);
+            using var pixels = texture.GetImage();
+            AssertThat(pixels.GetPixel(0, 0)).IsEqual(range.Item1 == 0 ? Colors.White : new Color(0, 0, 0, 0));
+        }
+        AssertThat(Performance.GetMonitor(Performance.Monitor.ObjectCount)).IsEqual(before);
+    }
+
+    [TestCase]
     public void Very_short_audio_segments_fit_without_empty_textures()
     {
         var audio = new AudioFile(ProjectSettings.GlobalizePath("res://Audio/clickedy.mp3"));
@@ -74,6 +129,77 @@ public class AudioDisplayTests
         finally
         {
             segment.Free();
+        }
+    }
+
+    [TestCase]
+    public void Attaching_a_spectrum_preserves_its_first_render()
+    {
+        var audio = new AudioFile(ProjectSettings.GlobalizePath("res://Audio/clickedy.mp3"));
+        using var context = new SpectrogramContext(audio, VisualSettings.From(new Settings()));
+        var segment = new SpectrogramSegment(audio, context, 100, 20, [0, 0.1f]);
+        var root = ((SceneTree)Engine.GetMainLoop()).Root;
+        try
+        {
+            var texture = segment.Texture;
+            root.AddChild(segment);
+            AssertThat(segment.Texture).IsSame(texture);
+            root.RemoveChild(segment);
+            root.AddChild(segment);
+            AssertThat(segment.Texture).IsSame(texture);
+            AssertThat(GodotObject.IsInstanceValid(texture)).IsTrue();
+        }
+        finally
+        {
+            segment.Free();
+        }
+    }
+
+    [TestCase]
+    public void Replaced_and_deleted_spectra_release_owned_textures()
+    {
+        var audio = new AudioFile(ProjectSettings.GlobalizePath("res://Audio/clickedy.mp3"));
+        using var context = new SpectrogramContext(audio, VisualSettings.From(new Settings()));
+        var segment = new SpectrogramSegment();
+        try
+        {
+            segment.InstantiateAndRender(audio, context, 100, 20, [0, 0.1f]);
+            var texture = segment.Texture;
+            segment.Render();
+            AssertThat(GodotObject.IsInstanceValid(texture)).IsFalse();
+            texture = segment.Texture;
+            segment.InstantiateAndRender(audio, context, 100, 0, [0, 0.1f]);
+            AssertThat(GodotObject.IsInstanceValid(texture)).IsFalse();
+            segment.InstantiateAndRender(audio, context, 100, 20, [0, 0.1f]);
+            texture = segment.Texture;
+            segment.Free();
+            AssertThat(GodotObject.IsInstanceValid(texture)).IsFalse();
+            AssertThat(GodotObject.IsInstanceValid(context.CachedSpectrogramImage)).IsTrue();
+        }
+        finally
+        {
+            if (GodotObject.IsInstanceValid(segment)) segment.Free();
+        }
+    }
+
+    [TestCase]
+    public void Spectrum_cleanup_preserves_external_textures()
+    {
+        var audio = new AudioFile(ProjectSettings.GlobalizePath("res://Audio/clickedy.mp3"));
+        using var context = new SpectrogramContext(audio, VisualSettings.From(new Settings()));
+        using var shared = context.GetSpectrogramSlice(0, 100, 20, 100);
+        var segment = new SpectrogramSegment { Texture = shared };
+        try
+        {
+            segment.InstantiateAndRender(audio, context, 100, 20, [0, 0.1f]);
+            AssertThat(GodotObject.IsInstanceValid(shared)).IsTrue();
+            segment.Texture = shared;
+            segment.Free();
+            AssertThat(GodotObject.IsInstanceValid(shared)).IsTrue();
+        }
+        finally
+        {
+            if (GodotObject.IsInstanceValid(segment)) segment.Free();
         }
     }
 
