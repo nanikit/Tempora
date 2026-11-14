@@ -2,7 +2,7 @@ namespace Tempora.Tests;
 
 using System.Globalization;
 using GdUnit4;
-using Tempora.Classes.Utility;
+using Tempora.Classes.DataHelpers;
 using static GdUnit4.Assertions;
 
 // Pure format/parse functions, so no Godot runtime is needed.
@@ -19,7 +19,7 @@ public class ProjectFileNumberFormatTests
         {
             float value = 310.00009f;
 
-            string formatted = ProjectFileManager.FormatFloatForProjectFile(value);
+            string formatted = ProjectFileCodec.FormatFloatForProjectFile(value);
 
             AssertThat(formatted).Contains(".");
             AssertThat(formatted).NotContains(",");
@@ -41,7 +41,7 @@ public class ProjectFileNumberFormatTests
         {
             double value = 154.99335007388657;
 
-            string formatted = ProjectFileManager.FormatDoubleForProjectFile(value);
+            string formatted = ProjectFileCodec.FormatDoubleForProjectFile(value);
 
             AssertThat(formatted).Contains(".");
             AssertThat(formatted).NotContains(",");
@@ -56,14 +56,14 @@ public class ProjectFileNumberFormatTests
     [TestCase]
     public void TryParseFloatFromProjectFile_accepts_round_trip_float_format()
     {
-        AssertThat(ProjectFileManager.TryParseFloatFromProjectFile("1.23456789E-05", out float value)).IsTrue();
+        AssertThat(ProjectFileCodec.TryParseFloatFromProjectFile("1.23456789E-05", out float value)).IsTrue();
         AssertThat(value).IsEqual(1.23456789E-05f);
     }
 
     [TestCase]
     public void TryParseDoubleFromProjectFile_accepts_round_trip_double_format()
     {
-        AssertThat(ProjectFileManager.TryParseDoubleFromProjectFile("154.99335007388657", out double value)).IsTrue();
+        AssertThat(ProjectFileCodec.TryParseDoubleFromProjectFile("154.99335007388657", out double value)).IsTrue();
         AssertThat(value).IsEqual(154.99335007388657);
     }
 }

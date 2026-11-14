@@ -118,36 +118,87 @@ public partial class Project : Node, ISettingsConsumer
         {
             if (audioFile == value)
                 return;
-            audioFile = value;
-            UpdateSpectrogramContextFromSettings();
-            GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.Instance.AudioFileChanged), this, EventArgs.Empty);
+            var spectrum = PrepareSpectrogram(value, GetSpectrogramSettings(value, null)!.Value, out _);
+            ApplyAudio(value, spectrum);
         }
     }
 
-    public SpectrogramContext SpectrogramContext { get; set; } = null!;
+    public SpectrogramContext SpectrogramContext { get; private set; } = null!;
+
+    public void ReplaceDocument(Timing document, AudioFile audio, string? path)
+    {
+        var spectrum = PrepareSpectrogram(audio, GetSpectrogramSettings(audio, null)!.Value, out _);
+        if (audioFile != null)
+            MusicPlayer.Instance.Pause();
+        Timing = document;
+        ProjectPath = path;
+        ApplyAudio(audio, spectrum);
+    }
 
     public bool UpdateSpectrogramContextFromSettings(VisualSettings? preview = null)
     {
-        VisualSettings values = preview ?? VisualSettings.From(Settings);
-        if (!values.IsValid(AudioFile.SampleRate, AudioFile.PcmFloats[0].Length))
-        {
-            if (preview.HasValue)
-                return false;
-            values = VisualSettings.From(new Settings());
-            if (!values.IsValid(AudioFile.SampleRate, AudioFile.PcmFloats[0].Length))
-                throw new InvalidOperationException("The audio cannot be represented as a spectrogram with default settings.");
-        }
-        if (SpectrogramContext == null || !SpectrogramContext.CanReuse(AudioFile, values))
-        {
-            var previous = SpectrogramContext;
-            SpectrogramContext = new SpectrogramContext(AudioFile, values);
-            previous?.Dispose();
-        }
-        SpectrogramContext.DB = values.UseDb;
-        SpectrogramContext.Intensity = values.Intensity;
-        SpectrogramContext.UpdateSpectrogram();
+        if (GetSpectrogramSettings(AudioFile, preview) is not VisualSettings values)
+            return false;
+        var spectrum = PrepareSpectrogram(AudioFile, values, out bool changed);
+        ReplaceSpectrogram(spectrum);
+        if (changed)
+            NotifySpectrogramUpdated();
         return true;
     }
+
+    private VisualSettings? GetSpectrogramSettings(AudioFile audio, VisualSettings? preview)
+    {
+        VisualSettings values = preview ?? VisualSettings.From(Settings);
+        if (!values.IsValid(audio.SampleRate, audio.PcmFloats[0].Length))
+        {
+            if (preview.HasValue)
+                return null;
+            values = VisualSettings.From(new Settings());
+            if (!values.IsValid(audio.SampleRate, audio.PcmFloats[0].Length))
+                throw new InvalidOperationException("The audio cannot be represented as a spectrogram with default settings.");
+        }
+        return values;
+    }
+
+    private SpectrogramContext PrepareSpectrogram(AudioFile audio, VisualSettings values, out bool changed)
+    {
+        var spectrum = SpectrogramContext != null && SpectrogramContext.CanReuse(audio, values)
+            ? SpectrogramContext
+            : new SpectrogramContext(audio, values);
+        try
+        {
+            spectrum.DB = values.UseDb;
+            spectrum.Intensity = values.Intensity;
+            changed = spectrum.UpdateSpectrogram();
+            return spectrum;
+        }
+        catch
+        {
+            if (spectrum != SpectrogramContext)
+                spectrum.Dispose();
+            throw;
+        }
+    }
+
+    private void ApplyAudio(AudioFile audio, SpectrogramContext spectrum)
+    {
+        audioFile = audio;
+        ReplaceSpectrogram(spectrum);
+        NotifySpectrogramUpdated();
+        GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.AudioFileChanged), this, EventArgs.Empty);
+    }
+
+    private void ReplaceSpectrogram(SpectrogramContext spectrum)
+    {
+        if (SpectrogramContext == spectrum)
+            return;
+        var previous = SpectrogramContext;
+        SpectrogramContext = spectrum;
+        previous?.Dispose();
+    }
+
+    private void NotifySpectrogramUpdated()
+        => GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.SpectrogramUpdated), this, EventArgs.Empty);
 
     // Called when the node enters the scene tree for the first time.
     public override void _Ready()

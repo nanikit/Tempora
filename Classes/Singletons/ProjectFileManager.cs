@@ -12,7 +12,6 @@
 // Full license text is available at: https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode
 
 using System;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using Godot;
@@ -41,8 +40,6 @@ public partial class ProjectFileManager : Node, ISettingsConsumer
     private MusicPlayer MusicPlayer => MusicPlayer.Instance;
 
     public static readonly string ProjectFileExtension = ".tmpr";
-
-    private static readonly string[] separator = ["\r\n", "\r", "\n"];
 
     public const string AutoSavePath = "user://autosave";
 
@@ -211,17 +208,11 @@ public partial class ProjectFileManager : Node, ISettingsConsumer
         if (!AudioFile.IsAudioFileExtensionValid(audioPath, out _))
             return;
 
-        if (Project.Instance.AudioFile != null)
-            MusicPlayer.Instance.Pause();
-
-        Project.Instance.ProjectPath = null;
-        ResetEditingStateForStandaloneAudio();
-        Project.Instance.AudioFile = new AudioFile(audioPath);
-
-        GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.TimingChanged));
+        var audio = new AudioFile(audioPath);
+        ReplaceDocument(new Timing(Settings), audio, null);
     }
 
-    private static void ResetEditingStateForStandaloneAudio()
+    private static void ResetEditingState()
     {
         Context.Instance.HeldPointIsJustBeingAdded = false;
         Context.Instance.HeldTimingPoint = null;
@@ -230,10 +221,6 @@ public partial class ProjectFileManager : Node, ISettingsConsumer
         Context.Instance.IsSelectedMeasurePositionMoving = false;
         TimingPointSelection.Instance.DeselectAll();
 
-        Project.Instance.Timing.IsInstantiating = true;
-        Project.Instance.Timing.TimingPoints.Clear();
-        Project.Instance.Timing.TimeSignaturePoints.Clear();
-        Project.Instance.Timing.IsInstantiating = false;
         MementoHandler.Instance.ResetTimingHistory();
     }
     #endregion
@@ -270,7 +257,7 @@ public partial class ProjectFileManager : Node, ISettingsConsumer
 
         FileHandler.SaveBuffer(audioFilePathLong, Project.Instance.AudioFile.FileBuffer);
 
-        string file = CreateProjectFileString(audioFilePathShort);
+        string file = ProjectFileCodec.Serialize(Project.Instance.Timing, audioFilePathShort);
         FileHandler.SaveText(filePath, file);
     }
 
@@ -292,76 +279,6 @@ public partial class ProjectFileManager : Node, ISettingsConsumer
         store.lastSavedState = project.Timing.GetMemento();
     }
 
-    public static string CreateProjectFileString() => CreateProjectFileString(Project.Instance.AudioFile.FilePath);
-
-    public static string FormatFloatForProjectFile(float value) => value.ToString("G9", CultureInfo.InvariantCulture);
-
-    public static string FormatDoubleForProjectFile(double value) => value.ToString("G17", CultureInfo.InvariantCulture);
-
-    public static bool TryParseFloatFromProjectFile(string value, out float result)
-        => float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out result);
-
-    public static bool TryParseDoubleFromProjectFile(string value, out double result)
-        => double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out result);
-
-    public static string CreateProjectFileString(string audioPath)
-    {
-        // TimeSignaturePoint
-        // MeasurePosition;TimeSignatureUpper;TimeSignatureLower
-        string timeSignaturePointsLines = "";
-        foreach (TimeSignaturePoint timeSignaturePoint in Project.Instance.Timing.TimeSignaturePoints)
-        {
-            string timeSignaturePointLine = "";
-            timeSignaturePointLine += timeSignaturePoint.Measure.ToString(CultureInfo.InvariantCulture);
-            timeSignaturePointLine += ";";
-            timeSignaturePointLine += timeSignaturePoint.TimeSignature[0].ToString();
-            timeSignaturePointLine += ";";
-            timeSignaturePointLine += timeSignaturePoint.TimeSignature[1].ToString();
-            timeSignaturePointLine += "\n";
-
-            timeSignaturePointsLines += timeSignaturePointLine;
-        }
-
-        string timingPointsLines = "";
-        if ((Project.Instance.Timing?.TimingPoints?.Count ?? 0) > 0)
-            timingPointsLines = GetTimingPointsAsString();
-
-        string file = "";
-        file += "[AudioPath]\n";
-        file += audioPath + "\n";
-        file += "[TimeSignaturePoints]\n";
-        file += timeSignaturePointsLines;
-        file += "[TimingPoints]\n";
-        file += timingPointsLines;
-
-        return file;
-    }
-
-    private static string GetTimingPointsAsString()
-    {
-        // Time;MeasurePosition;TimeSignatureUpper;TimeSignatureLower
-        string timingPointsLines = "";
-        TimingPoint lastTimingPoint = Project.Instance.Timing.TimingPoints[^1];
-        foreach (TimingPoint timingPoint in Project.Instance.Timing.TimingPoints)
-        {
-            if (timingPoint?.MeasurePosition == null)
-                continue;
-            string timingPointLine = "";
-            timingPointLine += FormatDoubleForProjectFile(timingPoint.Offset);
-            timingPointLine += ";";
-            timingPointLine += FormatDoubleForProjectFile(timingPoint.MeasurePosition.Value);
-            timingPointLine += ";";
-            timingPointLine += timingPoint.TimeSignature[0].ToString();
-            timingPointLine += ";";
-            timingPointLine += timingPoint.TimeSignature[1].ToString();
-            if (timingPoint == lastTimingPoint)
-                timingPointLine += ";" + FormatDoubleForProjectFile(timingPoint.MeasuresPerSecond);
-            timingPointLine += "\n";
-
-            timingPointsLines += timingPointLine;
-        }
-        return timingPointsLines;
-    }
     #endregion
 
     #region Load Project
@@ -371,127 +288,43 @@ public partial class ProjectFileManager : Node, ISettingsConsumer
         //Project.Instance.NotificationMessage = "You are now editing a new project.";
     }
 
-    private void LoadProjectFromFile(string projectFile, string filePath)
-    {
-        Project.Instance.Timing = new Timing(Settings)
-        {
-            IsInstantiating = true
-        };
-
-        string[] lines = projectFile.Split(separator, StringSplitOptions.None);
-        string audioPath = "";
-        string? fileDir = Path.GetDirectoryName(filePath) ?? throw new NullReferenceException("filePath was null");
-        ParseMode parseMode = ParseMode.None;
-
-        for (int i = 0; i < lines.Length; i++)
-        {
-            string line = lines[i];
-            if (line == "TimingPoints")
-                parseMode = ParseMode.TimingPoints;
-
-            switch (line)
-            {
-                case "[AudioPath]":
-                    parseMode = ParseMode.AudioPath;
-                    continue;
-                case "[TimeSignaturePoints]":
-                    parseMode = ParseMode.TimeSignaturePoints;
-                    continue;
-                case "[TimingPoints]":
-                    parseMode = ParseMode.TimingPoints;
-                    continue;
-            }
-
-            string[] lineData = line.Split(";");
-
-            switch (parseMode)
-            {
-                case ParseMode.AudioPath:
-                    audioPath = Path.Combine(fileDir, line);
-                    continue;
-                case ParseMode.TimeSignaturePoints:
-                    if (lineData.Length != 3)
-                        continue;
-
-                    bool tsMeasurePositionParsed = int.TryParse(lineData[0], out int tsMeasurePosition);
-                    bool timeSignatureUpperParsed = int.TryParse(lineData[1], out int timeSignatureUpper);
-                    bool timeSignatureLowerParsed = int.TryParse(lineData[2], out int timeSignatureLower);
-                    if (tsMeasurePositionParsed == false
-                        || timeSignatureUpperParsed == false
-                        || timeSignatureLowerParsed == false
-                       )
-                    {
-                        continue;
-                    }
-
-                    Project.Instance.Timing.UpdateTimeSignature([timeSignatureUpper, timeSignatureLower], tsMeasurePosition);
-
-                    break;
-                case ParseMode.TimingPoints:
-                    if (lineData.Length is not 4 and not 5)
-                        continue;
-
-                    bool timeParsed = TryParseDoubleFromProjectFile(lineData[0], out double time);
-                    bool tpMeasurePositionParsed = TryParseDoubleFromProjectFile(lineData[1], out double tpMeasurePosition);
-                    timeSignatureUpperParsed = int.TryParse(lineData[2], out _);
-                    timeSignatureLowerParsed = int.TryParse(lineData[3], out _);
-
-                    bool measuresPerSecondParsed = true;
-                    double measuresPerSecond = 2d;
-                    if (lineData.Length == 5)
-                        measuresPerSecondParsed = TryParseDoubleFromProjectFile(lineData[4], out measuresPerSecond);
-
-                    if (timeParsed == false
-                        || tpMeasurePositionParsed == false
-                        || timeSignatureUpperParsed == false
-                        || timeSignatureLowerParsed == false
-                        || measuresPerSecondParsed == false
-                       )
-                    {
-                        continue;
-                    }
-
-                    switch (lineData.Length)
-                    {
-                        case 4:
-                            Project.Instance.Timing.AddTimingPoint(tpMeasurePosition, time);
-                            break;
-                        case 5:
-                            Project.Instance.Timing.AddTimingPoint(tpMeasurePosition, time, measuresPerSecond);
-                            break;
-                    }
-
-                    break;
-            }
-        }
-
-        Project.Instance.AudioFile = new AudioFile(audioPath);
-        Project.Instance.Timing.IsInstantiating = false;
-        GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.TimingChanged));
-
-        // Reset undo history so undo after loading cannot restore the previous project's state
-        // (mirrors the standalone-audio load path in ResetEditingStateForStandaloneAudio).
-        MementoHandler.Instance.ResetTimingHistory();
-    }
-
     public void LoadProjectFromFilePath(string filePath)
     {
         string projectFile = FileHandler.LoadText(filePath);
         if (string.IsNullOrEmpty(projectFile))
             return;
-        if (Project.Instance.AudioFile != null)
-            MusicPlayer.Instance.Pause();
-        Project.Instance.ProjectPath = filePath;
-        LoadProjectFromFile(projectFile, filePath);
+
+        ProjectFileData data = ProjectFileCodec.Parse(projectFile);
+        Timing timing = CreateTiming(data);
+        string directory = Path.GetDirectoryName(filePath) ?? throw new ArgumentException("Project path has no directory.", nameof(filePath));
+        var audio = new AudioFile(Path.Combine(directory, data.AudioPath));
+
+        ReplaceDocument(timing, audio, filePath);
         Project.Instance.ShowNotification("Loaded {0}", arguments: [filePath]);
     }
 
-    private enum ParseMode
+    private Timing CreateTiming(ProjectFileData data)
     {
-        None,
-        AudioPath,
-        TimingPoints,
-        TimeSignaturePoints
+        var timing = new Timing(Settings) { IsInstantiating = true };
+        foreach (var point in data.TimeSignaturePoints)
+            timing.UpdateTimeSignature([point.Upper, point.Lower], point.Measure);
+        foreach (var point in data.TimingPoints)
+        {
+            if (point.MeasuresPerSecond is double measuresPerSecond)
+                timing.AddTimingPoint(point.MeasurePosition, point.Offset, measuresPerSecond);
+            else
+                timing.AddTimingPoint(point.MeasurePosition, point.Offset);
+        }
+        timing.IsInstantiating = false;
+        return timing;
+    }
+
+    private static void ReplaceDocument(Timing timing, AudioFile audio, string? path)
+    {
+        Project.Instance.ReplaceDocument(timing, audio, path);
+        ResetEditingState();
+        GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.TimingChanged));
+        Project.Instance.NotifyTimingEditFinished();
     }
     #endregion
 }

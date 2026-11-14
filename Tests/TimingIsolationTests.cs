@@ -3,6 +3,7 @@ namespace Tempora.Tests;
 using System;
 using Godot;
 using Tempora.Classes.Audio;
+using Tempora.Classes.DataHelpers;
 using GdUnit4;
 using Tempora.Classes.TimingClasses;
 using Tempora.Classes.Utility;
@@ -70,13 +71,13 @@ public class TimingIsolationTests
             open.AddTimingPoint(2, 4, 0.5);
             open.IsInstantiating = false;
             MementoHandler.Instance.ResetTimingHistory();
-            string beforeAdding = ProjectFileManager.CreateProjectFileString("audio.ogg");
+            string beforeAdding = ProjectFileCodec.Serialize(Project.Instance.Timing, "audio.ogg");
             if (addingPoint)
                 Project.Instance.Edits.Begin();
             Project.Instance.Edits.Apply(() => open.AddTimingPoint(4, 8, 0.5));
             if (addingPoint)
                 Context.Instance.HeldTimingPoint = open.TimingPoints[^1];
-            string beforeEdit = ProjectFileManager.CreateProjectFileString("audio.ogg");
+            string beforeEdit = ProjectFileCodec.Serialize(Project.Instance.Timing, "audio.ogg");
             Context.Instance.HeldPointIsJustBeingAdded = addingPoint;
 
             switch (edit)
@@ -98,10 +99,10 @@ public class TimingIsolationTests
                     throw new ArgumentOutOfRangeException(nameof(edit));
             }
 
-            AssertThat(ProjectFileManager.CreateProjectFileString("audio.ogg")).IsNotEqual(beforeEdit);
+            AssertThat(ProjectFileCodec.Serialize(Project.Instance.Timing, "audio.ogg")).IsNotEqual(beforeEdit);
             MementoHandler.Instance.Undo();
             string expected = addingPoint ? beforeAdding : beforeEdit;
-            AssertThat(ProjectFileManager.CreateProjectFileString("audio.ogg")).IsEqual(expected);
+            AssertThat(ProjectFileCodec.Serialize(Project.Instance.Timing, "audio.ogg")).IsEqual(expected);
         }
         finally
         {

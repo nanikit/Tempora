@@ -32,17 +32,17 @@ public sealed class SpectrogramContext : IDisposable
         => ReferenceEquals(pcmData, audio)
             && calculation == (settings.StepSize, settings.FftSize, settings.MinFreq);
 
-    public void UpdateSpectrogram()
+    public bool UpdateSpectrogram()
     {
         if (CachedSpectrogramImage != null && imageSettings == (Intensity, DB))
-            return;
+            return false;
 
         Godot.Image image = SpectrogramHelper.GenerateGodotImage(
             SpectrogramGenerator, SpectrogramHelper.TemporaColormap, Intensity, DB);
         CachedSpectrogramImage?.Dispose();
         CachedSpectrogramImage = image;
         imageSettings = (Intensity, DB);
-        GlobalEvents.Instance.InvokeEvent(nameof(GlobalEvents.Instance.SpectrogramUpdated));
+        return true;
     }
 
     public ImageTexture GetSpectrogramSlice(int sampleStart, int sampleEnd, int targetHeight, int targetWidth)

@@ -4,6 +4,7 @@ using Godot;
 using GdUnit4;
 using System.IO;
 using Tempora.Classes.Audio;
+using Tempora.Classes.DataHelpers;
 using Tempora.Classes.TimingClasses;
 using Tempora.Classes.Utility;
 using static GdUnit4.Assertions;
@@ -42,7 +43,7 @@ public class TimingEditTests
             MementoHandler.Instance.Undo();
             AssertThat(project.Timing.TimingPoints[1].Offset).IsEqual(2d);
             AssertThat(FileHandler.LoadText("user://autosave.tmpr"))
-                .IsEqual(ProjectFileManager.CreateProjectFileString("autosave.ogg"));
+                .IsEqual(ProjectFileCodec.Serialize(project.Timing, "autosave.ogg"));
         }
         finally
         {
