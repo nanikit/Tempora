@@ -46,7 +46,7 @@ public partial class TimingShortcutTests
         var application = ((SceneTree)Engine.GetMainLoop()).Root.GetNode<Application>("Application");
         AssertThat(((Control)runner.FindChild("MessageLabel")!).GetThemeFontSize("font_size"))
             .IsEqual((int)System.Math.Round(25 * application.SystemTextScale, System.MidpointRounding.AwayFromZero));
-        await VerifyRestoredBpmPosition(runner, container);
+        await VerifyRestoredTimingStartsAtZero(runner, container);
 
         bool roundBpm = Project.Instance.Settings.RoundBPM;
         int rows = Project.Instance.Settings.NumberOfRows;

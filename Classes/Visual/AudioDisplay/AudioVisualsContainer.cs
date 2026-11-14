@@ -49,17 +49,7 @@ public partial class AudioVisualsContainer : VBoxContainer, ISettingsConsumer
 
     public List<AudioBlock> AudioBlocks = [];
 
-    public int FirstTopMeasure
-    {
-        get
-        {
-            Timing timing = Project.Instance.Timing;
-            int firstMeasure = (int)Math.Floor(timing.OffsetToMeasurePosition(0));
-            return timing.TimeSignaturePoints.Count > 0
-                ? Math.Min(firstMeasure, timing.TimeSignaturePoints[0].Measure)
-                : firstMeasure;
-        }
-    }
+    public int FirstTopMeasure => 0;
 
     public int LastRowMeasure
     {

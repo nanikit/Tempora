@@ -21,7 +21,7 @@ public partial class TimingShortcutTests
         string audioPath = ProjectSettings.GlobalizePath("res://Audio/Loop.mp3");
         try
         {
-            System.IO.File.WriteAllText(path, $"[AudioPath]\n{audioPath}\n[TimeSignaturePoints]\n[TimingPoints]\n0;0;4;4;0.5832166666666667\n");
+            System.IO.File.WriteAllText(path, $"[AudioPath]\n{audioPath}\n[TimeSignaturePoints]\n[TimingPoints]\n1.5042;18;4;4;0.5832166666666667\n");
             var main = ResourceLoader.Load<PackedScene>("res://Classes/Visual/Main.tscn").Instantiate<Control>();
             // The test viewport interrupts the Window theme inheritance used by the real scene.
             main.Theme = ((SceneTree)Engine.GetMainLoop()).Root.Theme;
@@ -37,15 +37,20 @@ public partial class TimingShortcutTests
         }
     }
 
-    private static async Task VerifyRestoredBpmPosition(ISceneRunner runner, AudioVisualsContainer container)
+    private static async Task VerifyRestoredTimingStartsAtZero(ISceneRunner runner, AudioVisualsContainer container)
     {
-        await runner.AwaitIdleFrame();
-        await runner.AwaitIdleFrame();
+        await Settle(runner);
+        AssertThat(container.AudioBlocks[0].NominalMeasurePosition).IsEqual(0);
+        var scrollbar = (BlockScrollBar)runner.FindChild("BlockScrollBar")!;
+        scrollbar.Value = 18;
+        await Settle(runner);
         AudioDisplayPanel panel = container.AudioBlocks.Select(row => row.AudioDisplayPanel).First(panel => VisibleTimingPoints(panel).Any());
         var point = VisibleTimingPoints(panel).Single();
         AssertThat(point.BpmLabel.Text).IsEqual("139.972");
         AssertThat(point.BpmLabel.GetGlobalRect().GetCenter().X).IsEqualApprox(point.GlobalPosition.X, 0.01f);
         AssertThat(point.BpmLabel.GetGlobalRect().Position.Y).IsEqualApprox(panel.GlobalPosition.Y, 0.01f);
+        scrollbar.Value = 0;
+        await Settle(runner);
     }
 
     private static async Task VerifyPointerTimeLayout(ISceneRunner runner, SubViewport viewport, AudioVisualsContainer container)
@@ -379,7 +384,7 @@ public partial class TimingShortcutTests
         var scrollbar = (BlockScrollBar)runner.FindChild("BlockScrollBar")!;
         await VerifyScrollbarWheel(runner, viewport, container, scrollbar);
         await VerifyMinimapRendering(runner, container, scrollbar);
-        await VerifySongEdgesInMinimap(runner, container, scrollbar);
+        await VerifySongEdgesInMinimap(runner, viewport, container, scrollbar);
         Project.Instance.Settings.NumberOfRows = 1;
         await runner.AwaitIdleFrame();
         scrollbar.Value = scrollbar.MinValue;
@@ -489,7 +494,7 @@ public partial class TimingShortcutTests
         }
     }
 
-    private static async Task VerifySongEdgesInMinimap(ISceneRunner runner, AudioVisualsContainer container, BlockScrollBar scrollbar)
+    private static async Task VerifySongEdgesInMinimap(ISceneRunner runner, SubViewport viewport, AudioVisualsContainer container, BlockScrollBar scrollbar)
     {
         Timing original = Project.Instance.Timing;
         Settings settings = Project.Instance.Settings;
@@ -502,11 +507,25 @@ public partial class TimingShortcutTests
         try
         {
             Project.Instance.ReplaceDocument(timing, Project.Instance.AudioFile, Project.Instance.ProjectPath);
+            settings.NumberOfRows = 3;
             await Settle(runner);
             scrollbar.Value = scrollbar.MinValue;
             await Settle(runner);
-            AssertThat(container.AudioBlocks[0].NominalMeasurePosition).IsEqual(-1);
+            AssertThat(container.AudioBlocks[0].NominalMeasurePosition).IsEqual(0);
             AssertMinimapMatchesRow(container, scrollbar);
+
+            AudioDisplayPanel first = container.AudioBlocks[0].AudioDisplayPanel;
+            AudioDisplayPanel target = container.AudioBlocks[2].AudioDisplayPanel;
+            Vector2 start = first.GlobalPosition + new Vector2(first.MeasurePositionToXPosition(0), first.Size.Y / 2);
+            Vector2 end = target.GlobalPosition + new Vector2(target.MeasurePositionToXPosition(2), target.Size.Y / 2);
+            Drag(viewport, start, end);
+            await Settle(runner);
+            AssertThat(timing.TimingPoints[0].MeasurePosition!.Value).IsEqual(2d);
+            AssertThat(timing.TimingPoints[0].Offset).IsEqual(1d);
+            AssertThat(container.AudioBlocks[0].NominalMeasurePosition).IsEqual(0);
+            AssertThat(scrollbar.MinValue).IsEqual(0d);
+            AssertMinimapMatchesRow(container, scrollbar);
+            await Capture(runner, viewport, "fixed-measure-origin.png");
 
             settings.NumberOfRows = 1;
             settings.MeasureOverlap = 0;
