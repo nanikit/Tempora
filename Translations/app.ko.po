@@ -589,3 +589,19 @@ msgstr "인터페이스 크기"
 
 msgid "Reset"
 msgstr "초기화"
+
+
+msgid "Check the spectrogram values. For long audio, increase step size or reduce FFT size."
+msgstr "스펙트로그램 값을 확인해 주세요. 긴 음원은 간격을 늘리거나 FFT 크기를 줄여 주세요."
+
+msgid "32–16384 (powers of 2)"
+msgstr "32–16384 (2의 거듭제곱)"
+
+msgid "0–96000 Hz; below half the sample rate"
+msgstr "0–96000 Hz, 샘플레이트의 절반 미만"
+
+msgid "Saved display values were invalid. Review and save your settings."
+msgstr "저장된 화면 설정값이 올바르지 않습니다. 값을 확인하고 저장해 주세요."
+
+msgid "Display settings are outside the supported range. The file has been preserved."
+msgstr "화면 설정값이 허용 범위를 벗어났습니다. 기존 파일을 보존했습니다."

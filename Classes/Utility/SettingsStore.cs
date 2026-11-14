@@ -9,6 +9,8 @@ namespace Tempora.Classes.Utility;
 
 public sealed class SettingsStore(string path = "user://settings.cfg", string legacyPath = "user://settings.txt")
 {
+    public VisualSettings? RejectedVisualSettings { get; private set; }
+
     private const string Section = "settings";
     private static readonly (PropertyInfo Property, string Key)[] Properties = typeof(Settings)
         .GetProperties().Where(property => property.CanWrite)
@@ -16,13 +18,16 @@ public sealed class SettingsStore(string path = "user://settings.cfg", string le
 
     public Settings Load()
     {
+        RejectedVisualSettings = null;
         var settings = new Settings();
         if (!Godot.FileAccess.FileExists(path))
         {
             if (Godot.FileAccess.FileExists(legacyPath))
             {
                 LoadLegacy(settings);
-                Save(settings);
+                UseValidVisualSettings(settings);
+                if (RejectedVisualSettings == null)
+                    Save(settings);
             }
             return settings;
         }
@@ -37,17 +42,42 @@ public sealed class SettingsStore(string path = "user://settings.cfg", string le
                 property.SetValue(settings, ReadValue(config.GetValue(Section, key), property.PropertyType, key),
                     BindingFlags.DoNotWrapExceptions, binder: null, index: null, culture: null);
         }
+        UseValidVisualSettings(settings);
         return settings;
     }
 
-    public void Save(Settings settings)
+    public void Save(Settings settings, string? changedProperty = null)
     {
+        ValidateVisualSettings(settings);
         using var config = new ConfigFile();
+        bool updateOne = changedProperty != null && Godot.FileAccess.FileExists(path);
+        if (updateOne && config.Load(path) is var loadError && loadError != Error.Ok)
+            throw new IOException($"Could not load {path}: {loadError}. The file has been preserved.");
         foreach (var (property, key) in Properties)
-            config.SetValue(Section, key, ToVariant(property.GetValue(settings)!));
+        {
+            if (!updateOne || property.Name == changedProperty)
+                config.SetValue(Section, key, ToVariant(property.GetValue(settings)!));
+        }
         Error error = config.Save(path);
         if (error != Error.Ok)
             throw new IOException($"Could not save {path}: {error}.");
+        if (changedProperty == null)
+            RejectedVisualSettings = null;
+    }
+
+    private void UseValidVisualSettings(Settings settings)
+    {
+        VisualSettings values = VisualSettings.From(settings);
+        if (values.IsInRange)
+            return;
+        RejectedVisualSettings = values;
+        VisualSettings.From(new Settings()).ApplyTo(settings);
+    }
+
+    private static void ValidateVisualSettings(Settings settings)
+    {
+        if (!VisualSettings.From(settings).IsInRange)
+            throw new FormatException("Display settings are outside the supported range. The file has been preserved.");
     }
 
     private void LoadLegacy(Settings settings)

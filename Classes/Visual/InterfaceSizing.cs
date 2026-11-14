@@ -36,9 +36,15 @@ public sealed class InterfaceSizing : IDisposable
 
     public void ApplyScale(float value)
     {
+        var positions = windows.Keys.Where(window => window.Visible && window.IsEmbedded())
+            .Select(window => (Window: window, ScreenPosition: window.GetScreenTransform() * GetTitleOrigin(window))).ToArray();
+
         scale = value;
         foreach (Window window in windows.Keys)
             ApplyWindowScale(window);
+
+        foreach (var (window, position) in positions)
+            RestoreTitleScreenPosition(window, position);
         QueueLayout();
     }
 
@@ -54,6 +60,12 @@ public sealed class InterfaceSizing : IDisposable
         // Embedded windows already inherit their embedder's canvas scale.
         window.ContentScaleFactor = window.GetParent() == null || !window.IsEmbedded() ? scale : 1;
     }
+
+    private static void RestoreTitleScreenPosition(Window window, Vector2 position)
+        => window.Position += (Vector2I)(window.GetScreenTransform().AffineInverse() * position - GetTitleOrigin(window)).Round();
+
+    private static Vector2 GetTitleOrigin(Window window)
+        => window.Borderless ? Vector2.Zero : new Vector2(0, -window.GetThemeConstant("title_height"));
 
     private void QueueLayout()
     {
@@ -82,9 +94,15 @@ public sealed class InterfaceSizing : IDisposable
         var original = windows[window];
         Vector2I preferred = window.Size == original.Applied ? original.Preferred : window.Size;
         Rect2I bounds = GetContentBounds(window);
+        Vector2I maximum = bounds.Size;
+        if (window is not Popup)
+        {
+            Vector2I position = window.Position.Clamp(bounds.Position, bounds.End - Vector2I.One);
+            bounds = new Rect2I(position, bounds.End - position);
+        }
 
         window.MinSize = Vector2I.Zero;
-        window.MaxSize = bounds.Size;
+        window.MaxSize = maximum;
         window.MinSize = original.Minimum.Min(bounds.Size);
 
         Vector2I content = (Vector2I)(window.GetContentsMinimumSize() * window.ContentScaleFactor).Ceil();

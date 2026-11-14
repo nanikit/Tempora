@@ -32,7 +32,7 @@ public partial class TimingShortcutTests
             var menu = (PopupMenu)runner.FindChild("Options")!;
             var menuButton = (Button)runner.FindChild("OptionsButton")!;
             var percentage = (SpinBox)window.FindChild("Percentage");
-            var apply = window.GetNode<Button>("Margin/Scroll/Layout/BottomButtonsHBox/ApplyButton");
+            var apply = window.GetNode<Button>("Margin/Scroll/Layout/BottomButtonsHBox/SaveButton");
             window.GetNode<TabContainer>("Margin/Scroll/Layout/TabContainer").CurrentTab = 0;
             int fontSize = apply.GetThemeFontSize("font_size");
             Vector2 checkSize = menu.GetThemeIcon("checked").GetSize();
@@ -41,16 +41,13 @@ public partial class TimingShortcutTests
             await Settle(runner);
             foreach (int percent in new[] { 200, 100, 150 })
             {
-                percentage.Value = percent;
-                percentage.GetLineEdit().Text = percent.ToString();
                 var elapsed = Stopwatch.StartNew();
-                apply.EmitSignal(Button.SignalName.Pressed);
-                double applyMilliseconds = elapsed.Elapsed.TotalMilliseconds;
+                percentage.Value = percent;
                 await Settle(runner);
                 viewport.Size = (Vector2I)root.GetVisibleRect().Size;
                 await Settle(runner);
                 AssertToolbarFits(runner);
-                GD.Print($"Interface {percent}%: apply {applyMilliseconds:F2} ms, six layout frames {elapsed.Elapsed.TotalMilliseconds:F2} ms");
+                GD.Print($"Interface preview {percent}%: six layout frames {elapsed.Elapsed.TotalMilliseconds:F2} ms");
                 float expectedScale = percent / 100f;
                 AssertThat(root.GetStretchTransform().Scale.X).IsEqualApprox(expectedScale, 0.001f);
                 AssertThat(apply.GetThemeFontSize("font_size")).IsEqual(fontSize);
@@ -58,12 +55,13 @@ public partial class TimingShortcutTests
                 AssertThat(menu.GetThemeIcon("checked").GetSize() * root.GetStretchTransform().Scale)
                     .IsEqual(checkSize * expectedScale);
                 AssertThat(menu.Visible).IsTrue();
+                AssertThat(window.Visible).IsTrue();
                 AssertWindowFits(root, window);
                 AssertWindowFits(root, menu);
                 AssertThat(menu.Size.Y).IsEqual((int)menu.GetContentsMinimumSize().Y);
                 await Capture(runner, root, $"interface-{percent}.png");
                 menu.Hide();
-                window.Hide();
+                apply.EmitSignal(Button.SignalName.Pressed);
                 await VerifyScaledDragging(runner, viewport, root);
                 window.Popup();
                 menuButton.EmitSignal(Button.SignalName.Pressed);

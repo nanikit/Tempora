@@ -591,3 +591,19 @@ msgstr "Interface Size"
 
 msgid "Reset"
 msgstr "Reset"
+
+
+msgid "Check the spectrogram values. For long audio, increase step size or reduce FFT size."
+msgstr "Check the spectrogram values. For long audio, increase step size or reduce FFT size."
+
+msgid "32–16384 (powers of 2)"
+msgstr "32–16384 (powers of 2)"
+
+msgid "0–96000 Hz; below half the sample rate"
+msgstr "0–96000 Hz; below half the sample rate"
+
+msgid "Saved display values were invalid. Review and save your settings."
+msgstr "Saved display values were invalid. Review and save your settings."
+
+msgid "Display settings are outside the supported range. The file has been preserved."
+msgstr "Display settings are outside the supported range. The file has been preserved."

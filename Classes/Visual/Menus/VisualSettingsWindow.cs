@@ -5,124 +5,179 @@ public partial class VisualSettingsWindow : Window, ISettingsConsumer
 {
     public Settings Settings { get; set; } = null!;
 
-    [Export]
-    HSlider textScaleSlider = null!;
+    [Export] HSlider textScaleSlider = null!;
+    [Export] SpinBox textScalePercentage = null!;
+    [Export] Button textDefaultsButton = null!;
+    [Export] LineEdit stepSizeLineEdit = null!;
+    [Export] LineEdit fftSizeLineEdit = null!;
+    [Export] LineEdit minFreqLineEdit = null!;
+    [Export] LineEdit intensityLineEdit = null!;
+    [Export] CheckBox dBCheckbox = null!;
+    [Export] Button saveButton = null!;
+    [Export] Button defaultsButton = null!;
+    [Export] Button cancelButton = null!;
+    [Export] Label previewStatus = null!;
 
-    [Export]
-    SpinBox textScalePercentage = null!;
-
-    [Export]
-    Button textDefaultsButton = null!;
-
-    [Export]
-    LineEdit stepSizeLineEdit = null!;
-
-    [Export]
-    LineEdit fftSizeLineEdit = null!;
-
-    [Export]
-    LineEdit minFreqLineEdit = null!;
-
-    [Export]
-    LineEdit intensityLineEdit = null!;
-
-    [Export]
-    CheckBox dBCheckbox = null!;
-
-    [Export]
-    Button okButton = null!;
-
-    [Export]
-    Button defaultsButton = null!;
-
-    [Export]
-    Button applyButton = null!;
+    private readonly Timer spectrogramDelay = new() { WaitTime = 0.2, OneShot = true };
+    private Application application = null!;
+    private VisualSettings appliedSpectrogram;
+    private bool previewing;
+    private bool scaleQueued;
+    private bool draggingScale;
 
     public override void _Ready()
     {
+        application = GetTree().Root.GetNode<Application>("Application");
+        AddChild(spectrogramDelay);
+        spectrogramDelay.Timeout += PreviewSpectrogram;
+
         textScaleSlider.Share(textScalePercentage);
+        textScalePercentage.UpdateOnTextChanged = true;
+        stepSizeLineEdit.TooltipText = "16–65536";
+        fftSizeLineEdit.TooltipText = "32–16384 (powers of 2)";
+        minFreqLineEdit.TooltipText = "0–96000 Hz; below half the sample rate";
+        intensityLineEdit.TooltipText = "≥ 0";
+        textScaleSlider.ValueChanged += _ => QueueScalePreview();
+        textScaleSlider.DragStarted += () => draggingScale = true;
+        textScaleSlider.DragEnded += _ =>
+        {
+            draggingScale = false;
+            QueueScalePreview();
+        };
         textDefaultsButton.Pressed += () => textScaleSlider.Value = 100;
-        okButton.Pressed += OnOkButtonPressed;
-        defaultsButton.Pressed += OnResetButtonPressed;
-        applyButton.Pressed += OnApplyButtonPressed;
+        foreach (LineEdit input in new[] { stepSizeLineEdit, fftSizeLineEdit, minFreqLineEdit, intensityLineEdit })
+            input.TextChanged += _ => QueueSpectrogramPreview();
+        dBCheckbox.Toggled += _ => QueueSpectrogramPreview();
+        defaultsButton.Pressed += ResetSpectrogram;
 
-        CloseRequested += CloseWithoutSaving;
-        AboutToPopup += OnAboutToPopup;
+        saveButton.Pressed += Save;
+        cancelButton.Pressed += Hide;
+        CloseRequested += Hide;
+        AboutToPopup += BeginPreview;
+        VisibilityChanged += OnVisibilityChanged;
+        GlobalEvents.Instance.AudioFileChanged += OnAudioFileChanged;
     }
 
-    private void LoadSpectrogramValues(Settings settings)
+    public override void _ExitTree()
     {
-        stepSizeLineEdit.Text = settings.SpectrogramStepSize.ToString();
-        fftSizeLineEdit.Text = settings.SpectrogramFftSize.ToString();
-        minFreqLineEdit.Text = settings.SpectrogramMinFreq.ToString();
-        intensityLineEdit.Text = settings.SpectrogramIntensity.ToString();
-        dBCheckbox.ButtonPressed = settings.SpectrogramUseDb;
+        GlobalEvents.Instance.AudioFileChanged -= OnAudioFileChanged;
+        EndPreview();
     }
 
-    private void OnAboutToPopup()
+    private void BeginPreview()
     {
+        if (previewing)
+            return;
+        appliedSpectrogram = VisualSettings.From(Settings);
         textScaleSlider.Value = Settings.TextScaleFactor * 100;
-        LoadSpectrogramValues(Settings);
+        LoadSpectrogramValues(application.RejectedVisualSettings ?? appliedSpectrogram);
+        saveButton.Disabled = false;
+        saveButton.TooltipText = "";
+        previewStatus.Visible = false;
+        previewing = true;
+        QueueSpectrogramPreview();
     }
 
-    private void OnOkButtonPressed()
+    private void ResetSpectrogram()
     {
-        ApplySettings();
-        Hide();
+        LoadSpectrogramValues(VisualSettings.From(new Settings()));
+        QueueSpectrogramPreview();
+    }
 
+    private void OnVisibilityChanged()
+    {
+        if (!Visible)
+            EndPreview();
+    }
+
+    private void LoadSpectrogramValues(VisualSettings values)
+    {
+        stepSizeLineEdit.Text = values.StepSize.ToString();
+        fftSizeLineEdit.Text = values.FftSize.ToString();
+        minFreqLineEdit.Text = values.MinFreq.ToString();
+        intensityLineEdit.Text = values.Intensity.ToString();
+        dBCheckbox.SetPressedNoSignal(values.UseDb);
+    }
+
+    private void QueueScalePreview()
+    {
+        if (!previewing || draggingScale || scaleQueued)
+            return;
+        scaleQueued = true;
+        Callable.From(PreviewScale).CallDeferred();
+    }
+
+    private void PreviewScale()
+    {
+        scaleQueued = false;
+        if (previewing && !draggingScale)
+            application.PreviewTextScale(textScalePercentage.Value / 100);
+    }
+
+    private void QueueSpectrogramPreview()
+    {
+        if (!previewing)
+            return;
+        bool valid = TryReadValues(out VisualSettings values);
+        saveButton.Disabled = !valid;
+        previewStatus.Text = !valid ? "Check the spectrogram values. For long audio, increase step size or reduce FFT size."
+            : application.RejectedVisualSettings != null && values == VisualSettings.From(Settings)
+                ? "Saved display values were invalid. Review and save your settings." : "";
+        previewStatus.Visible = previewStatus.Text.Length > 0;
+        spectrogramDelay.Start();
+    }
+
+    private void PreviewSpectrogram()
+    {
+        if (previewing && TryReadValues(out VisualSettings values))
+            ApplySpectrogram(values);
+    }
+
+    private void ApplySpectrogram(VisualSettings values)
+    {
+        if (values.Spectrogram == appliedSpectrogram.Spectrogram && Project.Instance.SpectrogramContext != null)
+            return;
+        if (Project.Instance.UpdateSpectrogramContextFromSettings(values))
+            appliedSpectrogram = values;
+    }
+
+    private void OnAudioFileChanged(object? sender, System.EventArgs args)
+    {
+        appliedSpectrogram = VisualSettings.From(Settings);
+        QueueSpectrogramPreview();
+    }
+
+    private bool TryReadValues(out VisualSettings values)
+    {
+        var audio = Project.Instance.AudioFile;
+        return VisualSettings.TryParse(textScalePercentage.Value / 100,
+            (stepSizeLineEdit.Text, fftSizeLineEdit.Text, minFreqLineEdit.Text, intensityLineEdit.Text),
+            dBCheckbox.ButtonPressed, audio.SampleRate, audio.PcmFloats[0].Length, out values);
+    }
+
+    private void Save()
+    {
+        if (textScalePercentage.IsVisibleInTree())
+            textScalePercentage.Apply();
+        if (!TryReadValues(out VisualSettings values))
+            return;
+        spectrogramDelay.Stop();
+        ApplySpectrogram(values);
+        if (!application.SaveVisualSettings(values))
+            return;
+        Hide();
         Project.Instance.NotificationMessage = "Saved visual options.";
     }
 
-    private void OnResetButtonPressed()
+    private void EndPreview()
     {
-        LoadSpectrogramValues(new Settings());
-    }
-
-    private void OnApplyButtonPressed()
-    {
-        ApplySettings();
-    }
-
-    private void ApplySettings()
-    {
-        var previous = (Settings.SpectrogramStepSize, Settings.SpectrogramFftSize,
-            Settings.SpectrogramMinFreq, Settings.SpectrogramIntensity, Settings.SpectrogramUseDb);
-        SaveSettings(Settings);
-        var current = (Settings.SpectrogramStepSize, Settings.SpectrogramFftSize,
-            Settings.SpectrogramMinFreq, Settings.SpectrogramIntensity, Settings.SpectrogramUseDb);
-        if (previous != current)
+        if (!previewing)
+            return;
+        previewing = false;
+        draggingScale = false;
+        spectrogramDelay.Stop();
+        application.PreviewTextScale(null);
+        if (appliedSpectrogram.Spectrogram != VisualSettings.From(Settings).Spectrogram)
             Project.Instance.UpdateSpectrogramContextFromSettings();
-    }
-
-    private void SaveSettings(Settings settings)
-    {
-        // A hidden SpinBox can retain stale text until its next draw.
-        if (textScalePercentage.IsVisibleInTree())
-            textScalePercentage.Apply();
-        settings.TextScaleFactor = textScalePercentage.Value / 100;
-
-        bool stepSizeParsed = int.TryParse(stepSizeLineEdit.Text, out int stepSize);
-        if (stepSizeParsed)
-            settings.SpectrogramStepSize = stepSize;
-
-        bool fftSizeParsed = int.TryParse(fftSizeLineEdit.Text, out int fftSize);
-        if (fftSizeParsed)
-            settings.SpectrogramFftSize = fftSize;
-
-        bool minFreqParsed = int.TryParse(minFreqLineEdit.Text, out int minFreq);
-        if (minFreqParsed)
-            settings.SpectrogramMinFreq = minFreq;
-
-        bool intensityParsed = int.TryParse(intensityLineEdit.Text, out int intensity);
-        if (intensityParsed)
-            settings.SpectrogramIntensity = intensity;
-
-        settings.SpectrogramUseDb = dBCheckbox.ButtonPressed;
-    }
-
-    private void CloseWithoutSaving()
-    {
-        Hide();
-        Project.Instance.NotificationMessage = "Visual options were not saved.";
     }
 }

@@ -63,6 +63,8 @@ public static class SpectrogramHelper
 	{
 		if (stepSize < 1) throw new ArgumentOutOfRangeException(nameof(stepSize), "Must be at least 1.");
 		double[] audio = pcmData.GetPcmAsDoubles(multiplier);
+		if (audio.Length < fftSize + stepSize)
+			Array.Resize(ref audio, checked(fftSize + stepSize));
 		int sampleRate = pcmData.SampleRate;
 		var spectrogramGenerator = new SpectrogramGenerator(sampleRate, fftSize, stepSize, minFreq: minFreq);
 

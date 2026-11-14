@@ -197,8 +197,7 @@ public partial class TimingShortcutTests
             AssertThat(container.NominalMeasurePositionStartForTopBlock).IsEqual(1);
             await VerifyPointerTimeLayout(runner, viewport, container);
             await VerifyTextScaleChanges(runner, viewport, container);
-            await VerifySettingsApplyAndCancel(runner);
-            await VerifyFontScaleApplyAndCancel(runner, viewport, container);
+            await VerifyVisualSettingsPreview(runner);
             await VerifyAppLanguages(runner);
             await VerifyInterfaceScaling(runner, viewport);
         }
@@ -259,113 +258,6 @@ public partial class TimingShortcutTests
             }
             window.Hide();
         }
-    }
-
-    private static async Task VerifySettingsApplyAndCancel(ISceneRunner runner)
-    {
-        var volume = (HScrollBar)runner.FindChild("VolumeSliderMusic")!;
-        double originalVolume = volume.Value;
-        try
-        {
-            volume.Value = originalVolume == 0.4 ? 0.6 : 0.4;
-            AssertThat(Mathf.DbToLinear(AudioServer.GetBusVolumeDb(AudioServer.GetBusIndex("Music"))))
-                .IsEqualApprox((float)volume.Value, 0.0001f);
-            AssertThat(new SettingsStore().Load().MusicVolumeNormalized).IsEqual(volume.Value);
-        }
-        finally
-        {
-            volume.Value = originalVolume;
-        }
-        var window = (Window)runner.FindChild("VisualSettingsWindow")!;
-        var input = window.GetNode<LineEdit>("Margin/Scroll/Layout/TabContainer/Spectrogram/minFreq/LineEdit");
-        int original = Project.Instance.Settings.SpectrogramMinFreq;
-        try
-        {
-            window.Popup();
-            input.Text = (original + 1000).ToString();
-            window.EmitSignal(Window.SignalName.CloseRequested);
-            window.Popup();
-            AssertThat(input.Text).IsEqual(original.ToString());
-            input.Text = (original + 1000).ToString();
-            window.GetNode<Button>("Margin/Scroll/Layout/BottomButtonsHBox/ApplyButton").EmitSignal(Button.SignalName.Pressed);
-            var spectrum = Project.Instance.SpectrogramContext.SpectrogramGenerator;
-            AssertThat(spectrum.FreqMin).IsBetween(original + 1000 - spectrum.HzPerPx, original + 1000d);
-            AssertThat(new SettingsStore().Load().SpectrogramMinFreq).IsEqual(original + 1000);
-            input.Text = (original + 2000).ToString();
-            window.EmitSignal(Window.SignalName.CloseRequested);
-            window.Popup();
-            await runner.AwaitIdleFrame();
-            AssertThat(input.Text).IsEqual((original + 1000).ToString());
-        }
-        finally
-        {
-            input.Text = original.ToString();
-            window.GetNode<Button>("Margin/Scroll/Layout/BottomButtonsHBox/OkButton").EmitSignal(Button.SignalName.Pressed);
-        }
-    }
-
-    private static async Task VerifyFontScaleApplyAndCancel(ISceneRunner runner, SubViewport viewport, AudioVisualsContainer container)
-    {
-        var window = (Window)runner.FindChild("VisualSettingsWindow")!;
-        var slider = window.GetNode<HSlider>("Margin/Scroll/Layout/TabContainer/Interface/Scale/Slider");
-        window.GetNode<TabContainer>("Margin/Scroll/Layout/TabContainer").CurrentTab = 0;
-        var percentage = window.GetNode<SpinBox>("Margin/Scroll/Layout/TabContainer/Interface/Scale/Percentage");
-        var apply = window.GetNode<Button>("Margin/Scroll/Layout/BottomButtonsHBox/ApplyButton");
-        var reset = window.GetNode<Button>("Margin/Scroll/Layout/TabContainer/Interface/DefaultsButton");
-        var message = (Control)runner.FindChild("MessageLabel")!;
-        int originalFontSize = message.GetThemeFontSize("font_size");
-        var spectrum = Project.Instance.SpectrogramContext.SpectrogramGenerator;
-        try
-        {
-            window.Popup();
-            slider.Value = 150;
-            AssertThat(percentage.Value).IsEqual(150d);
-            AssertThat(message.GetThemeFontSize("font_size")).IsEqual(originalFontSize);
-            window.EmitSignal(Window.SignalName.CloseRequested);
-            window.Popup();
-            AssertThat(slider.Value).IsEqual(100d);
-
-            percentage.GetLineEdit().Text = "200";
-            await runner.AwaitIdleFrame();
-            apply.EmitSignal(Button.SignalName.Pressed);
-            await runner.AwaitIdleFrame();
-            AssertThat(slider.Value).IsEqual(200d);
-            AssertThat(message.GetThemeFontSize("font_size")).IsEqual(originalFontSize);
-            AssertThat(((SceneTree)Engine.GetMainLoop()).Root.ContentScaleFactor).IsEqual(2f);
-            AssertThat(Project.Instance.SpectrogramContext.SpectrogramGenerator).IsSame(spectrum);
-            using var config = new ConfigFile();
-            AssertThat(config.Load("user://settings.cfg")).IsEqual(Error.Ok);
-            AssertThat(config.GetValue("settings", "TextScaleFactor").AsDouble()).IsEqual(2d);
-
-            await VerifySettingsDialogSizes(runner);
-            await VerifyPointerTimeLayout(runner, viewport, container);
-
-            window.Popup();
-            reset.EmitSignal(Button.SignalName.Pressed);
-            AssertThat(percentage.Value).IsEqual(100d);
-            window.EmitSignal(Window.SignalName.CloseRequested);
-            window.Popup();
-            AssertThat(percentage.Value).IsEqual(200d);
-            await runner.AwaitIdleFrame();
-            apply.EmitSignal(Button.SignalName.Pressed);
-            AssertThat(message.GetThemeFontSize("font_size")).IsEqual(originalFontSize);
-
-            window.GetNode<TabContainer>("Margin/Scroll/Layout/TabContainer").CurrentTab = 0;
-            await runner.AwaitIdleFrame();
-            percentage.GetLineEdit().GrabFocus();
-            percentage.GetLineEdit().Text = "120";
-            apply.GrabFocus();
-            apply.EmitSignal(Button.SignalName.Pressed);
-            AssertThat(new SettingsStore().Load().TextScaleFactor).IsEqual(1.2d);
-        }
-        finally
-        {
-            percentage.Value = 100;
-            percentage.GetLineEdit().Text = "100";
-            await runner.AwaitIdleFrame();
-            window.GetNode<Button>("Margin/Scroll/Layout/BottomButtonsHBox/OkButton").EmitSignal(Button.SignalName.Pressed);
-        }
-        AssertThat(message.GetThemeFontSize("font_size")).IsEqual(originalFontSize);
     }
 
     private static async Task VerifyAppLanguages(ISceneRunner runner)

@@ -18,6 +18,14 @@ using static GdUnit4.Assertions;
 [RequireGodotRuntime]
 public class AudioDisplayTests
 {
+    [TestCase]
+    public void Audio_shorter_than_an_fft_window_still_has_a_spectrum()
+    {
+        var audio = new PcmData(44100, 16, [new byte[600]], [new float[300]]);
+        var spectrum = SpectrogramHelper.GetSpectrogramGenerator(audio, stepSize: 64, fftSize: 256, minFreq: 2200);
+        AssertThat(spectrum.GetFFTs().Count).IsEqual(1);
+    }
+
     [TestCase(false)]
     [TestCase(true)]
     public void Mp3_display_preserves_decoded_duration_and_samples(bool embedded)

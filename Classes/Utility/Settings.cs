@@ -219,28 +219,28 @@ public sealed class Settings : INotifyPropertyChanged
     public int SpectrogramStepSize
     {
         get => spectrogramStepSize;
-        set => Set(ref spectrogramStepSize, Math.Abs(value));
+        set => Set(ref spectrogramStepSize, value);
     }
 
     private int spectrogramFftSize = 256;
     public int SpectrogramFftSize
     {
         get => spectrogramFftSize;
-        set => Set(ref spectrogramFftSize, Math.Abs(value));
+        set => Set(ref spectrogramFftSize, value);
     }
 
     private int spectrogramMinFreq = 2200;
     public int SpectrogramMinFreq
     {
         get => spectrogramMinFreq;
-        set => Set(ref spectrogramMinFreq, Math.Abs(value));
+        set => Set(ref spectrogramMinFreq, value);
     }
 
     private int spectrogramIntensity = 5;
     public int SpectrogramIntensity
     {
         get => spectrogramIntensity;
-        set => Set(ref spectrogramIntensity, Math.Abs(value));
+        set => Set(ref spectrogramIntensity, value);
     }
 
     private bool spectrogramUseDb = true;

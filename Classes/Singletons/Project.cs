@@ -85,17 +85,22 @@ public partial class Project : Node, ISettingsConsumer
 
     public SpectrogramContext SpectrogramContext { get; set; } = null!;
 
-    public void UpdateSpectrogramContextFromSettings()
+    public bool UpdateSpectrogramContextFromSettings(VisualSettings? preview = null)
     {
-        int stepSize = Settings.SpectrogramStepSize;
-        int fftSize = Settings.SpectrogramFftSize;
-        int minFreq = Settings.SpectrogramMinFreq;
-        bool dB = Settings.SpectrogramUseDb;
-        int intensity = Settings.SpectrogramIntensity;
-        SpectrogramContext = new(SpectrogramHelper.GetSpectrogramGenerator(AudioFile, stepSize, fftSize, minFreq, 16000));
-        SpectrogramContext.DB = dB;
-        SpectrogramContext.Intensity = intensity;
+        VisualSettings values = preview ?? VisualSettings.From(Settings);
+        if (!values.IsValid(AudioFile.SampleRate, AudioFile.PcmFloats[0].Length))
+        {
+            if (preview.HasValue)
+                return false;
+            values = VisualSettings.From(new Settings());
+            if (!values.IsValid(AudioFile.SampleRate, AudioFile.PcmFloats[0].Length))
+                throw new InvalidOperationException("The audio cannot be represented as a spectrogram with default settings.");
+        }
+        SpectrogramContext = new(SpectrogramHelper.GetSpectrogramGenerator(AudioFile, values.StepSize, values.FftSize, values.MinFreq, 16000));
+        SpectrogramContext.DB = values.UseDb;
+        SpectrogramContext.Intensity = values.Intensity;
         SpectrogramContext.UpdateSpectrogram();
+        return true;
     }
 
     // Called when the node enters the scene tree for the first time.

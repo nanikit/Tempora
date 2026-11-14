@@ -14,7 +14,51 @@ public class SettingsPersistenceTests
 {
     [TestCase(false)]
     [TestCase(true)]
-    public void Invalid_numeric_settings_reach_the_load_error_handler(bool legacy)
+    public void Invalid_display_values_use_defaults_without_blocking_other_saves(bool legacy)
+    {
+        string directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(directory);
+        string path = Path.Combine(directory, "settings.cfg");
+        string legacyPath = Path.Combine(directory, "settings.txt");
+        string source = legacy ? legacyPath : path;
+        string invalid = legacy ? "SpectrogramStepSize;1\n" : "[settings]\nSpectrogramStepSize=1\n";
+        try
+        {
+            File.WriteAllText(source, invalid);
+            var store = new SettingsStore(path, legacyPath);
+            Settings settings = store.Load();
+            AssertThat(settings.SpectrogramStepSize).IsEqual(new Settings().SpectrogramStepSize);
+            AssertThat(store.RejectedVisualSettings!.Value.StepSize).IsEqual(1);
+            AssertThat(File.ReadAllText(source)).IsEqual(invalid);
+            if (legacy)
+                AssertThat(File.Exists(path)).IsFalse();
+
+            var unsafeSettings = new Settings { SpectrogramStepSize = 1 };
+            AssertThrown(() => store.Save(unsafeSettings)).IsInstanceOf<FormatException>();
+            AssertThat(File.ReadAllText(source)).IsEqual(invalid);
+
+            settings.MusicVolumeNormalized = 0.4;
+            store.Save(settings, nameof(Settings.MusicVolumeNormalized));
+            var restarted = new SettingsStore(path, legacyPath);
+            AssertThat(restarted.Load().MusicVolumeNormalized).IsEqual(0.4d);
+            AssertThat(restarted.Load().SpectrogramStepSize).IsEqual(new Settings().SpectrogramStepSize);
+            if (!legacy)
+                AssertThat(restarted.RejectedVisualSettings!.Value.StepSize).IsEqual(1);
+
+            store.Save(settings);
+            AssertThat(store.RejectedVisualSettings).IsNull();
+            restarted.Load();
+            AssertThat(restarted.RejectedVisualSettings).IsNull();
+        }
+        finally
+        {
+            Directory.Delete(directory, true);
+        }
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public void Invalid_numeric_display_values_are_retained_for_correction(bool legacy)
     {
         string directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
         Directory.CreateDirectory(directory);
@@ -25,7 +69,9 @@ public class SettingsPersistenceTests
         try
         {
             File.WriteAllText(originalPath, invalid);
-            AssertThrown(() => new SettingsStore(path, legacyPath).Load()).IsInstanceOf<OverflowException>();
+            var store = new SettingsStore(path, legacyPath);
+            AssertThat(store.Load().SpectrogramIntensity).IsEqual(new Settings().SpectrogramIntensity);
+            AssertThat(store.RejectedVisualSettings!.Value.Intensity).IsEqual(int.MinValue);
             AssertThat(File.ReadAllText(originalPath)).IsEqual(invalid);
             if (legacy)
                 AssertThat(File.Exists(path)).IsFalse();

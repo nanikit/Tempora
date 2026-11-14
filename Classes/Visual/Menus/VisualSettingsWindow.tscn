@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bmawdtoq15vkb" path="res://Classes/Visual/Menus/VisualSettingsWindow.cs" id="1_irav1"]
 
-[node name="VisualSettingsWindow" type="Window" node_paths=PackedStringArray("textScaleSlider", "textScalePercentage", "textDefaultsButton", "stepSizeLineEdit", "fftSizeLineEdit", "minFreqLineEdit", "intensityLineEdit", "dBCheckbox", "okButton", "defaultsButton", "applyButton")]
+[node name="VisualSettingsWindow" type="Window" node_paths=PackedStringArray("textScaleSlider", "textScalePercentage", "textDefaultsButton", "stepSizeLineEdit", "fftSizeLineEdit", "minFreqLineEdit", "intensityLineEdit", "dBCheckbox", "saveButton", "defaultsButton", "cancelButton", "previewStatus")]
 title = "Display Settings"
 position = Vector2i(0, 36)
 size = Vector2i(640, 360)
@@ -17,9 +17,10 @@ fftSizeLineEdit = NodePath("Margin/Scroll/Layout/TabContainer/Spectrogram/fftSiz
 minFreqLineEdit = NodePath("Margin/Scroll/Layout/TabContainer/Spectrogram/minFreq/LineEdit")
 intensityLineEdit = NodePath("Margin/Scroll/Layout/TabContainer/Spectrogram/Intensity/LineEdit")
 dBCheckbox = NodePath("Margin/Scroll/Layout/TabContainer/Spectrogram/dB/CheckBox")
-okButton = NodePath("Margin/Scroll/Layout/BottomButtonsHBox/OkButton")
+saveButton = NodePath("Margin/Scroll/Layout/BottomButtonsHBox/SaveButton")
 defaultsButton = NodePath("Margin/Scroll/Layout/TabContainer/Spectrogram/DefaultsButton")
-applyButton = NodePath("Margin/Scroll/Layout/BottomButtonsHBox/ApplyButton")
+cancelButton = NodePath("Margin/Scroll/Layout/BottomButtonsHBox/CancelButton")
+previewStatus = NodePath("Margin/Scroll/Layout/PreviewStatus")
 
 [node name="Margin" type="MarginContainer" parent="."]
 anchors_preset = 15
@@ -167,18 +168,23 @@ size_flags_horizontal = 3
 text = "dB"
 vertical_alignment = 1
 
+[node name="PreviewStatus" type="Label" parent="Margin/Scroll/Layout"]
+visible = false
+layout_mode = 2
+autowrap_mode = 3
+
 [node name="BottomButtonsHBox" type="HBoxContainer" parent="Margin/Scroll/Layout"]
 layout_mode = 2
 mouse_filter = 2
 
-[node name="OkButton" type="Button" parent="Margin/Scroll/Layout/BottomButtonsHBox"]
+[node name="SaveButton" type="Button" parent="Margin/Scroll/Layout/BottomButtonsHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 8
-text = "Ok"
+text = "Save"
 
-[node name="ApplyButton" type="Button" parent="Margin/Scroll/Layout/BottomButtonsHBox"]
+[node name="CancelButton" type="Button" parent="Margin/Scroll/Layout/BottomButtonsHBox"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 8
-text = "Apply"
+text = "Cancel"

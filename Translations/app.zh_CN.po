@@ -589,3 +589,19 @@ msgstr "界面大小"
 
 msgid "Reset"
 msgstr "重置"
+
+
+msgid "Check the spectrogram values. For long audio, increase step size or reduce FFT size."
+msgstr "请检查频谱图数值。对于较长的音频，请增大步长或减小FFT大小。"
+
+msgid "32–16384 (powers of 2)"
+msgstr "32–16384（2的幂）"
+
+msgid "0–96000 Hz; below half the sample rate"
+msgstr "0–96000 Hz，低于采样率的一半"
+
+msgid "Saved display values were invalid. Review and save your settings."
+msgstr "已保存的显示设置值无效。请检查并保存设置。"
+
+msgid "Display settings are outside the supported range. The file has been preserved."
+msgstr "显示设置超出允许范围。原文件已保留。"

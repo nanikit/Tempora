@@ -589,3 +589,19 @@ msgstr "インターフェースのサイズ"
 
 msgid "Reset"
 msgstr "初期化"
+
+
+msgid "Check the spectrogram values. For long audio, increase step size or reduce FFT size."
+msgstr "スペクトログラムの値を確認してください。長い音声ではステップを大きくするか、FFTサイズを小さくしてください。"
+
+msgid "32–16384 (powers of 2)"
+msgstr "32–16384（2の累乗）"
+
+msgid "0–96000 Hz; below half the sample rate"
+msgstr "0–96000 Hz、サンプルレートの半分未満"
+
+msgid "Saved display values were invalid. Review and save your settings."
+msgstr "保存された表示設定の値が無効です。設定を確認して保存してください。"
+
+msgid "Display settings are outside the supported range. The file has been preserved."
+msgstr "表示設定が許容範囲外です。元のファイルは保持されています。"

@@ -14,7 +14,10 @@ public partial class Application : Node
     private string? settingsLoadError;
     private readonly TextSizing textSizing = new();
     private WindowsTextScale? windowsTextScale;
+    private double? previewTextScale;
+    private bool savingVisualSettings;
     public double SystemTextScale { get; private set; } = 1;
+    public VisualSettings? RejectedVisualSettings => store?.RejectedVisualSettings;
 
     public override void _EnterTree()
     {
@@ -55,7 +58,34 @@ public partial class Application : Node
         ApplyTextScale();
     }
 
-    private void ApplyTextScale() => textSizing.ApplyScale(SystemTextScale, settings.TextScaleFactor);
+    public void PreviewTextScale(double? scale)
+    {
+        previewTextScale = scale;
+        ApplyTextScale();
+    }
+
+    public bool SaveVisualSettings(VisualSettings values)
+    {
+        var audio = Project.Instance.AudioFile;
+        if (!values.IsValid(audio.SampleRate, audio.PcmFloats[0].Length))
+            return false;
+        VisualSettings original = VisualSettings.From(settings);
+        savingVisualSettings = true;
+        try
+        {
+            values.ApplyTo(settings);
+            if (SaveSettings())
+                return true;
+            original.ApplyTo(settings);
+            return false;
+        }
+        finally
+        {
+            savingVisualSettings = false;
+        }
+    }
+
+    private void ApplyTextScale() => textSizing.ApplyScale(SystemTextScale, previewTextScale ?? settings.TextScaleFactor);
 
     private void LoadSettings()
     {
@@ -101,7 +131,8 @@ public partial class Application : Node
     private void OnSettingChanged(object? sender, PropertyChangedEventArgs change)
     {
         ApplySetting(change.PropertyName);
-        SaveSettings();
+        if (!savingVisualSettings)
+            SaveSettings(change.PropertyName);
     }
 
     private void ApplySetting(string? name)
@@ -116,16 +147,20 @@ public partial class Application : Node
         }
     }
 
-    private void SaveSettings()
+    private bool SaveSettings(string? changedProperty = null)
     {
+        if (store == null)
+            return false;
         try
         {
-            store?.Save(settings);
+            store.Save(settings, changedProperty);
+            return true;
         }
-        catch (System.IO.IOException exception)
+        catch (Exception exception) when (exception is System.IO.IOException or FormatException)
         {
             Godot.GD.PushError(exception.Message);
             Project.Instance.ShowNotification(exception.Message, 10);
+            return false;
         }
     }
 
