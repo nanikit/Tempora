@@ -47,58 +47,39 @@ public partial class BeatSaberExporter : Node, ISettingsConsumer
 
         bool isV4Format = Settings.BeatSaberExportFormat == 4;
 
-        // Info file
         var info = new Info { SongName = audioFilename };
-        string infoJson = JsonSerializer.Serialize(isV4Format ? info.GetV4Object() : info.GetV2Object(),
-            serializeOptions);
+        WriteJson(zipPacker, "Info.dat", isV4Format ? info.GetV4Object() : info.GetV2Object());
 
-        zipPacker.StartFile("Info.dat");
-        zipPacker.WriteFile(infoJson.ToUtf8Buffer());
-        zipPacker.CloseFile();
-
-        // Audio data file
         var audioData = new AudioData
         {
             SongSampleCount = audioSamples,
             SongFrequency = audioFile.SampleRate,
             BpmData = bpmData
         };
-        string audioDataJson = JsonSerializer.Serialize(isV4Format ? audioData.GetV4Object() : audioData.GetV2Object(),
-            serializeOptions);
         string audioDataFilename = isV4Format ? "AudioData.dat" : "BPMInfo.dat";
+        WriteJson(zipPacker, audioDataFilename, isV4Format ? audioData.GetV4Object() : audioData.GetV2Object());
 
-        zipPacker.StartFile(audioDataFilename);
-        zipPacker.WriteFile(audioDataJson.ToUtf8Buffer());
-        zipPacker.CloseFile();
-
-        // Difficulty files
         object difficultyObject = isV4Format ? Difficulty.GetV4Object() : Difficulty.GetV3Object(audioData.BpmData);
-        string difficultyJson = JsonSerializer.Serialize(difficultyObject, serializeOptions);
-
-        zipPacker.StartFile(DefaultDifficultyFilename);
-        zipPacker.WriteFile(difficultyJson.ToUtf8Buffer());
-        zipPacker.CloseFile();
-
+        WriteJson(zipPacker, DefaultDifficultyFilename, difficultyObject);
         if (isV4Format)
-        {
-            zipPacker.StartFile("Lightshow.dat");
-            zipPacker.WriteFile(difficultyJson.ToUtf8Buffer());
-            zipPacker.CloseFile();
-        }
+            WriteJson(zipPacker, "Lightshow.dat", difficultyObject);
 
-        // Audio file
         if (audioFile.Extension == ".ogg")
-        {
-            zipPacker.StartFile("song.ogg");
-            zipPacker.WriteFile(audioFile.FileBuffer);
-            zipPacker.CloseFile();
-        }
+            WriteFile(zipPacker, "song.ogg", audioFile.FileBuffer);
         else
-        {
             Project.Instance.NotificationMessage = "Note: convert audio file to .ogg in Audacity";
-        }
 
         zipPacker.Close();
+    }
+
+    private void WriteJson(ZipPacker archive, string filename, object value)
+        => WriteFile(archive, filename, JsonSerializer.SerializeToUtf8Bytes(value, serializeOptions));
+
+    private static void WriteFile(ZipPacker archive, string filename, byte[] contents)
+    {
+        archive.StartFile(filename);
+        archive.WriteFile(contents);
+        archive.CloseFile();
     }
 
     public static List<BpmDataPoint> GetBpmDataPoints(IReadOnlyList<TimingPoint> timingPoints, int audioSamples, int sampleRate, double audacityOrigin)
