@@ -434,9 +434,9 @@ public partial class TimingShortcutTests
         AssertThat(scrollbar.GetThemeStylebox("scroll")).IsInstanceOf<StyleBoxTexture>();
         var track = (StyleBoxTexture)scrollbar.GetThemeStylebox("scroll");
         Texture2D texture = track.Texture;
-        using Image image = texture.GetImage();
-        AssertThat(image.GetWidth()).IsEqual((int)System.Math.Ceiling(scrollbar.Size.X));
-        AssertThat(image.GetData().Distinct().Count()).IsGreater(10);
+        byte[] pixels = ReadTexturePixels(texture);
+        AssertThat(texture.GetWidth()).IsEqual((int)System.Math.Ceiling(scrollbar.Size.X));
+        AssertThat(pixels.Distinct().Count()).IsGreater(10);
         foreach (string name in new[] { "grabber", "grabber_highlight", "grabber_pressed" })
         {
             var handle = (StyleBoxFlat)scrollbar.GetThemeStylebox(name);
@@ -467,8 +467,7 @@ public partial class TimingShortcutTests
         {
             Project.Instance.Timing.TrySetBpm(lastPoint, originalBpm * 2);
             await Settle(runner);
-            using Image edited = track.Texture.GetImage();
-            AssertThat(edited.GetData().SequenceEqual(image.GetData())).IsFalse();
+            AssertThat(ReadTexturePixels(track.Texture).SequenceEqual(pixels)).IsFalse();
             AssertMinimapMatchesRow(container, scrollbar);
             settings.MeasureOverlap = originalOverlap + 0.25f;
             settings.DownbeatPositionOffset = originalDownbeat + 0.125f;
@@ -556,6 +555,12 @@ public partial class TimingShortcutTests
             Project.Instance.ReplaceDocument(original, Project.Instance.AudioFile, Project.Instance.ProjectPath);
             await Settle(runner);
         }
+    }
+
+    private static byte[] ReadTexturePixels(Texture2D texture)
+    {
+        using Image image = texture.GetImage();
+        return image.GetData();
     }
 
     private static void AssertMinimapMatchesRow(AudioVisualsContainer container, BlockScrollBar scrollbar)

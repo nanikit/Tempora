@@ -26,7 +26,7 @@ public partial class TimingShortcutTests
         var image = context.CachedSpectrogramImage;
         var scrollbar = (BlockScrollBar)runner.FindChild("BlockScrollBar")!;
         var minimap = (StyleBoxTexture)scrollbar.GetThemeStylebox("scroll");
-        using Image originalMinimap = minimap.Texture.GetImage();
+        byte[] originalMinimap = ReadTexturePixels(minimap.Texture);
         try
         {
             window.Popup();
@@ -37,8 +37,7 @@ public partial class TimingShortcutTests
             AssertThat(spectrum.GetFFTs()[0]).IsSame(fft);
             AssertThat(GodotObject.IsInstanceValid(image)).IsFalse();
             AssertThat(Project.Instance.SpectrogramContext.CachedSpectrogramImage!.GetData().SequenceEqual(pixels)).IsFalse();
-            using Image darkMinimap = minimap.Texture.GetImage();
-            AssertThat(darkMinimap.GetData().SequenceEqual(originalMinimap.GetData())).IsFalse();
+            AssertThat(ReadTexturePixels(minimap.Texture).SequenceEqual(originalMinimap)).IsFalse();
             image = project.SpectrogramContext.CachedSpectrogramImage;
             project.UpdateSpectrogramContextFromSettings(original with { Intensity = 0 });
             AssertThat(project.SpectrogramContext.CachedSpectrogramImage).IsSame(image);
@@ -55,8 +54,7 @@ public partial class TimingShortcutTests
             await runner.AwaitMillis(350);
             AssertThat(Project.Instance.SpectrogramContext.SpectrogramGenerator.GetFFTs()[0]).IsSame(fft);
             AssertThat(Project.Instance.SpectrogramContext.CachedSpectrogramImage!.GetData()).IsEqual(pixels);
-            using Image restoredMinimap = minimap.Texture.GetImage();
-            AssertThat(restoredMinimap.GetData()).IsEqual(originalMinimap.GetData());
+            AssertThat(ReadTexturePixels(minimap.Texture)).IsEqual(originalMinimap);
 
             VerifySpectrumDetailChanges(original);
             project.UpdateSpectrogramContextFromSettings();
@@ -66,8 +64,7 @@ public partial class TimingShortcutTests
             AssertThat(project.SpectrogramContext.SpectrogramGenerator.GetFFTs()[0]).IsNotSame(fft);
             AssertThat(GodotObject.IsInstanceValid(image)).IsFalse();
             await Settle(runner);
-            using Image replacedMinimap = minimap.Texture.GetImage();
-            AssertThat(replacedMinimap.GetData().SequenceEqual(originalMinimap.GetData())).IsFalse();
+            AssertThat(ReadTexturePixels(minimap.Texture).SequenceEqual(originalMinimap)).IsFalse();
         }
         finally
         {
