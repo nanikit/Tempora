@@ -304,7 +304,9 @@ async function retryPlan(
 }
 
 function preparationJob(run: ArtifactRun, jobs: ArtifactJob[]): ArtifactJob {
-  const exported = jobs.find((job) => job.name === "Export Game");
+  const exported = jobs.find((job) =>
+    ["Upload", "Export Game"].includes(job.name)
+  );
   if (!exported) {
     throw new Error(`Run ${run.id} has no artifact preparation job.`);
   }

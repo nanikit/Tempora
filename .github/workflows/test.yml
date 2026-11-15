@@ -87,7 +87,7 @@ jobs:
         with:
           deno-version: 2.9.8
 
-      - name: check for successful tests on this commit
+      - name: Check for successful tests on this commit
         id: reuse
         if: github.event_name != 'pull_request'
         shell: bash
@@ -95,18 +95,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: deno run --frozen -A .github/scripts/find-test-result.ts "$GITHUB_REPOSITORY" "$SOURCE_COMMIT" "$GITHUB_RUN_ID"
 
-      - name: resolve build version
+      - name: Resolve build version
         id: version
         shell: bash
         run: deno run --frozen -A .github/scripts/prepare-artifacts.ts "$SOURCE_COMMIT"
 
-      - name: setup dotnet
-        if: steps.reuse.outputs.test-passed != 'true'
+      - if: steps.reuse.outputs.test-passed != 'true'
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 8.0.x
 
-      - name: install Godot Mono
+      - name: Install Godot Mono
         if: steps.reuse.outputs.test-passed != 'true'
         id: godot
         shell: pwsh
@@ -127,24 +126,24 @@ jobs:
 
           "godot_bin=$($godot.FullName)" >> $env:GITHUB_OUTPUT
 
-      - name: test
+      - name: Test
         if: steps.reuse.outputs.test-passed != 'true'
         shell: pwsh
         run: dotnet run --project tools/StartupSmoke/StartupSmoke.csproj -- test "${{ steps.godot.outputs.godot_bin }}"
 
-      - name: verify artifact preparation and reuse
+      - name: Verify artifact preparation and reuse
         if: steps.reuse.outputs.test-passed != 'true'
         shell: bash
         run: |
           deno task check
           deno task test
 
-      - name: verify startup capture isolation
+      - name: Verify startup capture isolation
         if: steps.reuse.outputs.test-passed != 'true'
         run: dotnet test tools/StartupSmoke.Tests/StartupSmoke.Tests.csproj
 
   export_game:
-    name: Export Game
+    name: Upload
     needs: test
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
@@ -153,7 +152,7 @@ jobs:
       SOURCE_COMMIT: ${{ needs.test.outputs.commit }}
       BUILD_VERSION: ${{ needs.test.outputs.version }}
     steps:
-      - name: checkout tested source
+      - name: Checkout tested source
         uses: actions/checkout@v6
         with:
           ref: ${{ needs.test.outputs.commit }}
@@ -163,11 +162,11 @@ jobs:
         with:
           deno-version: 2.9.8
 
-      - name: apply the fixed build version
+      - name: Apply the fixed build version
         shell: bash
         run: deno run --frozen -A .github/scripts/prepare-artifacts.ts "$SOURCE_COMMIT" "$BUILD_VERSION"
 
-      - name: export game
+      - name: Export
         id: export
         uses: firebelley/godot-export@v8.0.0
         with:
@@ -177,14 +176,14 @@ jobs:
           presets_to_export: Linux/X11,Windows,macOS
           archive_output: true
 
-      - name: re-sign macOS app and name release archives
+      - name: Re-sign macOS app and name release archives
         id: artifacts
         shell: bash
         env:
           ARCHIVE_DIRECTORY: ${{ steps.export.outputs.archive_directory }}
         run: bash .github/scripts/package-artifacts.sh "$ARCHIVE_DIRECTORY"
 
-      - name: upload ready-to-publish artifacts
+      - name: Upload ready-to-publish artifacts
         uses: actions/upload-artifact@v7
         with:
           name: release-artifacts

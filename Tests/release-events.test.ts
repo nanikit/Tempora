@@ -210,7 +210,10 @@ scenario(
     const event = releaseEvent(boundary);
     boundary.runs([run(10)]);
     boundary.artifacts(10, { expired: true });
-    boundary.jobs(10);
+    boundary.jobs(10, [
+      { id: 101, name: "Test", conclusion: "success" },
+      { id: 102, name: "Upload", conclusion: "success" },
+    ]);
     assertEquals(await planRelease(repository, event), {
       action: "retry",
       commit: sourceSha,

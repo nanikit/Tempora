@@ -37,7 +37,7 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: 2.9.8
-      - name: decide whether to prepare or publish
+      - name: Decide whether to prepare or publish
         id: plan
         shell: bash
         env:
@@ -60,7 +60,7 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: 2.9.8
-      - name: request preparation and release the runner
+      - name: Request preparation and release the runner
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -89,7 +89,7 @@ jobs:
         with:
           deno-version: 2.9.8
 
-      - name: download the prepared artifacts
+      - name: Download the prepared artifacts
         uses: actions/download-artifact@v8
         with:
           github-token: ${{ github.token }}
@@ -97,19 +97,19 @@ jobs:
           artifact-ids: ${{ needs.plan.outputs.artifact-id }}
           path: release-artifacts
 
-      - name: verify source and release version
+      - name: Verify source and release version
         id: version
         shell: bash
         run: |
           test "$SOURCE_COMMIT" = "$GITHUB_SHA"
           deno run --frozen -A .github/scripts/read-release-info.ts "$SOURCE_COMMIT" release-artifacts
 
-      - name: attest release artifacts
+      - name: Attest release artifacts
         uses: actions/attest-build-provenance@v4.1.0
         with:
           subject-path: release-artifacts/*.zip
 
-      - name: push release tag
+      - name: Push release tag
         shell: bash
         env:
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
@@ -132,7 +132,7 @@ jobs:
           artifactErrorsFailBuild: true
           artifacts: release-artifacts/*.zip
 
-      - name: rollback release tag after upload failure
+      - name: Rollback release tag after upload failure
         if: steps.release.outcome == 'failure'
         shell: bash
         env:
