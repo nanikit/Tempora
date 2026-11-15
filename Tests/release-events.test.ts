@@ -1,5 +1,6 @@
-import { assertEquals, assertRejects } from "@std/assert";
+import { assertEquals, assertObjectMatch, assertRejects } from "@std/assert";
 import {
+  planOutputs,
   planRelease,
   prepareRelease,
   type ReleaseEvent,
@@ -8,6 +9,7 @@ import { type ArtifactRun } from "../.github/scripts/artifact-runs.ts";
 import {
   type Boundary,
   otherSha,
+  releaseArtifacts,
   repository,
   run,
   scenario,
@@ -15,12 +17,41 @@ import {
 } from "./release-boundary.ts";
 
 scenario(
-  "A release request publishes artifacts that finished first",
+  "A release publishes each OS archive without unpacking",
   async (boundary) => {
     const event = releaseEvent(boundary);
     boundary.runs([run(10)]);
     boundary.artifacts(10);
-    assertEquals(await planRelease(repository, event), publication());
+    boundary.jobs(10);
+    const plan = await planRelease(repository, event);
+    assertObjectMatch(planOutputs(plan), {
+      action: "publish",
+      commit: sourceSha,
+      "run-id": 10,
+      "artifact-ids": "201,202,203,204",
+      "skip-decompress": "true",
+    });
+  },
+);
+
+scenario(
+  "Existing bundled builds remain ready for publication",
+  async (boundary) => {
+    const event = releaseEvent(boundary);
+    boundary.runs([run(10)]);
+    boundary.artifacts(10, [{
+      id: 201,
+      name: "release-artifacts",
+      expired: false,
+    }]);
+    const plan = await planRelease(repository, event);
+    assertObjectMatch(planOutputs(plan), {
+      action: "publish",
+      commit: sourceSha,
+      "run-id": 10,
+      "artifact-ids": "201",
+      "skip-decompress": "false",
+    });
   },
 );
 
@@ -209,7 +240,13 @@ scenario(
   async (boundary) => {
     const event = releaseEvent(boundary);
     boundary.runs([run(10)]);
-    boundary.artifacts(10, { expired: true });
+    boundary.artifacts(
+      10,
+      releaseArtifacts().map((artifact, index) => ({
+        ...artifact,
+        expired: index === 2,
+      })),
+    );
     boundary.jobs(10, [
       { id: 101, name: "Test", conclusion: "success" },
       { id: 102, name: "Upload", conclusion: "success" },
@@ -448,7 +485,8 @@ function publication(options: { runId?: number } = {}) {
     commit: sourceSha,
     requestId: 50,
     runId: options.runId ?? 10,
-    artifactId: 201,
+    artifactIds: [201, 202, 203, 204],
+    skipDecompress: true,
   };
 }
 

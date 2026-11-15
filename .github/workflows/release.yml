@@ -29,7 +29,8 @@ jobs:
       commit: ${{ steps.plan.outputs.commit }}
       preparation-name: ${{ steps.plan.outputs.preparation-name }}
       run-id: ${{ steps.plan.outputs.run-id }}
-      artifact-id: ${{ steps.plan.outputs.artifact-id }}
+      artifact-ids: ${{ steps.plan.outputs.artifact-ids }}
+      skip-decompress: ${{ steps.plan.outputs.skip-decompress }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -94,7 +95,9 @@ jobs:
         with:
           github-token: ${{ github.token }}
           run-id: ${{ needs.plan.outputs.run-id }}
-          artifact-ids: ${{ needs.plan.outputs.artifact-id }}
+          artifact-ids: ${{ needs.plan.outputs.artifact-ids }}
+          merge-multiple: true
+          skip-decompress: ${{ needs.plan.outputs.skip-decompress }}
           path: release-artifacts
 
       - name: Verify source and release version

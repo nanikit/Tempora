@@ -183,10 +183,38 @@ jobs:
           ARCHIVE_DIRECTORY: ${{ steps.export.outputs.archive_directory }}
         run: bash .github/scripts/package-artifacts.sh "$ARCHIVE_DIRECTORY"
 
-      - name: Upload ready-to-publish artifacts
+      - name: Upload Windows archive
         uses: actions/upload-artifact@v7
         with:
-          name: release-artifacts
-          path: ${{ steps.artifacts.outputs.directory }}/*
+          name: Tempora-v${{ env.BUILD_VERSION }}-Windows.zip
+          path: ${{ steps.artifacts.outputs.directory }}/Tempora-v${{ env.BUILD_VERSION }}-Windows.zip
+          archive: false
+          if-no-files-found: error
+          overwrite: true
+
+      - name: Upload Linux archive
+        uses: actions/upload-artifact@v7
+        with:
+          name: Tempora-v${{ env.BUILD_VERSION }}-Linux.zip
+          path: ${{ steps.artifacts.outputs.directory }}/Tempora-v${{ env.BUILD_VERSION }}-Linux.zip
+          archive: false
+          if-no-files-found: error
+          overwrite: true
+
+      - name: Upload macOS archive
+        uses: actions/upload-artifact@v7
+        with:
+          name: Tempora-v${{ env.BUILD_VERSION }}-macOS.zip
+          path: ${{ steps.artifacts.outputs.directory }}/Tempora-v${{ env.BUILD_VERSION }}-macOS.zip
+          archive: false
+          if-no-files-found: error
+          overwrite: true
+
+      - name: Upload build metadata
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-info.json
+          path: ${{ steps.artifacts.outputs.directory }}/build-info.json
+          archive: false
           if-no-files-found: error
           overwrite: true

@@ -27,6 +27,11 @@ interface ReleaseArtifact {
   expired: boolean;
 }
 
+export interface ReleaseArtifacts {
+  artifactIds: number[];
+  skipDecompress: boolean;
+}
+
 export function artifactApi<T>(
   path: string,
   options?: { paged?: boolean },
@@ -112,18 +117,51 @@ export async function getArtifactJobs(
     .map((attempts) => attempts.sort((a, b) => b.id - a.id)[0]);
 }
 
-export async function getReleaseArtifact(
+export async function getReleaseArtifacts(
   repository: string,
   runId: number,
-): Promise<ReleaseArtifact | undefined> {
+): Promise<ReleaseArtifacts | undefined> {
   const pages = await artifactApi<{ artifacts: ReleaseArtifact[] }[]>(
     `repos/${repository}/actions/runs/${runId}/artifacts?per_page=100`,
     { paged: true },
   );
-  return pages.flatMap((page) => page.artifacts)
-    .find((artifact) =>
-      artifact.name === "release-artifacts" && !artifact.expired
+  return selectReleaseArtifacts(pages.flatMap((page) => page.artifacts));
+}
+
+export function selectReleaseArtifacts(
+  artifacts: ReleaseArtifact[],
+): ReleaseArtifacts | undefined {
+  const available = artifacts.filter((artifact) => !artifact.expired)
+    .sort((a, b) => b.id - a.id);
+  const split = selectSplitReleaseArtifacts(available);
+  if (split) return split;
+  const bundle = available.find((artifact) =>
+    artifact.name === "release-artifacts"
+  );
+  return bundle && { artifactIds: [bundle.id], skipDecompress: false };
+}
+
+function selectSplitReleaseArtifacts(
+  available: ReleaseArtifact[],
+): ReleaseArtifacts | undefined {
+  const metadata = available.find((artifact) =>
+    artifact.name === "build-info.json"
+  );
+  const windows = available.find((artifact) =>
+    /^Tempora-v.+-Windows\.zip$/.test(artifact.name)
+  );
+  if (metadata && windows) {
+    const prefix = windows.name.slice(0, -"Windows.zip".length);
+    const archives = ["Windows", "Linux", "macOS"].map((platform) =>
+      available.find((artifact) => artifact.name === `${prefix}${platform}.zip`)
     );
+    if (archives.every((artifact) => artifact !== undefined)) {
+      return {
+        artifactIds: [...archives, metadata].map((artifact) => artifact.id),
+        skipDecompress: true,
+      };
+    }
+  }
 }
 
 function dispatchedCommit(

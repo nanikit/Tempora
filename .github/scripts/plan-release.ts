@@ -7,8 +7,9 @@ import {
   type ArtifactRun,
   getArtifactJobs,
   getArtifactRuns,
-  getReleaseArtifact,
+  getReleaseArtifacts,
   isSuccessfulTest,
+  type ReleaseArtifacts,
 } from "./artifact-runs.ts";
 
 if (import.meta.main) {
@@ -57,13 +58,12 @@ export type ReleasePlan =
     attempt: number;
     jobId: number;
   }
-  | {
+  | ({
     action: "publish";
     commit: string;
     requestId: number;
     runId: number;
-    artifactId: number;
-  };
+  } & ReleaseArtifacts);
 
 export async function planRelease(
   repository: string,
@@ -143,6 +143,31 @@ export async function prepareRelease(
   }
 }
 
+export function planOutputs(
+  plan: ReleasePlan,
+): Record<string, string | number> {
+  const outputs: Record<string, string | number> = {
+    action: plan.action,
+    plan: JSON.stringify(plan),
+  };
+  if (plan.action === "none") return outputs;
+  outputs.commit = plan.commit;
+  if (plan.action === "publish") {
+    outputs["run-id"] = plan.runId;
+    outputs["artifact-ids"] = plan.artifactIds.join(",");
+    outputs["skip-decompress"] = String(plan.skipDecompress);
+  } else if (plan.action === "resume") {
+    outputs["preparation-name"] = `Resume release ${plan.requestId}`;
+  } else {
+    const action = plan.action === "dispatch"
+      ? "dispatch"
+      : `retry ${plan.runId}/${plan.attempt}`;
+    outputs["preparation-name"] =
+      `Prepare release ${plan.requestId}: ${action}`;
+  }
+  return outputs;
+}
+
 async function planArtifacts(
   repository: string,
   { commit, requestId, preparations }: {
@@ -168,14 +193,14 @@ async function planArtifacts(
       continue;
     }
     if (run.status !== "completed" || run.conclusion !== "success") continue;
-    const artifact = await getReleaseArtifact(repository, run.id);
-    if (artifact) {
+    const artifacts = await getReleaseArtifacts(repository, run.id);
+    if (artifacts) {
       return {
         action: "publish",
         commit,
         requestId,
         runId: run.id,
-        artifactId: artifact.id,
+        ...artifacts,
       };
     }
   }
@@ -342,26 +367,4 @@ async function tagCommit(name: string): Promise<string | undefined> {
     }),
   );
   return refs.get(`${tag}^{}`) ?? refs.get(tag);
-}
-
-function planOutputs(plan: ReleasePlan): Record<string, string | number> {
-  const outputs: Record<string, string | number> = {
-    action: plan.action,
-    plan: JSON.stringify(plan),
-  };
-  if (plan.action === "none") return outputs;
-  outputs.commit = plan.commit;
-  if (plan.action === "publish") {
-    outputs["run-id"] = plan.runId;
-    outputs["artifact-id"] = plan.artifactId;
-  } else if (plan.action === "resume") {
-    outputs["preparation-name"] = `Resume release ${plan.requestId}`;
-  } else {
-    const action = plan.action === "dispatch"
-      ? "dispatch"
-      : `retry ${plan.runId}/${plan.attempt}`;
-    outputs["preparation-name"] =
-      `Prepare release ${plan.requestId}: ${action}`;
-  }
-  return outputs;
 }

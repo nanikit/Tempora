@@ -110,16 +110,10 @@ export class Boundary {
     }, { jobs: jobs.slice(1) }]);
   }
 
-  artifacts(runId: number, options: { expired?: boolean } = {}): void {
+  artifacts(runId: number, artifacts = releaseArtifacts()): void {
     this.api(`actions/runs/${runId}/artifacts?per_page=100`, [{
-      artifacts: [
-        {
-          id: 201,
-          name: "release-artifacts",
-          expired: options.expired ?? false,
-        },
-      ],
-    }]);
+      artifacts: artifacts.slice(0, 2),
+    }, { artifacts: artifacts.slice(2) }]);
   }
 
   command(command: string, args: string[]): { code: number; text: string } {
@@ -204,4 +198,19 @@ export function run(
 
 export function outputs(): Promise<string> {
   return Deno.readTextFile(Deno.env.get("GITHUB_OUTPUT")!);
+}
+
+export function releaseArtifacts(
+  options: { version?: string; firstId?: number } = {},
+) {
+  return [
+    ...["Windows", "Linux", "macOS"].map((platform) =>
+      `Tempora-v${options.version ?? "1.5.4"}-${platform}.zip`
+    ),
+    "build-info.json",
+  ].map((name, index) => ({
+    id: (options.firstId ?? 201) + index,
+    name,
+    expired: false,
+  }));
 }
